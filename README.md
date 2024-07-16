@@ -7,6 +7,8 @@ Creates a carbon footprint visualization based on relevant text information of m
 2. Unzip release.zip to get the 'release' folder
 3. Import that folder into google extensions to run the extension locally
 
+Tip: Whenever adding a new .js script to src, make sure to edit js_bundles in package.json to 'whitelist' that .js file. Otherwise, the .js file will not work.
+
 ## Development
 
 This extension was created with [Extension CLI](https://oss.mobilefirst.me/extension-cli/)!

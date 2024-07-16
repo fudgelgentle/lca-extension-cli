@@ -3,22 +3,245 @@
     <title>Carbon Footprint Analyzer</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Lexend:wght@100..900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=Lexend:wght@100..900&family=League+Spartan:wght@100..900&display=swap" rel="stylesheet">
     <style>
-      .phone-spec-container {
+      :root {
+        --eco-green-100: #E1EDE8;
+        --eco-green-200: #C3E3CA;
+        --eco-green-300: #ABD2B3;
+        --eco-green-400: #93CFA0;
+        --eco-green-500: #7CBD8A;
+        --eco-green-600: #82A589;
+
+        --eco-turquoise-100: #D3EDE5;
+        --eco-turquoise-200: #93CFC0;
+        --eco-turquoise-300: #72AD9E;
+
+        --eco-grey: #636363;
+
+        --eco-black: #033425;
+      }
+      body {
+        background-color: white;
         font-family: "Lexend", sans-serif;
+        width: 400px;
+        height: 600px;
+      }
+      .lexend-reg {
+        font-weight: 400;
+      }
+      .red-text {
+        color: red;
+      }
+      .grey-text {
+        color: var(--eco-grey);
+      }
+      .icon-16 {
+        width: 16px;
+        height: 16px;
+      }
+      .icon-20 {
+        width: 20px;
+        height: 20px;
+      }
+      .icon-24 {
+        width: 24px;
+        height: 24px;
+      }
+      .margin-0 {
+        margin: 0;
+      }
+      .margin-10 {
+        margin: 10px;
+      }
+      .br-4 {
+        border-radius: 4px;
+      }
+      .br-8 {
+        border-radius: 8px;
+      }
+      .br-16 {
+        border-radius: 16px;
+      }
+      .pd-4 {
+        padding: 4px;
+      }
+      .pd-8 {
+        padding: 8px;
+      }
+      .pd-12 {
+        padding: 12px;
+      }
+      .pd-16 {
+        padding: 16px;
+      }
+      .pd-20 {
+        padding: 20px;
+      }
+      .fz-8 {
+        font-size: 8px;
+      }
+      .fz-12 {
+        font-size: 12px;
+      }
+      .fz-16 {
+        font-size: 16px;
+      }
+      .fz-20 {
+        font-size: 20px;
+      }
+      .fz-24 {
+        font-size: 24px;
+      }
+      .fz-32 {
+        font-size: 32px;
+      }
+      .cg-4 {
+        column-gap: 4px;
+      }
+      .cg-8 {
+        column-gap: 4px;
+      }
+      .eco-bold {
+        color: var(--eco-black);
+      }
+
+      .title-text {
+        margin-top: 0;
+        margin-bottom: 0;
+      }
+      .flex-center {
+        display: flex;
+        align-items: center;
+      }
+      .flex-stretch {
+        display: flex;
+        align-items: stretch;
+      }
+      .lca-banner {
+        display: flex;
+        flex-wrap: nowrap;
+        justify-content: space-between;
+      }
+      .title-container {
+        justify-content: center;
+        flex-grow: 3;
+      }
+      .title-container, .lca-banner {
+        gap: 8px;
+      }
+      .title-container, .close-container {
+        background-color: var(--eco-turquoise-100);
+      }
+      .co2e-data-container {
+        background-color: white;
+        justify-content: space-evenly;
+      }
+      .phone-spec-container {
+        background-color: var(--eco-turquoise-100);
+        margin-top: 12px;
+      }
+      .phone-spec-title {
+        /* top, right, bottom, left */
+        margin: 4px 0px 4px 0px;
+      }
+      .co2e-data-container {
+        /* top, right, bottom, left */
+        margin-bottom: 8px;
+        padding: 12px 4px 12px 4px;
+      }
+      .compare-container {
+        background-color: var(--eco-turquoise-200);
+        justify-content: center;
+        margin: 16px 0px 16px 0px;
+      }
+      .compare-container:hover {
+        color: var(--eco-turquoise-300);
+        transition: all 0.5s;
       }
     </style>
   </head>
-  <body class="">
-    <h1 class="cc">
-        Carbon Footprint Analyzer
-    </h1>
-    <div class="phone-spec-container">
-      <p>iPhone 15 Pro Carbon Emissions</p>
-      <div>
-        <img src="../assets/img/lca-48.png" alt="LCA Image">
+  <body>
+    <div class="master-container">
+      <div class="lca-banner flex-stretch">
+        <div class="flex-center title-container br-8 pd-16">
+          <img src="../assets/img/lca-48.png" alt="LCA Image" class="icon-20">
+          <p class="title-text fz-20 eco-bold"><b>LCA-Viz</b></p>
+        </div>
+        <div class="flex-center close-container br-8 pd-16">
+          <svg class="icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
       </div>
-    </div>
+
+      <div class="phone-spec-container fz-20 br-8 pd-16"></div>
+
+      <div class="flex-center compare-container br-8 pd-4">
+        <img src="../assets/img/plus-square-icon.png" class="icon-20">
+        <p class="fz-16 margin-10">Compare</p>
+      </div>
+
+      <!-- <p class="phone-spec-title"><b>iPhone 15 Pro Carbon Emissions</b></p>
+        <div class="details-container fz-16">
+          <div class="flex-center most-green cg-4">
+            <p><b>128 GB </b></p>
+            <img src="../assets/img/most-green-icon.png" class="icon-16" alt="Most eco-friendly option">
+          </div>
+          <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
+            <p class="margin-0">12 kg CO2e</p>
+            <img src="../assets/img/equivalent-icon.png" class="icon-16" alt="Equivalent to">
+            <div class="flex-center cg-4">
+              <p class="margin-0 grey-text">10.6 kg of trash burned</p>
+              <img src="../assets/img/fire-grey-icon.png" class="icon-16" alt="Trash">
+            </div>
+          </div>
+        </div>
+
+        <div class="details-container fz-16">
+          <div class="flex-center most-green">
+            <p><b>256 GB </b>&nbsp;</p><span class="red-text fz-12">(+100% emissions)</span>
+          </div>
+          <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
+            <p class="margin-0">24 kg CO2e</p>
+            <img src="../assets/img/equivalent-icon.png" class="icon-16" alt="Equivalent to">
+            <div class="flex-center cg-4">
+              <p class="margin-0 grey-text">21.2 kg of trash burned</p>
+              <img src="../assets/img/fire-grey-icon.png" class="icon-16" alt="Trash">
+            </div>
+          </div>
+        </div>
+
+        <div class="details-container fz-16">
+          <div class="flex-center most-green">
+            <p><b>512 GB </b>&nbsp;</p><span class="red-text fz-12">(+200% emissions)</span>
+          </div>
+          <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
+            <p class="margin-0">48 kg CO2e</p>
+            <img src="../assets/img/equivalent-icon.png" class="icon-16" alt="Equivalent to">
+            <div class="flex-center cg-4">
+              <p class="margin-0 grey-text">42.4 kg of trash burned</p>
+              <img src="../assets/img/fire-grey-icon.png" class="icon-16" alt="Trash">
+            </div>
+          </div>
+        </div>
+
+        <div class="details-container fz-16">
+          <div class="flex-center most-green">
+            <p><b>1 TB </b>&nbsp;</p><span class="red-text fz-12">(+300% emissions)</span>
+          </div>
+          <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
+            <p class="margin-0">96 kg CO2e</p>
+            <img src="../assets/img/equivalent-icon.png" class="icon-16" alt="Equivalent to">
+            <div class="flex-center cg-4">
+              <p class="margin-0 grey-text">84.8 kg of trash burned</p>
+              <img src="../assets/img/fire-grey-icon.png" class="icon-16" alt="Trash">
+            </div>
+          </div>
+        </div>
+      </div> -->
+
+
+    <script src="popup.js"></script>
   </body>
 </html>
