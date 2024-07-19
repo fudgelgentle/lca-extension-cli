@@ -20,7 +20,8 @@ let mouseY;
 let scrollX;
 let scrollY;
 
-handleHighlightText();
+// ! Uncomment to renable highlight text behavior
+// handleHighlightText();
 recordCurrentMouseCoord();
 
 function handleHighlightText() {
