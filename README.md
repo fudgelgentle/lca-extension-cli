@@ -7,6 +7,7 @@ Creates a carbon footprint visualization based on relevant text information of m
 2. Unzip release.zip to get the 'release' folder
 3. Go to [Google Extensions](chrome://extensions/) --> My Extensions
 4. Click on 'Load unpacked' button on the top left and select the 'release' folder
+5. Run the extension locally
 
 Tip: Whenever adding a new .js script to src, make sure to edit js_bundles in package.json to 'whitelist' that .js file. Otherwise, the .js file will not work.
 
