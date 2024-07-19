@@ -5,7 +5,7 @@ Creates a carbon footprint visualization based on relevant text information of m
 # Instructions:
 1. Run 'npx xt-build' to package the project in release.zip
 2. Unzip release.zip to get the 'release' folder
-3. Go to [Google Extensions](chrome://extensions/) --> My Extensions
+3. Go to Google Extensions (chrome://extensions/) --> My Extensions
 4. Click on 'Load unpacked' button on the top left and select the 'release' folder
 5. Run the extension locally
 
