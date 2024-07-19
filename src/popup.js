@@ -191,31 +191,6 @@
 
   }
 
-  function displaySideBySideComparisonX(phoneId) {
-    const wrapperTemplate = `
-      <section class="side-by-side-section">
-        <div class="side-by-side-container flex-center">
-          <div class="side-by-side-spec-container grid-1fr-1fr cg-12"></div>
-        </div>
-      </section>
-    `;
-
-    const lcaBanner = document.querySelector(".lca-banner");
-    lcaBanner.insertAdjacentHTML("afterend", wrapperTemplate);
-
-    const sideBySideContainer = document.querySelector(".side-by-side-container");
-    const phoneSpecContainer = document.querySelector(".phone-spec-container");
-
-    phoneSpecContainer.classList.add('hidden');
-    setTimeout(() => {
-      phoneSpecContainer.classList.remove("hidden");
-      phoneSpecContainer.classList.remove("phone-spec-container");
-      phoneSpecContainer.className += " side-by-side-spec-container grid-1fr-1fr cg-12";
-    }, 200);
-
-    sideBySideContainer.appendChild(phoneSpecContainer);
-  }
-
   /**
    * Takes in the storage value and returns a numerical value in gigabytes (e.g. "256 GB" --> 256)
    * @param {String} storage the storage of a phone model (e.g. "256 GB", "1 TB")
