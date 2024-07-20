@@ -174,10 +174,12 @@
           </div>
         </div>
       `;
+
+      const sidePhoneText = document.querySelector('.side-phone-text');
+      scrollToElement(sidePhoneText);
     }
 
     const trashBtn = specContainer.querySelector(".trash-btn");
-    console.log("trashBtn: ", trashBtn);
     trashBtn.addEventListener("click", () => {
       hideElement(wrapper);
       showElement(phoneSpecContainer);
@@ -186,8 +188,13 @@
     const lcaBanner = document.querySelector(".lca-banner");
     lcaBanner.insertAdjacentElement("afterend", wrapper);
 
-    hideElement(phoneSpecContainer);
-    showElement(wrapper);
+    if (phoneSpecContainer.classList.contains('hidden')) {
+      hideElement(wrapper);
+      showElement(wrapper);
+    } else {
+      hideElement(phoneSpecContainer);
+      showElement(wrapper);
+    }
 
   }
 
@@ -352,18 +359,49 @@
         </div>
         `;
     });
+
+    const phoneSpecContainer = document.querySelector(".phone-spec-title");
+    scrollToElement(phoneSpecContainer);
   }
 
   function showElement(element) {
-    element.classList.remove("hidden");
-    element.classList.add("visible");
+    element.style.display = "block";
+    requestAnimationFrame(() => {
+      element.classList.remove("hidden");
+      element.classList.add("visible");
+    });
   }
 
   function hideElement(element) {
-    element.classList.add("hidden");
     element.classList.remove("visible");
+    element.classList.add("hidden");
+    element.addEventListener('transitionend', function handleTransitionEnd() {
+      if (element.classList.contains("hidden")) {
+        element.style.display = "none";
+      }
+      element.removeEventListener("transitionend", handleTransitionEnd);
+    });
   }
 
+  function scrollToElement(element) {
+    const y = element.getBoundingClientRect().top + window.scrollY;
+    if (isEdge() || isSafari) {
+      element.scrollIntoView();
+    } else {
+      window.scroll({
+        top: y,
+        behavior: "smooth",
+      });
+    }
+  }
+
+  function isEdge() {
+    return /Edg/.test(navigator.userAgent);
+  }
+
+  function isSafari() {
+    return /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+  }
 
   /**
    * Returns a sample data containing the phone's model, storage, and carbon footprint.
