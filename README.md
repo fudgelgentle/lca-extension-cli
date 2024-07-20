@@ -4,7 +4,7 @@ The Life Cycle Assessment Visualization creates a carbon footprint visualization
 
 # Running the extension locally:
 1. Clone the repository
-2. Run 'npx xt-build' in the root directory. You will see 'release.zip' being created
+2. Run `npx xt-build` in the root directory. You will see 'release.zip' being created
 3. Unzip release.zip to get the 'release' folder
 4. Go to Google Extensions (chrome://extensions/) then to 'My Extensions'
 5. Click on 'Load unpacked' button on the top left and select the 'release' folder
