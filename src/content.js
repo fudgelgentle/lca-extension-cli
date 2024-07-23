@@ -1,6 +1,10 @@
 
 import Chart from 'chart.js/auto';
 
+// Test sites for raw materials visualizer:
+// https://www.nature.com/articles/s41893-024-01333-7
+// https://www.allaboutcircuits.com/news/new-vitrimer-pcbs-recycled-many-times-over/
+
 window.onload = () => {
     var newLink = document.createElement("link");
     newLink.rel = "stylesheet";
@@ -8,7 +12,6 @@ window.onload = () => {
     newLink.href = chrome.runtime.getURL("assets/content-style.css");
     document.head.appendChild(newLink);
 }
-
 
 let chart;
 let chartContainer;
@@ -23,6 +26,137 @@ let scrollY;
 // ! Uncomment to renable highlight text behavior
 // handleHighlightText();
 recordCurrentMouseCoord();
+searchAndHighlight();
+
+
+// Function to search and highlight the searchTerm
+function searchAndHighlight() {
+  const searchTerms = getRelevantSentences();
+
+  const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
+  let node;
+
+  while ((node = walker.nextNode())) {
+    const normalizedText = normalizeText(node.textContent);
+
+    searchTerms.forEach((termNode, termIndex) => {
+      const normalizedTerm = normalizeText(termNode.sentence);
+      const index = normalizedText.indexOf(normalizedTerm);
+      if (index !== -1) {
+        const beforeText = node.textContent.slice(0, index);
+        const highlightedText = node.textContent.slice(
+          index,
+          index + searchTerms[termIndex].sentence.length
+        );
+        const afterText = node.textContent.slice(
+          index + searchTerms[termIndex].sentence.length
+        );
+
+        const div = document.createElement("div");
+        div.classList.add("lca-viz-inline");
+        div.textContent = highlightedText;
+        div.innerHTML = termNode.htmlContent;
+
+        let parentNode = node.parentNode;
+        const newClasses = ["lca-viz-highlight"];
+        const newParentNode = replaceTagNameAndKeepStyles(parentNode, 'div', newClasses);
+        parentNode.parentNode.replaceChild(newParentNode, parentNode);
+        parentNode = newParentNode; // Update parentNode reference
+
+        parentNode.insertBefore(document.createTextNode(beforeText), node);
+        parentNode.insertBefore(div, node);
+        parentNode.insertBefore(document.createTextNode(afterText), node);
+        parentNode.removeChild(node);
+
+        let lcaVizParamTarget = document.querySelector(".lca-viz-param-target");
+        createUpDownBtn(lcaVizParamTarget, lcaVizParamTarget.textContent);
+      }
+    });
+  }
+}
+
+function createUpDownBtn(element, parameter) {
+  const upDownBtn = `
+        <div class="special-text-container-2">
+          <div class="special-text-2 inactive-st">
+            <span id="parameter-2">${parameter}</span>
+            <div class="up-down-btn-container">
+              <div class="inactive up-down-btn" id="up">
+                <svg width="9" height="7" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M3.60595 1.24256C3.99375 0.781809 4.7032 0.781808 5.091 1.24256L8.00777 4.70806C8.53906 5.3393 8.09032 6.30353 7.26525 6.30353L1.4317 6.30353C0.606637 6.30353 0.157892 5.33931 0.689181 4.70807L3.60595 1.24256Z" fill="currentColor"/>
+                </svg>
+              </div>
+              <div class="inactive up-down-btn" id="down">
+                <svg width="9" height="7" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M5.09107 5.74914C4.70327 6.20989 3.99382 6.20989 3.60602 5.74914L0.689251 2.28363C0.157962 1.65239 0.606707 0.688168 1.43177 0.688168L7.26532 0.688168C8.09039 0.688168 8.53913 1.65239 8.00784 2.28363L5.09107 5.74914Z" fill="currentColor"/>
+                </svg>
+              </div>
+            </div>
+          </div>
+          <div title="Click to display CO2 emissions"><img src="../assets/img/eye-off.png" class="display-chart-btn eye-off em-regular"></div>
+        </div>
+  `;
+  element.innerHTML = upDownBtn;
+}
+
+function replaceTagNameAndKeepStyles(oldNode, newTagName, newClasses) {
+  const newNode = document.createElement(newTagName);
+  newNode.classList.add(...newClasses);
+
+  // Copy existing classes
+  oldNode.classList.forEach((cls) => newNode.classList.add(cls));
+
+  // Copy inline styles
+  newNode.style.cssText = oldNode.style.cssText;
+
+  // Copy the content of old node into the new node
+  while (oldNode.firstChild) {
+    newNode.appendChild(oldNode.firstChild);
+  }
+  // Copy the atrributes of old node into the new node
+  for (const attr of oldNode.attributes) {
+    if (attr.name !== "class" && attr.name !== "style") {
+      newNode.setAttribute(attr.name, attr.value);
+    }
+  }
+  return newNode;
+}
+
+function getPageTextContent() {
+  return document.body.innerHTML;
+  // return normalizeText(document.body.innerText);
+}
+
+// TODO: WIP. Currently returns a mock/example sentence.
+// Uses LLM to determine the relevant sentences that can be used to display a carbon chart.
+// Returns the sentence
+function getRelevantSentences(pageTextContent) {
+  // return [
+  //   "epoxy (EPON 828, Skygeek), adipic acid (Sigma Aldrich) and 1,5,7-triazabicyclo[4.4.0]dec-5-ene (TBD, Sigma Aldrich). The epoxy was poured into a beaker, then placed in a 100 °C heated bath and stirred at 100 r.p.m. for 10 min.",
+  //   "2.4-GHz transmitter using vPCB to simulate a typical IoT device"
+  // ];
+  return [
+    {
+      // sentence: "The epoxy was poured into a beaker, then placed in a 100&thinsp;°C heated bath and stirred at 100&thinsp;r.p.m. for 10&thinsp;min.",
+      sentence:
+        "epoxy (EPON 828, Skygeek), adipic acid (Sigma Aldrich) and 1,5,7-triazabicyclo[4.4.0]dec-5-ene (TBD, Sigma Aldrich). The epoxy was poured into a beaker, then placed in a 100 °C heated bath and stirred at 100 r.p.m. for 10 min.",
+      parameter: "10",
+      htmlContent:
+        'epoxy (EPON 828, Skygeek), adipic acid (Sigma Aldrich) and 1,5,7-triazabicyclo[4.4.0]dec-5-ene (TBD, Sigma Aldrich). The epoxy was poured into a beaker, then placed in a 100 °C heated bath and stirred at 100 r.p.m. for <div class="lca-viz-param-target">10</div> min.',
+    },
+    {
+      sentence:
+        "2.4-GHz transmitter using vPCB to simulate a typical IoT device",
+      parameter: null,
+      htmlContent: null,
+    },
+  ];
+  // return normalizeText("epoxy (EPON 828, Skygeek), adipic acid (Sigma Aldrich) and 1,5,7-triazabicyclo[4.4.0]dec-5-ene (TBD, Sigma Aldrich). The epoxy was poured into a beaker, then placed in a 100 °C heated bath and stirred at 100 r.p.m. for 10 min.");
+}
+
+function normalizeText(text) {
+  return text.toLowerCase().replace(/\s+/g, " ").trim();
+}
 
 function handleHighlightText() {
   document.addEventListener('selectionchange', () => {
@@ -32,7 +166,7 @@ function handleHighlightText() {
       displayChart(chartConfig);
       makeChartVisible();
     }
-  })
+  });
 }
 
 // Records the current coordinate of the mouse.

@@ -10,9 +10,9 @@ The Life Cycle Assessment Visualization creates a carbon footprint visualization
 5. Click on 'Load unpacked' button on the top left and select the 'release' folder
 6. The extension can now be used locally
 
-Tip: If there are changes/updates in the repo, to get the latest update, please delete the current 'release' folder, run `npx xt-build`, unzip release.zip to get the new 'release' folder, then refresh the extension on Google Extensions.
+**Tip 1:** If there are changes/updates in the repo, to get the latest update, please delete the current 'release' folder (if it exists), run `npx xt-build`, unzip release.zip to get the new 'release' folder, then refresh the extension on Google Extensions.
 
-Tip: Whenever adding a new .js script to src, make sure to edit js_bundles in package.json to 'whitelist' that .js file. Otherwise, the .js file will not work.
+**Tip 2:**  Whenever adding a new .js script to src, make sure to edit js_bundles in package.json to 'whitelist' that .js file. Otherwise, the .js file will not work.
 
 ## Development
 
