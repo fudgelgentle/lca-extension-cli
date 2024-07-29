@@ -2,3 +2,4 @@ node_modules
 release.zip
 release
 .vscode
+.lca-extension-cli.code-workspace
