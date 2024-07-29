@@ -1,7 +1,7 @@
 import Chart from 'chart.js/auto';
 
 const FREIGHT_URL = 'https://api.climatiq.io/freight/v1/intermodal';
-const CLIMATIQ_API_KEY = "ST0XX03BSYMTB5GTD8EYGS152ED1";
+const CLIMATIQ_API_KEY = process.env.CLIMATIQ_API_KEY;
 
 window.onload = () => {
     const createLinkElement = (rel, href, crossorigin) => {
@@ -44,6 +44,17 @@ handleHighlightText();
 recordCurrentMouseCoord();
 // searchAndHighlight();
 testClimatiqAPI();
+
+fetch('/api/endpoint', {
+  method: 'POST',
+  headers: {
+      'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({ key: 'value' })
+})
+.then(response => response.json())
+.then(data => console.log(data))
+.catch(error => console.error('Error:', error));
 
 function testClimatiqAPI() {
   console.log('calling testClimatiqAPI...');
