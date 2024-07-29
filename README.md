@@ -7,8 +7,9 @@ The Life Cycle Assessment Visualization creates a carbon footprint visualization
 2. Run `npx xt-build` in the root directory. You will see 'release.zip' being created
 3. Unzip release.zip to get the 'release' folder
 4. Go to Google Extensions (chrome://extensions/) then to 'My Extensions'
-5. Click on 'Load unpacked' button on the top left and select the 'release' folder
-6. The extension can now be used locally
+5. Turn on Developer Mode (in the top right)
+6. Click on 'Load unpacked' button on the top left and select the 'release' folder
+7. The extension can now be used locally
 
 **Tip 1:** If there are changes/updates in the repo, to get the latest update, please delete the current 'release' folder (if it exists), run `npx xt-build`, unzip release.zip to get the new 'release' folder, then refresh the extension on Google Extensions.
 

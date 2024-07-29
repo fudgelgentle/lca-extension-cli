@@ -58,6 +58,7 @@
 		]
 	},
 	"dependencies": {
-		"chart.js": "^4.4.3"
+		"chart.js": "^4.4.3",
+		"express": "^4.19.2"
 	}
 }

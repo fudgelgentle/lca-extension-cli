@@ -2,14 +2,17 @@
 
 #map {
   position: absolute;
-  border: 2px solid #ccc;
+  /* border: 2px solid #ccc; */
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
+  border-radius: 10px;
   z-index: 999999;
   background-color: white;
   padding: 20px;
-  padding-right: 70px;
+  padding-right: 60px;
   transition: opacity 0.5s ease-in-out;
   opacity: 0;
   pointer-events: none;
+  cursor: grab;
 }
 
 #map.visible {
@@ -20,11 +23,12 @@
 #carbonChart {
   max-width: 360px;
   max-height: 240px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
 }
 
 .slidercontainer {
   width: 100%;
+  text-align: center;
 }
 
 #parameter {
@@ -34,6 +38,25 @@
   user-select: none;
   text-decoration: underline dotted;
 }
+
+/* ~ Saving this for now, for the <input> implement of #parameter-2 */
+/* <input id="parameter-2" type="number" value="${parameter}" */
+/* #parameter-2 {
+  border: none;
+  outline: none;
+  background: none;
+  font-size: inherit;
+  color: inherit;
+  width: 2em;
+}
+#parameter-2::-webkit-inner-spin-button,
+#parameter-2::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+#parameter-2[type=number] {
+  -moz-appearance: textfield;
+} */
 
 #closeMap {
   background-color: aliceblue;
@@ -63,7 +86,20 @@
 .lca-viz-inline, .lca-viz-param-target {
   display: inline;
 }
+.lca-lexend {
+  color: #585858;
+  font-family: "Lexend", sans-serif;
+  font-size: 14px;
+}
 
+.previously-highlighted {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
+.hidden {
+  display: none !important;
+}
 
 /* * CSS Rule for the up-and-down btn ONLY */
 .special-text-container-2 {
@@ -71,6 +107,7 @@
   align-items: center;
   padding: 2px;
   column-gap: 5px;
+  user-select: none
 }
 .special-text-2 {
   display: flex;
@@ -81,9 +118,6 @@
   align-items: center;
   gap: 10px;
 }
-.inactive-st {
-  background-color: #F5F5F5;
-}
 .up-down-btn-container {
   display: flex;
   flex-direction: column;
@@ -92,11 +126,28 @@
 .up-down-btn {
   padding: 0px 6px 0px 6px;
   box-shadow: 0px 0.5px 3px 0px rgba(0, 0, 0, 0.25);
+  line-height: 1.2;
+}
+.active {
+  cursor: pointer;
+  background-color: white;
+  color: #39805F;
+}
+.active:hover {
+  background-color: #ddf2e8;
+  transition: 0.5s all;
 }
 .inactive {
   cursor: not-allowed;
   background-color: #F5F5F5;
   color: grey;
+}
+.inactive-st {
+  background-color: #F5F5F5;
+}
+.active-st {
+  /* background-color: #F2FFF9; */
+  background-color: white;
 }
 .up-down-btn-container .up-down-btn svg {
   width: 0.7em;
@@ -115,5 +166,9 @@
 .em-regular {
   width: 1em;
   height: 1em;
+}
+.display-chart-btn {
+  width: 1.5em;
+  height: 1.5em;
 }
 /* * CSS Rule for the up and down btn ONLY */
