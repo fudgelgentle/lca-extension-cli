@@ -1,15 +1,62 @@
 (function () {
   window.addEventListener("load", init);
 
-  function init() {
-    displayPhoneSpecEmissions();
-    handlePhoneCompare();
-    handlePhoneSearch();
+  async function init() {
+    if (isPhoneCase()) {
+      document.querySelector(".phone-container").classList.remove('hidden');
+      await hideLoadingIcon();
+      const phoneSpecContainer = document.querySelector(".phone-spec-container");
+      const comparePhone = document.querySelector('.compare-phone');
+      showElement(phoneSpecContainer);
+      // phoneSpecContainer.classList.remove('hidden');
+      // showElement(comparePhone);
+      comparePhone.classList.remove('hidden');
+      displayPhoneSpecEmissions();
+      handlePhoneCompare();
+      handlePhoneSearch();
+    } else if (isFreightCase()) {
+      document.querySelector(".freight-container").classList.remove('hidden');
+      await hideLoadingIcon2();
+      const freightContent = document.querySelector(".freight-content");
+      showElement(freightContent);
+    }
 
     const closeExtension = document.querySelector(".close-container");
     closeExtension.addEventListener("click", () => {
       window.close();
     });
+  }
+
+  // Use this function to display a loading animation while waiting for the API calls
+  function hideLoadingIcon() {
+    let loadingBox = document.querySelector(".loading-box");
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        loadingBox.classList.add('hidden');
+        resolve();
+      }, 1500)
+    })
+  }
+
+  function hideLoadingIcon2() {
+    let loadingBox = document.querySelector(".loading-box-2");
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        loadingBox.classList.add('hidden');
+        resolve();
+      }, 1500)
+    })
+  }
+
+  // TODO: A function that evaluates if a phone carbon visualizer is to be displayed.
+  function isPhoneCase() {
+    // return false;
+    return true;
+  }
+
+  function isFreightCase() {
+    return false;
+    // return true;
   }
 
   // Handles searching for a phone model from the database
@@ -131,7 +178,7 @@
     const comparedPhone = phoneModelList.find((phone) => phone.id === phoneId);
 
     const wrapper = document.querySelector(".side-by-side-section");
-    const phoneSpecContainer = document.querySelector(".phone-spec-container");
+    const phoneContainer = document.querySelector(".phone-container");
 
     let specContainer = document.querySelector('.side-by-side-spec-container');
     specContainer.innerHTML = "";
@@ -182,17 +229,17 @@
     const trashBtn = specContainer.querySelector(".trash-btn");
     trashBtn.addEventListener("click", () => {
       hideElement(wrapper);
-      showElement(phoneSpecContainer);
+      showElement(phoneContainer);
     });
 
     const lcaBanner = document.querySelector(".lca-banner");
     lcaBanner.insertAdjacentElement("afterend", wrapper);
 
-    if (phoneSpecContainer.classList.contains('hidden')) {
+    if (phoneContainer.classList.contains('hidden')) {
       hideElement(wrapper);
       showElement(wrapper);
     } else {
-      hideElement(phoneSpecContainer);
+      hideElement(phoneContainer);
       showElement(wrapper);
     }
 
@@ -360,8 +407,8 @@
         `;
     });
 
-    const phoneSpecContainer = document.querySelector(".phone-spec-title");
-    scrollToElement(phoneSpecContainer);
+    const phoneSpecTitle = document.querySelector(".phone-spec-title");
+    scrollToElement(phoneSpecTitle);
   }
 
   function showElement(element) {

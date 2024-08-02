@@ -1,7 +1,6 @@
 import Chart from 'chart.js/auto';
 
-const FREIGHT_URL = 'https://api.climatiq.io/freight/v1/intermodal';
-const CLIMATIQ_API_KEY = process.env.CLIMATIQ_API_KEY;
+const FREIGHT_URL = 'https://lca-server-api.fly.dev';
 
 window.onload = () => {
     const createLinkElement = (rel, href, crossorigin) => {
@@ -45,16 +44,22 @@ recordCurrentMouseCoord();
 // searchAndHighlight();
 testClimatiqAPI();
 
-fetch('/api/endpoint', {
-  method: 'POST',
-  headers: {
-      'Content-Type': 'application/json'
-  },
-  body: JSON.stringify({ key: 'value' })
-})
-.then(response => response.json())
-.then(data => console.log(data))
-.catch(error => console.error('Error:', error));
+// Populates .master-container with the LCA banner
+function prepareLCABanner() {
+  const lcaBannerHTML = `
+    <section class="lca-banner flex-stretch">
+        <div class="flex-center title-container br-8 pd-16">
+          <img src="../assets/img/lca-48.png" alt="LCA Image" class="icon-20">
+          <p class="title-text fz-20 eco-bold"><b>LCA-Viz</b></p>
+        </div>
+        <div class="flex-center close-container br-8 pd-16">
+          <svg class="icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </div>
+      </section>
+  `;
+}
 
 function testClimatiqAPI() {
   console.log('calling testClimatiqAPI...');
@@ -86,17 +91,16 @@ function testClimatiqAPI() {
     }
   };
 
-  fetch(FREIGHT_URL, {
+  fetch(FREIGHT_URL + "/api/freight", {
     method: 'POST',
     headers: {
-      'Authorization': `Bearer ${CLIMATIQ_API_KEY}`,
       'Content-Type': 'application/json'
     },
     body: JSON.stringify(data)
   })
   .then(response => response.json())
   .then(responseData => {
-    console.log(responseData);
+    console.log('API Response: ', responseData);
   })
   .catch(error => {
     console.log(error);
@@ -182,7 +186,6 @@ function handleDisplayBtn(parameter, legendTitle) {
 function activeUpDownBtn() {
   const upDownBtn = document.querySelectorAll(".up-down-btn");
   const specialText = document.querySelectorAll(".special-text-2");
-  const parameterInput = document.getElementById('parameter-2');
 
   upDownBtn.forEach((btn) => {
     if (btn.classList.contains("active")) {
@@ -268,11 +271,6 @@ function makeHighlightTextInteractive(parentNode, range, selection) {
       fullText.indexOf(endContainerText) + endOffset
     );
 
-    // console.log("beforeText: ", beforeText);
-    // console.log("highlightedText: ", highlightedText);
-    // console.log("afterText: ", afterText);
-    // console.log("parentNode HTML: ", parentNode);
-
     let div = document.createElement("div");
     div.classList.add("lca-viz-inline");
     div.classList.add("lca-viz-highlight");
@@ -309,62 +307,6 @@ function makeHighlightTextInteractive(parentNode, range, selection) {
   }
 
 }
-
-
-// Function to search and highlight the searchTerm
-// function searchAndHighlight() {
-//   const searchTerms = getValidSentence();
-
-//   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT, null, false);
-//   let node;
-
-//   while ((node = walker.nextNode())) {
-//     const normalizedText = normalizeText(node.textContent);
-
-//     searchTerms.forEach((termNode, termIndex) => {
-//       const normalizedTerm = normalizeText(termNode.sentence);
-//       const index = normalizedText.indexOf(normalizedTerm);
-//       if (index !== -1) {
-//         const beforeText = node.textContent.slice(0, index);
-//         const highlightedText = node.textContent.slice(
-//           index,
-//           index + searchTerms[termIndex].sentence.length
-//         );
-//         const afterText = node.textContent.slice(
-//           index + searchTerms[termIndex].sentence.length
-//         );
-
-//         const div = document.createElement("div");
-//         div.classList.add("lca-viz-inline");
-//         div.classList.add("lca-viz-highlight");
-//         div.textContent = highlightedText;
-//         div.innerHTML = termNode.htmlContent;
-
-//         let parentNode = node.parentNode;
-//         const newClasses = ["lca-viz-highlight-container"];
-//         const newParentNode = replaceTagNameAndKeepStyles(
-//           parentNode,
-//           "div",
-//           newClasses
-//         );
-//         parentNode.parentNode.replaceChild(newParentNode, parentNode);
-//         parentNode = newParentNode; // Update parentNode reference
-
-//         parentNode.insertBefore(document.createTextNode(beforeText), node);
-//         parentNode.insertBefore(div, node);
-//         parentNode.insertBefore(document.createTextNode(afterText), node);
-//         parentNode.removeChild(node);
-
-//         let lcaVizParamTarget = document.querySelector(".lca-viz-param-target");
-//         createUpDownBtn(lcaVizParamTarget, lcaVizParamTarget.textContent);
-//         let parameter = searchTerms[termIndex].parameter;
-//         let materialName = searchTerms[termIndex].rawMaterials;
-
-//         handleDisplayBtn(parameter, materialName);
-//       }
-//     });
-//   }
-// }
 
 function createUpDownBtn(element, parameter) {
   const upDownBtn = `

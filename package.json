@@ -6,7 +6,7 @@
 	"author": "Pu Thavikulwat",
 	"repository": {
 		"type": "git",
-		"url": "ENTER GIT REPO URL"
+		"url": "https://github.com/fudgelgentle/lca-extension-cli"
 	},
 	"scripts": {
 		"start": "xt-build -e dev -w",

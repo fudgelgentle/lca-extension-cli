@@ -16,11 +16,14 @@
         --eco-black: #033425;
         --scrollbar-spacing: 4px;
       }
+      html {
+        width: 400px;
+        /* height: 600px; */
+        min-height: 360px;
+      }
       body {
         background-color: white;
         font-family: "Lexend", sans-serif;
-        width: 400px;
-        height: 600px;
       }
       .lexend-reg {
         font-weight: 400;
@@ -54,6 +57,9 @@
       }
       .margin-12 {
         margin: 12px;
+      }
+      .mb-16 {
+        margin-bottom: 16px;
       }
       .br-4 {
         border-radius: 4px;
@@ -109,10 +115,27 @@
       .eco-bold {
         color: var(--eco-black);
       }
+      .rg-4 {
+        row-gap: 4px;
+      }
+      .rg-8 {
+        row-gap: 8px;
+      }
+      .rg-12 {
+        row-gap: 12px;
+      }
 
       .title-text {
         margin-top: 0;
         margin-bottom: 0;
+      }
+      .freight-title-text {
+        margin-top: 0;
+        margin-bottom: 28px;
+      }
+      .from-to-text {
+        /* top, right, bottom, left */
+        margin: 8px 0px 8px 0px;
       }
       .flex-center {
         display: flex;
@@ -121,6 +144,11 @@
       .flex-stretch {
         display: flex;
         align-items: stretch;
+      }
+      .flex-column-center {
+        display: flex;
+        align-items: center;
+        flex-direction: column;
       }
       .lca-banner {
         display: flex;
@@ -150,13 +178,16 @@
         margin-bottom: 8px;
         padding: 12px 4px 12px 4px;
       }
-      .phone-spec-container {
+      .phone-spec-container, .freight-container, .phone-container {
         background-color: var(--eco-turquoise-100);
       }
-      .side-by-side-section, .phone-spec-container {
+      .side-by-side-section, .phone-spec-container, .phone-container {
         margin-top: 12px;
       }
-      .search-container {
+      .shipping-container {
+        margin-top: 28px;
+      }
+      .search-container, .freight-emissions {
         background-color: white;
       }
       .phone-spec-title {
@@ -211,7 +242,7 @@
       .compare-container.hide {
         display: none;
       }
-      .compare-btn {
+      .compare-btn, .loading-box, .loading-box-2 {
         justify-content: center;
       }
       #search-phone {
@@ -316,146 +347,62 @@
         transition: all 0.5s ease-in-out;
         pointer-events: none;
       }
-
       .visible {
         opacity: 1;
         transform: translateY(0);
         transition: all 0.5s ease-in-out;
         height: auto;
         pointer-events: auto;
-      }</style></head><body><div class="master-container"><section class="lca-banner flex-stretch"><div class="flex-center title-container br-8 pd-16"><img src="../assets/img/lca-48.png" alt="LCA Image" class="icon-20"><p class="title-text fz-20 eco-bold"><b>LCA-Viz</b></p></div><div class="flex-center close-container br-8 pd-16"><svg class="icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div></section><section class="phone-spec-container fz-20 br-8 pd-16"></section><section class="compare-phone br-8"><div class="compare-container br-8 pd-4"><div class="flex-center compare-btn"><img src="../assets/img/plus-square-icon.png" class="icon-20"><p class="fz-16 margin-12">Compare</p></div></div><div class="select-phone-container br-8 pd-16 slide-content"><div class="flex-center close-phone-btn"><svg class="icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><p class="margin-0 fz-20">Select phone model</p><p class="phone-spec-title fz-12">Comparing with: <b>iPhone 15 Pro</b></p><div class="search-container br-8 pd-16 fz-16"><input type="text" id="search-phone" class="grey-text fz-16" placeholder="Search..." title="Type to search for phone models"><div class="phone-model-container"><!-- <p class="phone-model-text br-4">Samsung Galaxy S24 Ultra</p>
+      }
+      .loading-box {
+        height: 280px;
+        margin-top: 12px;
+      }
+      .loading-box-2  {
+        height: 192px;
+        margin-top: 12px;
+      }
+      .loading-gif {
+        height: 120px;
+      }
+
+      /* CSS Animation for the loading circles */
+      .loader {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 120px;
+      }
+      .circle {
+        width: 16px;
+        height: 16px;
+        margin: 0 8px; /* 24px total spacing between circles */
+        background-color: #7CBD8A;
+        border-radius: 50%;
+        animation: moveUpDown 1.5s ease-in-out infinite;
+      }
+
+      .circle:nth-child(2) {
+        animation-delay: 0.5s;
+      }
+
+      .circle:nth-child(3) {
+        animation-delay: 1.0s;
+      }
+
+      @keyframes moveUpDown {
+          0%, 20%, 100% {
+            transform: translateY(0);
+          }
+          10% {
+            transform: translateY(-20px);
+          }
+      }
+      /* CSS Animation for the loading circles */</style></head><body><div class="master-container"><section class="lca-banner flex-stretch"><div class="flex-center title-container br-8 pd-16"><img src="../assets/img/lca-48.png" alt="LCA Image" class="icon-20"><p class="title-text fz-20 eco-bold"><b>LCA-Viz</b></p></div><div class="flex-center close-container br-8 pd-16"><svg class="icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div></section><!-- ****~This section is ONLY for phone carbon visualizer ****--><section class="phone-container fz br-8 pd-16 hidden"><!-- ~ ** Loading animations --><div class="loading-box flex-center br-8 pd-16"><div class="loader"><div class="circle"></div><div class="circle"></div><div class="circle"></div></div></div><!-- ~ ^^ Loading animations --><section class="phone-spec-container fz-20 hidden"></section></section><section class="compare-phone br-8 hidden"><div class="compare-container br-8 pd-4"><div class="flex-center compare-btn"><img src="../assets/img/plus-square-icon.png" class="icon-20"><p class="fz-16 margin-12">Compare</p></div></div><div class="select-phone-container br-8 pd-16 slide-content"><div class="flex-center close-phone-btn"><svg class="icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><p class="margin-0 fz-20">Select phone model</p><p class="phone-spec-title fz-12">Comparing with: <b>iPhone 15 Pro</b></p><div class="search-container br-8 pd-16 fz-16"><input type="text" id="search-phone" class="grey-text fz-16" placeholder="Search..." title="Type to search for phone models"><div class="phone-model-container"><!-- <p class="phone-model-text br-4">Samsung Galaxy S24 Ultra</p>
               <p class="phone-model-text br-4">Samsung Galaxy Z Flip 5</p>
               <p class="phone-model-text br-4">OnePlus 12R</p>
               <p class="phone-model-text br-4 last">Google Pixel 8 Pro</p>
               <p class="phone-model-text br-4">Samsung 1</p>
               <p class="phone-model-text br-4">Samsung 2</p>
               <p class="phone-model-text br-4">Samsung 3</p>
-              <p class="phone-model-text br-4 last">Samsung 4</p> --></div></div></div></section><!-- ! Uncomment this to use displaySideBySideComparison() --><section class="side-by-side-section hidden"><div class="side-by-side-container flex-center"><div class="side-by-side-spec-container grid-1fr-1fr cg-12"></div></div></section></div><!-- ~For single phone emissions --><!-- <p class="phone-spec-title"><b>iPhone 15 Pro Carbon Emissions</b></p>
-        <div class="details-container fz-16">
-          <div class="flex-center most-green cg-4">
-            <p><b>128 GB </b></p>
-            <img src="../assets/img/most-green-icon.png" class="icon-16" alt="Most eco-friendly option">
-          </div>
-          <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
-            <p class="margin-0">12 kg CO2e</p>
-            <img src="../assets/img/equivalent-icon.png" class="icon-16" alt="Equivalent to">
-            <div class="flex-center cg-4">
-              <p class="margin-0 grey-text">10.6 kg of trash burned</p>
-              <img src="../assets/img/fire-grey-icon.png" class="icon-16" alt="Trash">
-            </div>
-          </div>
-        </div>
-
-        <div class="details-container fz-16">
-          <div class="flex-center most-green">
-            <p><b>256 GB </b>&nbsp;</p><span class="red-text fz-12">(+100% emissions)</span>
-          </div>
-          <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
-            <p class="margin-0">24 kg CO2e</p>
-            <img src="../assets/img/equivalent-icon.png" class="icon-16" alt="Equivalent to">
-            <div class="flex-center cg-4">
-              <p class="margin-0 grey-text">21.2 kg of trash burned</p>
-              <img src="../assets/img/fire-grey-icon.png" class="icon-16" alt="Trash">
-            </div>
-          </div>
-        </div>
-
-        <div class="details-container fz-16">
-          <div class="flex-center most-green">
-            <p><b>512 GB </b>&nbsp;</p><span class="red-text fz-12">(+200% emissions)</span>
-          </div>
-          <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
-            <p class="margin-0">48 kg CO2e</p>
-            <img src="../assets/img/equivalent-icon.png" class="icon-16" alt="Equivalent to">
-            <div class="flex-center cg-4">
-              <p class="margin-0 grey-text">42.4 kg of trash burned</p>
-              <img src="../assets/img/fire-grey-icon.png" class="icon-16" alt="Trash">
-            </div>
-          </div>
-        </div>
-
-        <div class="details-container fz-16">
-          <div class="flex-center most-green">
-            <p><b>1 TB </b>&nbsp;</p><span class="red-text fz-12">(+300% emissions)</span>
-          </div>
-          <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
-            <p class="margin-0">96 kg CO2e</p>
-            <img src="../assets/img/equivalent-icon.png" class="icon-16" alt="Equivalent to">
-            <div class="flex-center cg-4">
-              <p class="margin-0 grey-text">84.8 kg of trash burned</p>
-              <img src="../assets/img/fire-grey-icon.png" class="icon-16" alt="Trash">
-            </div>
-          </div>
-        </div>
-      </div> --><!-- ~For side by side emissions --><!-- <p class="margin-0 side-phone-text"><b>iPhone 15 Pro</b></p>
-    <p class="margin-0 side-phone-text"><b>Samsung Galaxy S24 Ultra</b></p>
-    <img src="../assets/img/red-trash-icon.png" class="icon-16 trash-btn" alt="remove device">
-    <div class="details-container fz-16">
-      <div class="flex-center most-green cg-4">
-        <p><b>128 GB </b></p>
-        <img src="../assets/img/most-green-icon.png" class="icon-16" alt="Most eco-friendly option">
-      </div>
-      <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
-        <p class="margin-0">12 kg CO2e</p>
-      </div>
-    </div>
-    <div class="details-container fz-16">
-      <div class="flex-center cg-4">
-        <p><b>-- </b></p>
-      </div>
-      <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
-        <p class="margin-0">--</p>
-      </div>
-    </div>
-
-    <div class="details-container fz-16">
-      <div class="flex-center">
-        <p><b>256 GB </b>&nbsp;</p>
-      </div>
-      <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
-        <p class="margin-0">24 kg CO2e</p>
-      </div>
-    </div>
-    <div class="details-container fz-16">
-      <div class="flex-center most-green">
-        <p><b>256 GB </b>&nbsp;</p>
-        <img src="../assets/img/most-green-icon.png" class="icon-16" alt="Most eco-friendly option">
-      </div>
-      <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
-        <p class="margin-0">21 kg CO2e</p>
-      </div>
-    </div>
-
-    <div class="details-container fz-16">
-      <div class="flex-center">
-        <p><b>512 GB </b>&nbsp;</p>
-      </div>
-      <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
-        <p class="margin-0">48 kg CO2e</p>
-      </div>
-    </div>
-    <div class="details-container fz-16">
-      <div class="flex-center">
-        <p><b>512 GB </b>&nbsp;</p>
-      </div>
-      <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
-        <p class="margin-0">42 kg CO2e</p>
-      </div>
-    </div>
-
-    <div class="details-container fz-16">
-      <div class="flex-center">
-        <p><b>1 TB </b>&nbsp;</p>
-      </div>
-      <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
-        <p class="margin-0">96 kg CO2e</p>
-      </div>
-    </div>
-    <div class="details-container fz-16">
-      <div class="flex-center">
-        <p><b>1 TB </b>&nbsp;</p>
-      </div>
-      <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
-        <p class="margin-0">84 kg CO2e</p>
-      </div>
-    </div> --><script src="popup.js"></script></body></html>
+              <p class="phone-model-text br-4 last">Samsung 4</p> --></div></div></div></section><!-- ! Uncomment this to use displaySideBySideComparison() --><section class="side-by-side-section hidden"><div class="side-by-side-container flex-center"><div class="side-by-side-spec-container grid-1fr-1fr cg-12"></div></div></section></div><!-- ^^^^~This section is ONLY for phone carbon visualizer ^^^^--><!-- ****~This section is ONLY for freight carbon visualizer ****--><div class="freight-container br-8 pd-16 hidden"><div class="loading-box-2 flex-center br-8 pd-16"><div class="loader"><div class="circle"></div><div class="circle"></div><div class="circle"></div></div></div><div class="freight-content hidden"><p class="fz-16 freight-title-text"><b>Your package&apos;s estimated carbon emissions:</b></p><div class="freight-emissions flex-column-center br-8 rg-12 pd-16"><span class="fz-20"><b>652 kg CO2e</b></span><div class="flex-center cg-4"><span class="">or 10.6 kg of trash burned</span> <img src="../assets/img/fire-black-icon.png" class="icon-16" alt="Trash"></div></div><div class="shipping-container"><p class="fz-12"><b>Shipping Details</b></p><div class="shipping-info fz-12"><p class="from-to-text"><b>From:</b> Seattle, Washington, 98154, United States</p><p class="from-to-text"><b>To:</b> Suginami City, Tokyo, 168-0063, Japan</p></div></div></div></div><!-- ^^^^~This section is ONLY for freight carbon visualizer ^^^^--><script src="popup.js"></script></body></html>
