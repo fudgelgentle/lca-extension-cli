@@ -1,4 +1,21 @@
+:root {
+  --eco-green-100: #E1EDE8;
+  --eco-green-200: #C3E3CA;
+  --eco-green-300: #ABD2B3;
+  --eco-green-400: #93CFA0;
+  --eco-green-500: #7CBD8A;
+  --eco-green-600: #82A589;
 
+  --eco-turquoise-100: #D3EDE5;
+  --eco-turquoise-200: #93CFC0;
+  --eco-turquoise-300: #84C2B2;
+
+  --eco-grey: #636363;
+  --light-grey: #F0F0F0;
+
+  --eco-black: #033425;
+  --scrollbar-spacing: 4px;
+}
 
 #map {
   position: absolute;
@@ -174,7 +191,3 @@
 /* * CSS Rule for the up and down btn ONLY */
 
 
-
-/* ** CSS Rule from popup.html */
-
-/* ** CSS Rule from popup.html */

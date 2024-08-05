@@ -1,3 +1,6 @@
+// content.js handles the following scenario:
+// 1. Displaying carbon chart on raw materials
+
 import Chart from 'chart.js/auto';
 
 const FREIGHT_URL = 'https://lca-server-api.fly.dev';
@@ -19,11 +22,10 @@ window.onload = () => {
       "stylesheet",
       "https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap"
     );
-    createLinkElement(
-      "stylesheet",
-      chrome.runtime.getURL("assets/content-style.css")
-    );
+    createLinkElement("stylesheet", chrome.runtime.getURL("assets/content-style.css"));
+    createLinkElement("stylesheet", chrome.runtime.getURL("assets/popup-content.css"));
 }
+
 
 let chart;
 let chartContainer;
@@ -44,22 +46,6 @@ recordCurrentMouseCoord();
 // searchAndHighlight();
 testClimatiqAPI();
 
-// Populates .master-container with the LCA banner
-function prepareLCABanner() {
-  const lcaBannerHTML = `
-    <section class="lca-banner flex-stretch">
-        <div class="flex-center title-container br-8 pd-16">
-          <img src="../assets/img/lca-48.png" alt="LCA Image" class="icon-20">
-          <p class="title-text fz-20 eco-bold"><b>LCA-Viz</b></p>
-        </div>
-        <div class="flex-center close-container br-8 pd-16">
-          <svg class="icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </div>
-      </section>
-  `;
-}
 
 function testClimatiqAPI() {
   console.log('calling testClimatiqAPI...');

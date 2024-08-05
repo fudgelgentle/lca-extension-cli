@@ -1,7 +1,21 @@
+
+document.addEventListener('DOMContentLoaded', function () {
+  // Retrieve the addresses from local storage
+  chrome.storage.local.get('addresses', (result) => {
+    const addresses = result.addresses;
+    if (addresses) {
+      console.log('popup.js --> addresses: ' + addresses);
+      document.getElementById('fromAddress').textContent = addresses.from;
+      document.getElementById('toAddress').textContent = addresses.to;
+    }
+  });
+});
+
 (function () {
   window.addEventListener("load", init);
 
   async function init() {
+
     if (isPhoneCase()) {
       document.querySelector(".phone-container").classList.remove('hidden');
       await hideLoadingIcon();
@@ -242,7 +256,6 @@
       hideElement(phoneContainer);
       showElement(wrapper);
     }
-
   }
 
   /**
@@ -477,5 +490,6 @@
       ],
     };
   }
+
 })();
 
