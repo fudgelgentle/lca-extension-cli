@@ -1,9 +1,8 @@
+/* eslint-disable no-unused-vars */
 // content.js handles the following scenario:
 // 1. Displaying carbon chart on raw materials
 
 import Chart from 'chart.js/auto';
-
-const FREIGHT_URL = 'https://lca-server-api.fly.dev';
 
 window.onload = () => {
     const createLinkElement = (rel, href, crossorigin) => {
@@ -41,57 +40,10 @@ let currentValidSentenceJSON;
 let currentHighlightedNode;
 let currentParamNode;
 
-handleHighlightText();
+trackRawMaterial();
 recordCurrentMouseCoord();
 // searchAndHighlight();
-testClimatiqAPI();
 
-
-function testClimatiqAPI() {
-  console.log('calling testClimatiqAPI...');
-  const data = {
-    route: [
-      {
-        location: {
-          query: "Seattle, Washington, 98154, United States"
-        }
-      },
-      {
-        transport_mode: "road"
-      },
-      {
-        transport_mode: "sea"
-      },
-      {
-        transport_mode: "road"
-      },
-      {
-        location: {
-          query: "Suginami City, Tokyo, 168-0063, Japan"
-        }
-      }
-    ],
-    cargo: {
-      weight: 10,
-      weight_unit: "t"
-    }
-  };
-
-  fetch(FREIGHT_URL + "/api/freight", {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(data)
-  })
-  .then(response => response.json())
-  .then(responseData => {
-    console.log('API Response: ', responseData);
-  })
-  .catch(error => {
-    console.log(error);
-  });
-}
 
 function getElementCoordinates(element) {
   const rect = element.getBoundingClientRect();
@@ -372,6 +324,15 @@ function getValidSentence(highlightedText) {
 
 function normalizeText(text) {
   return text.toLowerCase().replace(/\s+/g, " ").trim();
+}
+
+function trackRawMaterial() {
+  let allowedDomains = ["nature.org", "acm.org"];
+  const currentDomain = window.location.hostname;
+  // Case: Fedex
+  if (allowedDomains.includes(currentDomain)) {
+    handleHighlightText();
+  }
 }
 
 function handleHighlightText() {

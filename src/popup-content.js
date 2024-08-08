@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 // popup-content.js handles the popup window that will be displayed for the following scenarios
 // 1. Phone model carbon emissions
 // 2. Freight carbon emissions
@@ -9,6 +10,8 @@
 //   newElement.innerHTML = `Testing if popup-content works...`;
 //   document.body.insertBefore(newElement, document.body.firstChild);
 // }
+const FREIGHT_URL = 'https://lca-server-api.fly.dev';
+
 const lca_48 = chrome.runtime.getURL('../assets/img/lca-48.png');
 const plus_square_icon = chrome.runtime.getURL('../assets/img/plus-square-icon.png');
 const fire_black_icon = chrome.runtime.getURL('../assets/img/fire-black-icon.png');
@@ -23,6 +26,7 @@ const equivalent_icon = chrome.runtime.getURL('../assets/img/equivalent-icon.png
 const masterContainer = document.createElement('div');
 masterContainer.classList.add('master-lca');
 masterContainer.classList.add('br-8');
+masterContainer.classList.add('hidden');
 document.body.append(masterContainer);
 
 const placeholder = document.createElement('div');
@@ -37,9 +41,8 @@ initialize();
 
 async function initialize() {
   await loadCSS(chrome.runtime.getURL('../assets/popup-content.css'));
-  injectPopupContent();
-  const phoneContainer = shadowRoot.querySelector('.phone-container');
-  console.log(phoneContainer); // This will log the element if it exists
+  trackFreight();
+  // injectPopupContent("phone");
 }
 
 // Function to fetch and inject CSS into the shadow DOM
@@ -51,12 +54,15 @@ async function loadCSS(url) {
   shadowRoot.appendChild(style);
 }
 
-function injectPopupContent() {
+// 3 popup cases: phone, freight, cloud
+function injectPopupContent(popupCase, freightData) {
   const lcaBanner = getLCABanner();
   masterContainer.insertAdjacentHTML('beforeend', lcaBanner);
+  const lcaFloatingMenu = getLCAFloatingMenu();
+  masterContainer.insertAdjacentHTML('beforebegin', lcaFloatingMenu);
 
-  // 3 popup cases: phone, freight, cloud
-  let popupCase = "phone";
+  toggleButtonState();
+
   if (popupCase === "phone") {
     const phoneSkeleton = getPhoneEmissionsSkeleton();
     masterContainer.insertAdjacentHTML('beforeend', phoneSkeleton);
@@ -64,14 +70,14 @@ function injectPopupContent() {
     stopInputPropogation(shadowRoot.getElementById('search-phone'));
     // Delay the execution of showPhoneEmissions to ensure DOM elements are available
     setTimeout(() => {
-      console.log('got in phone case');
+      masterContainer.classList.remove('hidden');
       showPhoneEmissions();
     }, 0);
   } else if (popupCase === "freight") {
-    const freightSkeleton = getFreightEmissionsSkeleton();
-    masterContainer.insertAdjacentHTML('beforeend', freightSkeleton);
+    const freightContent = getFreightContent(freightData);
+    masterContainer.insertAdjacentHTML('beforeend', freightContent);
     setTimeout(() => {
-      console.log('got in freight case');
+      masterContainer.classList.remove('hidden');
       showFreightEmissions();
     }, 0);
   }
@@ -89,13 +95,27 @@ function stopInputPropogation(input) {
   });
 }
 
-function getFloatingLCAMenu() {
+function getLCAFloatingMenu() {
   const floatingMenu = `
-    <div class="floating-lca-menu pd-16 br-8">
-      <img src="${lca_48}" alt="LCA Image" class="icon-32">
+    <div class="flex-center floating-lca-menu pd-12 br-8 hidden-b">
+      <img src="${lca_48}" alt="LCA Image" class="floating-lca-img icon-24">
     </div>
   `;
   return floatingMenu;
+}
+
+// Handles the behavior of opening and closing the lca-extension window.
+function toggleButtonState() {
+  const closeContainer = shadowRoot.querySelector('.close-container');
+  const openContainer = shadowRoot.querySelector('.floating-lca-menu');
+  closeContainer.addEventListener("click", () => {
+    hideElement(masterContainer, 'b');
+    showElement(openContainer, 'b');
+  });
+  openContainer.addEventListener("click", () => {
+    hideElement(openContainer, 'b');
+    showElement(masterContainer, 'b');
+  })
 }
 
 /**
@@ -172,10 +192,10 @@ function getPhoneEmissionsSkeleton() {
 
 async function showPhoneEmissions() {
   shadowRoot.querySelector(".phone-container").classList.remove('hidden-a');
-  await hideLoadingIcon();
+  await hidePhoneLoadingIcon();
   const phoneSpecContainer = shadowRoot.querySelector(".phone-spec-container");
   const comparePhone = shadowRoot.querySelector('.compare-phone');
-  showElement(phoneSpecContainer);
+  showElement(phoneSpecContainer, "a");
   comparePhone.classList.remove('hidden-a');
   displayPhoneSpecEmissions();
   handlePhoneCompare();
@@ -184,13 +204,87 @@ async function showPhoneEmissions() {
 
 async function showFreightEmissions() {
   shadowRoot.querySelector(".freight-container").classList.remove('hidden-a');
-  await hideLoadingIcon2();
+
+  await hideFreightLoadingIcon();
   const freightContent = shadowRoot.querySelector(".freight-content");
-  showElement(freightContent);
+  showElement(freightContent, "a");
 }
 
-function getFreightEmissionsSkeleton() {
-  const freightEmissionsSkeleton = `
+
+/**
+ * Takes in a weight value in kg and determines if the weight needs
+// unit conversion (to grams or tons) to make it more readable.
+ * @param {number} kg
+ */
+function getReadableUnit(kg) {
+  if (kg < 1.0) {
+    const grams = parseFloat((kg * 100).toFixed(2));
+    return { weight: grams, unit: 'g'}
+  } else if (kg >= 1000) {
+    const tons = parseFloat((kg / 1000).toFixed(2));
+    return { weight: tons, unit: 'tons'}
+  } else {
+    const kilograms = parseFloat(kg.toFixed(2));
+    return { weight: kilograms, unit: 'kg'}
+  }
+}
+
+async function updateFreightContent(freightData) {
+
+  const floatingMenu = shadowRoot.querySelector('.floating-lca-menu');
+  //& New addition.... need to test if it works
+  if (floatingMenu.classList.contains('visible-b')) {
+    hideElement(floatingMenu, "b");
+    showElement(masterContainer, "b");
+  }
+
+  let loadingBox = shadowRoot.querySelector(".loading-box-2");
+  loadingBox.classList.remove('hidden-a');
+  loadingBox.classList.add('visible-a');
+
+  // Hiding freight container
+  let freightContent = shadowRoot.querySelector(".freight-content");
+  freightContent.classList.add('hidden');
+
+  console.log('UPDATING FREIGHT CONTENT');
+  const from = freightData.from;
+  const to = freightData.to;
+  // co2eValue unit is kg
+  const co2eValue = freightData.co2eValue;
+
+  let trashValue = (co2eValue / 1.15);
+  const weightObject = getReadableUnit(trashValue);
+  trashValue = weightObject.weight;
+  const trashUnit = weightObject.unit;
+
+  const freightCO2eValue = shadowRoot.querySelector('.fz-20.freight-co2e-value b');
+  const trashElement = shadowRoot.querySelector('.trash-value');
+  const fromElement = shadowRoot.getElementById('f-from');
+  const toElement = shadowRoot.getElementById('t-to');
+
+  freightCO2eValue.textContent = co2eValue + " kg CO2e";
+  trashElement.textContent = 'or ' + trashValue + ' ' + trashUnit + ' of trash burned';
+  fromElement.textContent = ' ' + from;
+  toElement.textContent = ' ' + to;
+
+
+  await hideFreightLoadingIcon();
+  freightContent.classList.remove('hidden');
+}
+
+
+function getFreightContent(freightData) {
+  const from = freightData.from;
+  const to = freightData.to;
+  // co2eValue unit is kg
+  const co2eValue = freightData.co2eValue;
+
+  let trashValue = (co2eValue / 1.15);
+  const weightObject = getReadableUnit(trashValue);
+  trashValue = weightObject.weight;
+  const trashUnit = weightObject.unit;
+
+  const freightEmissions = `
     <div class="freight-container br-8 pd-16 hidden-a">
       <div class="loading-box-2 flex-center br-8 pd-16">
         <div class="loader">
@@ -202,25 +296,202 @@ function getFreightEmissionsSkeleton() {
       <div class="freight-content hidden-a">
         <p class="fz-16 freight-title-text"><b>Your package&apos;s estimated carbon emissions:</b></p>
         <div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
-          <span class="fz-20"><b>652 kg CO2e</b></span>
+          <span class="fz-20 freight-co2e-value"><b>${co2eValue} kg CO2e</b></span>
           <div class="flex-center cg-4">
-            <span class="">or 10.6 kg of trash burned</span>
+            <span class="trash-value">or ${trashValue} ${trashUnit} of trash burned</span>
             <img src="${fire_black_icon}" class="icon-16" alt="Trash">
           </div>
         </div>
         <div class="shipping-container">
           <p class="fz-12"><b>Shipping Details</b></p>
           <div class="shipping-info fz-12">
-            <p class="from-to-text"><b>From:</b> Seattle, Washington, 98154, United States</p>
-            <p class="from-to-text"><b>To:</b> Suginami City, Tokyo, 168-0063, Japan</p>
+            <p class="from-to-text"><b>From:</b> <span id="f-from">${from}</span></p>
+            <p class="from-to-text"><b>To:</b> <span id="t-to">${to}</span></p>
           </div>
         </div>
       </div>
     </div>
   `;
-  return freightEmissionsSkeleton;
+  return freightEmissions;
 }
 
+//  ************* Analyzing Freight Data *****************
+
+// Tracks the current web page the extension is on to see if they are 'eligible' for displaying freight emissions
+function trackFreight() {
+  let allowedDomains = ["fedex.com"];
+  const currentDomain = window.location.hostname;
+  if (currentDomain.includes(allowedDomains[0])) {
+    observeFedexDOM();
+  }
+}
+
+// Function to observe the DOM and add the event listener when the button in Fedex is created
+function observeFedexDOM() {
+  const observer = new MutationObserver((mutationsList, observer) => {
+    for (const mutation of mutationsList) {
+      if (mutation.type === 'childList') {
+        const fedexButton = document.getElementById("e2ePackageDetailsSubmitButtonRates");
+        console.log(fedexButton);
+        if (fedexButton) {
+          fedexButton.addEventListener("click", handleFedexButtonClick);
+          observer.disconnect(); // Stop observing once the button is found and event listener is added
+          recordAllInputChange();
+          recordPackageTypeChange();
+          recordFromToAddressChange();
+          break;
+        }
+      }
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+// Detects if an element's class has been changed.
+function onClassChange(element, callback) {
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      if (
+        mutation.type === 'attributes' &&
+        mutation.attributeName === 'class'
+      ) {
+        callback(mutation.target);
+      }
+    });
+  });
+  observer.observe(element, { attributes: true });
+  return observer.disconnect;
+}
+
+function recordFromToAddressChange() {
+  const fromAddressElement = document.getElementById("fromGoogleAddress");
+  const toAddressElement = document.getElementById("toGoogleAddress");
+  // Listen to class changes on fromAddressElement and toAddressElement
+
+  const checkBothValid = () => {
+    const isFromValid = fromAddressElement.classList.contains('ng-valid');
+    const isToValid = toAddressElement.classList.contains('ng-valid');
+    if (isFromValid && isToValid) {
+      console.log('both input are valid');
+      // Calling the record methods again because after a change of location, the inputs
+      // were removed and added again (making the old event listeners invalid)
+      recordAllInputChange();
+      recordPackageTypeChange();
+
+      handleFedexChange();
+    } else {
+      console.log("At least one input is invalid");
+    }
+  };
+
+  onClassChange(fromAddressElement, checkBothValid);
+  onClassChange(toAddressElement, checkBothValid);
+
+  // Initial check in case the classes are already set
+  checkBothValid();
+}
+
+// ! recordPackageTypeChange
+function recordPackageTypeChange() {
+  const packageType = document.getElementById('package-details__package-type');
+  packageType.addEventListener("change", () => {
+    console.log('packaging type is changed to: ' + packageType.value);
+
+    const packageWeightElement = document.getElementById("package-details__weight-0");
+    const packageCountElement = document.getElementById("package-details__quantity-0");
+
+    packageWeightElement.addEventListener("input", handleFedexChange);
+    packageCountElement.addEventListener("input", handleFedexChange);
+  });
+}
+
+function handleFedexChange() {
+  // console.log(`Changed value in ${event.target.tagName}:`, event.target.value);
+  const fedexButton = document.getElementById("e2ePackageDetailsSubmitButtonRates");
+  if (fedexButton) {
+    fedexButton.addEventListener("click", handleFedexButtonClick);
+  }
+}
+
+function recordAllInputChange() {
+  // Select all input, select, and textarea elements
+  const inputs = document.querySelectorAll('input, select, textarea');
+
+  // Add event listeners to all selected elements
+  inputs.forEach(input => {
+    if (input.id != 'package-details__package-type' && input.id != 'fromGoogleAddress' && input.id != 'toGoogleAddress') {
+      input.addEventListener('change', handleFedexChange);
+      input.addEventListener('input', handleFedexChange);
+    }
+  });
+}
+
+async function handleFedexButtonClick() {
+  const fedexButton = document.getElementById("e2ePackageDetailsSubmitButtonRates");
+  fedexButton.removeEventListener("click", handleFedexButtonClick);
+  console.log('fedexButton is clicked');
+
+  const fromAddressElement = document.getElementById("fromGoogleAddress");
+  const fromAddress = fromAddressElement ? fromAddressElement.value : null;
+
+  const toAddressElement = document.getElementById("toGoogleAddress");
+  const toAddress = toAddressElement ? toAddressElement.value : null;
+
+  const packageCountElement = document.getElementById("package-details__quantity-0");
+  const packageCount = packageCountElement ? parseInt(packageCountElement.value) : null;
+
+  const packageWeightElement = document.getElementById("package-details__weight-0");
+  let packageWeight = packageWeightElement ? parseInt(packageWeightElement.value) : null;
+
+  const unitElement = document.querySelector('select[data-e2e-id="selectMeasurement"]');
+  const unit = unitElement ? unitElement.value : null;
+
+  console.log('packageWeight original: ' + packageWeight);
+
+  // If the unit is imperial, convert the package weight to kg.
+  if (unit.includes('IMPERIAL')) {
+    packageWeight = toKg(packageWeight);
+  }
+
+  console.log('fromAddress: ' + fromAddress);
+  console.log('toAddress: ' + toAddress);
+  console.log('packageCount: ' + packageCount);
+  console.log('unit: ' + unit);
+  console.log('packageWeight in kg: ' + packageWeight);
+
+  if (fromAddress && toAddress && packageCount && packageWeight) {
+    const totalWeight = packageWeight * packageCount;
+    const freightEmissionsData = await getFreightEmissions(fromAddress, toAddress, totalWeight);
+    const co2eValue = parseFloat(freightEmissionsData.co2e.toFixed(2));
+
+    const freightData = {
+      "from": fromAddress,
+      "to": toAddress,
+      "co2eValue": co2eValue,
+    }
+
+    if (shadowRoot.querySelector('.freight-container') !== null) {
+      console.log('FREIGHT CONTAINER EXISTS, updating freight');
+      await updateFreightContent(freightData);
+    } else {
+      console.log('FREIGHT CONTAINER DOESNT EXIST, injecting freight');
+      injectPopupContent("freight", freightData);
+    }
+
+  } else {
+    console.error('Invalid input.. Information is not complete');
+  }
+
+  // ~Send the addresses to the background.js script
+  // chrome.runtime.sendMessage({
+  //   action: "sendAddresses",
+  //   data: { from: fromAddress, to: toAddress }
+  // });
+}
+
+function toKg(lbs) {
+  return lbs * 0.453;
+}
 
 // Handles searching for a phone model from the database
 function handlePhoneSearch() {
@@ -345,19 +616,19 @@ function displaySideBySideComparison(phoneId) {
 
   const trashBtn = specContainer.querySelector(".trash-btn");
   trashBtn.addEventListener("click", () => {
-    hideElement(wrapper);
-    showElement(phoneContainer);
+    hideElement(wrapper, "a");
+    showElement(phoneContainer, "a");
   });
 
   const lcaBanner = shadowRoot.querySelector(".lca-banner");
   lcaBanner.insertAdjacentElement("afterend", wrapper);
 
   if (phoneContainer.classList.contains('hidden-a')) {
-    hideElement(wrapper);
-    showElement(wrapper);
+    hideElement(wrapper, "a");
+    showElement(wrapper, "a");
   } else {
-    hideElement(phoneContainer);
-    showElement(wrapper);
+    hideElement(phoneContainer, "a");
+    showElement(wrapper, "a");
   }
 }
 
@@ -483,8 +754,8 @@ function displayPhoneSpecEmissions() {
           <p class="margin-0">${option.co2e}</p>
           <img src="${equivalent_icon}" class="icon-16" alt="Equivalent to">
           <div class="flex-center cg-4">
-            <p class="margin-0 grey-text fz-16">${(co2eValue * 0.88).toFixed(
-              1
+            <p class="margin-0 grey-text fz-16">${(co2eValue / 1.15).toFixed(
+              2
             )} kg of trash burned</p>
             <img src="${fire_grey_icon}" class="icon-16" alt="Trash">
           </div>
@@ -498,7 +769,7 @@ function displayPhoneSpecEmissions() {
 }
 
 // Use this function to display a loading animation while waiting for the API calls
-async function hideLoadingIcon() {
+async function hidePhoneLoadingIcon() {
   console.log('got inside hideLoadingIcon');
   let loadingBox = shadowRoot.querySelector(".loading-box");
   if (loadingBox) {
@@ -517,7 +788,7 @@ async function hideLoadingIcon() {
   }
 }
 
-function hideLoadingIcon2() {
+function hideFreightLoadingIcon() {
   console.log('got inside hideLoadingIcon');
   let loadingBox = shadowRoot.querySelector(".loading-box-2");
   if (loadingBox) {
@@ -536,23 +807,60 @@ function hideLoadingIcon2() {
   }
 }
 
-function showElement(element) {
-  element.style.display = "block";
-  requestAnimationFrame(() => {
-    element.classList.remove("hidden-a");
-    element.classList.add("visible-a");
-  });
+/**
+ * Shows an element. Only works with flex and block elements
+ * @param {element} element The element to be shown
+ * @param {*} version The animation style. If no version is given, use the default style
+ */
+function showElement(element, version) {
+  if (version === 'a') {
+    if (element.classList.contains('flex-center')) {
+      element.style.display = "flex";
+    } else {
+      element.style.display = "block";
+    }
+    requestAnimationFrame(() => {
+      element.classList.remove("hidden-a");
+      element.classList.add("visible-a");
+    });
+  } else if (version === 'b') {
+    if (element.classList.contains('flex-center')) {
+      element.style.display = "flex";
+    } else {
+      element.style.display = "block";
+    }
+    requestAnimationFrame(() => {
+      element.classList.remove("hidden-b");
+      element.classList.add("visible-b");
+    });
+  }
 }
 
-function hideElement(element) {
-  element.classList.remove("visible-a");
-  element.classList.add("hidden-a");
-  element.addEventListener('transitionend', function handleTransitionEnd() {
-    if (element.classList.contains("hidden-a")) {
-      element.style.display = "none";
-    }
-    element.removeEventListener("transitionend", handleTransitionEnd);
-  });
+/**
+ * Hides an element. Only works with block elements
+ * @param {element} element The element to be shown
+ * @param {*} version The animation style. If no version is given, use the default style
+ */
+function hideElement(element, version) {
+  if (version === 'a') {
+    element.classList.remove("visible-a");
+    element.classList.add("hidden-a");
+    element.addEventListener('transitionend', function handleTransitionEnd() {
+      if (element.classList.contains("hidden-a")) {
+        element.style.display = "none";
+      }
+      element.removeEventListener("transitionend", handleTransitionEnd);
+    });
+  } else if (version === 'b') {
+    element.classList.remove("visible-b");
+    element.classList.add("hidden-b");
+    element.addEventListener('transitionend', function handleTransitionEnd() {
+      if (element.classList.contains("hidden-b")) {
+        element.style.display = "none";
+      }
+      element.removeEventListener("transitionend", handleTransitionEnd);
+    });
+  }
 }
 
 function scrollToElement(element) {
@@ -677,47 +985,63 @@ function getSampleData() {
   };
 }
 
-//  ***UNUSED COE: Sending data to popup.js ***************************
+/**
+ *
+ * @param {String} fromLocation
+ * @param {String} toLocation
+ * @param {Number} cargoWeight the weight of the cargo in kg
+ */
+async function getFreightEmissions(fromLocation, toLocation, cargoWeight) {
+  console.log('calling testClimatiqAPI...');
+  const data = {
+    route: [
+      {
+        location: {
+          query: fromLocation,
+          // query: "Seattle, Washington, 98154, United States"
+        }
+      },
+      {
+        transport_mode: "road"
+      },
+      {
+        transport_mode: "sea"
+      },
+      {
+        transport_mode: "road"
+      },
+      {
+        location: {
+          query: toLocation
+          // query: "Suginami City, Tokyo, 168-0063, Japan"
+        }
+      }
+    ],
+    cargo: {
+      weight: cargoWeight,
+      // weight: 10,
+      weight_unit: "kg"
+    }
+  };
 
-// sendFreightDataToPopup();
-// // Sends freight information to popup.js to be analyzed
-// function sendFreightDataToPopup() {
-//   let allowedDomains = ["fedex.com", "ups.com"];
-//   const currentDomain = window.location.hostname;
-//   // Case: Fedex
-//   if (currentDomain.includes(allowedDomains[0])) {
-//     observeFedexDOM();
-//   } else if (currentDomain.includes(allowedDomains[1])) {
-//     console.log('filler');
-//   }
-// }
-// function handleFedexButtonClick() {
-//   console.log('called handleFedexButtonClick');
-//   const fromAddressElement = document.getElementById("fromGoogleAddress");
-//   const fromAddress = fromAddressElement ? fromAddressElement.value : '';
-//   const toAddressElement = document.getElementById("toGoogleAddress");
-//   const toAddress = toAddressElement ? toAddressElement.value : '';
-//   console.log('fromAddress: ' + fromAddress);
-//   console.log('toAddress: ' + toAddress);
-//   // ~Send the addresses to the background.js script
-//   chrome.runtime.sendMessage({
-//     action: "sendAddresses",
-//     data: { from: fromAddress, to: toAddress }
-//   });
-// }
-// // Function to observe the DOM and add the event listener when the button in Fedex is created
-// function observeFedexDOM() {
-//   const observer = new MutationObserver((mutationsList, observer) => {
-//     for (const mutation of mutationsList) {
-//       if (mutation.type === 'childList') {
-//         const fedexButton = document.getElementById("e2ePackageDetailsSubmitButtonRates");
-//         if (fedexButton) {
-//           fedexButton.addEventListener("click", handleFedexButtonClick);
-//           observer.disconnect(); // Stop observing once the button is found and event listener is added
-//           break;
-//         }
-//       }
-//     }
-//   });
-//   observer.observe(document.body, { childList: true, subtree: true });
-// }
+  try {
+    const response = await fetch(FREIGHT_URL + "/api/freight", {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! Status: ${response.status}`);
+    }
+
+    const responseData = await response.json();
+    console.log('API Response: ', responseData);
+    return responseData;
+  } catch (error) {
+    console.error('Error:', error);
+  }
+}
+

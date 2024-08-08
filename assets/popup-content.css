@@ -1,17 +1,17 @@
 /* * CSS Rules from popup.css *************************************************/
 
 .master-lca {
-  background-color: white;
   width: 380px;
   min-height: 312px;
   max-height: 700px;
   position: fixed;
-  z-index: 2147483647;
-  border: 2px solid #52B788;
   padding: 12px;
   overflow-y: auto;
   font-family: "Lexend", sans-serif;
-  box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
+}
+
+.master-lca > * {
+  font-family: "Lexend", sans-serif;
 }
 
 .master-lca, .floating-lca-menu {
@@ -20,11 +20,21 @@
   position: fixed;
   top: 12px;
   right: 12px;
+  z-index: 2147483647;
+  background-color: white;
 }
 
 .floating-lca-menu {
-  width: 64px;
-  height: 64px;
+  justify-content: center;
+}
+.floating-lca-menu:hover {
+  background-color: var(--light-green);
+  transition: all 0.5s;
+}
+
+.floating-lca-img {
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .master-lca *::-webkit-scrollbar, .master-lca::-webkit-scrollbar {
@@ -204,7 +214,7 @@ p {
 .title-container, .close-container, .select-phone-container {
   background-color: var(--eco-turquoise-100);
 }
-.close-container {
+.close-container, .floating-lca-menu, .close-phone-btn, .trash-btn {
   cursor: pointer;
 }
 .co2e-data-container {
@@ -312,7 +322,6 @@ p {
 
 .close-phone-btn, .trash-btn {
   position: absolute;
-  cursor: pointer;
 }
 .close-phone-btn {
   top: 18px;
@@ -372,10 +381,25 @@ p {
 .visible-a {
   opacity: 1;
   transform: translateY(0);
-  transition: all 0.5s ease-in-out;
+  transition: all 0.5s;
   height: auto;
   pointer-events: auto;
 }
+.hidden-b {
+  display: none;
+  opacity: 0;
+  transform: translateX(20px);
+  transition: all 0.5s;
+}
+.visible-b {
+  opacity: 1;
+  transform: translateX(0px);
+  transition: all 0.5s;
+}
+.hidden {
+  display: none !important;
+}
+
 .loading-box {
   height: 280px;
   margin-top: 12px;
