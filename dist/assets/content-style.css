@@ -44,12 +44,12 @@
   margin-bottom: 16px;
 }
 
-.slidercontainer {
+.lca-viz-slidercontainer {
   width: 100%;
   text-align: center;
 }
 
-#parameter {
+#lca-viz-parameter {
   cursor: ew-resize;
   -webkit-user-select: none;
   -ms-user-select: none;
@@ -76,12 +76,12 @@
   -moz-appearance: textfield;
 } */
 
-#closeMap {
+#lca-viz-close-map {
   background-color: aliceblue;
   padding: 10px;
 }
 
-.close-button {
+.lca-viz-close-button {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -91,7 +91,7 @@
   padding: 0;
 }
 
-.close-button svg {
+.lca-viz-close-button svg {
   width: 24px;
   height: 24px;
   stroke: #000;
@@ -110,17 +110,17 @@
   font-size: 14px;
 }
 
-.previously-highlighted {
+.lca-viz-previously-highlighted {
   text-decoration: underline;
   cursor: pointer;
 }
 
-.hidden {
+.lca-viz-hidden {
   display: none !important;
 }
 
 /* * CSS Rule for the up-and-down btn ONLY */
-.special-text-container-2 {
+.lca-viz-special-text-container-2 {
   display: inline-flex;
   align-items: center;
   padding: 2px;

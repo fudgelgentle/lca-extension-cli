@@ -18,7 +18,7 @@
   --scrollbar-spacing: 4px;
 }
 
-#map {
+#lca-viz-map {
   position: absolute;
   /* border: 2px solid #ccc; */
   box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
@@ -33,23 +33,23 @@
   cursor: grab;
 }
 
-#map.visible {
+#lca-viz-map.visible {
   opacity: 1;
   pointer-events: auto;
 }
 
-#carbonChart {
+#lca-viz-carbon-chart {
   max-width: 360px;
   max-height: 240px;
   margin-bottom: 16px;
 }
 
-.slidercontainer {
+.lca-viz-slider-container {
   width: 100%;
   text-align: center;
 }
 
-#parameter {
+#lca-viz-parameter {
   cursor: ew-resize;
   -webkit-user-select: none;
   -ms-user-select: none;
@@ -76,12 +76,12 @@
   -moz-appearance: textfield;
 } */
 
-#closeMap {
+#lca-viz-close-map {
   background-color: aliceblue;
   padding: 10px;
 }
 
-.close-button {
+.lca-viz-close-button {
   position: absolute;
   top: 10px;
   right: 10px;
@@ -91,7 +91,7 @@
   padding: 0;
 }
 
-.close-button svg {
+.lca-viz-close-button svg {
   width: 24px;
   height: 24px;
   stroke: #000;
@@ -110,24 +110,24 @@
   font-size: 14px;
 }
 
-.previously-highlighted {
+.lca-viz-previously-highlighted {
   text-decoration: underline;
   cursor: pointer;
 }
 
-.hidden {
+.lca-viz-hidden {
   display: none !important;
 }
 
 /* * CSS Rule for the up-and-down btn ONLY */
-.special-text-container-2 {
+.lca-viz-special-text-container-2 {
   display: inline-flex;
   align-items: center;
   padding: 2px;
   column-gap: 5px;
   user-select: none
 }
-.special-text-2 {
+.lca-viz-special-text-2 {
   display: flex;
   outline: 2px solid #39805F;
   border-radius: 5px;
@@ -136,56 +136,56 @@
   align-items: center;
   gap: 10px;
 }
-.up-down-btn-container {
+.lca-viz-up-down-btn-container {
   display: flex;
   flex-direction: column;
   row-gap: 3px;
 }
-.up-down-btn {
+.lca-viz-up-down-btn {
   padding: 0px 6px 0px 6px;
   box-shadow: 0px 0.5px 3px 0px rgba(0, 0, 0, 0.25);
   line-height: 1.2;
 }
-.active {
+.lca-viz-active {
   cursor: pointer;
   background-color: white;
   color: #39805F;
 }
-.active:hover {
+.lca-viz-active:hover {
   background-color: #ddf2e8;
   transition: 0.5s all;
 }
-.inactive {
+.lca-viz-inactive {
   cursor: not-allowed;
   background-color: #F5F5F5;
   color: grey;
 }
-.inactive-st {
+.lca-viz-inactive-st {
   background-color: #F5F5F5;
 }
-.active-st {
+.lca-viz-active-st {
   /* background-color: #F2FFF9; */
   background-color: white;
 }
-.up-down-btn-container .up-down-btn svg {
+.lca-viz-up-down-btn-container .lca-viz-up-down-btn svg {
   width: 0.7em;
   height: 0.7em;
 }
-.eye-off, .eye-on {
+.lca-viz-eye-off, .lca-viz-eye-on {
   color: #39805F;
   padding: 5px;
   box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
   border-radius: 5px;
   cursor: pointer;
 }
-.eye-off {
+.lca-viz-eye-off {
   background-color: #F5F5F5;
 }
-.em-regular {
+.lca-viz-em-regular {
   width: 1em;
   height: 1em;
 }
-.display-chart-btn {
+.lca-viz-display-chart-btn {
   width: 1.5em;
   height: 1.5em;
 }

@@ -54,7 +54,7 @@ function getElementCoordinates(element) {
 }
 
 function handleDraggableMap() {
-  const map = document.getElementById('map');
+  const map = document.getElementById('lca-viz-map');
   map.addEventListener('mousedown', (e) => {
     console.log('detected mousedown');
     let shiftX = e.clientX - map.getBoundingClientRect().left;
@@ -88,11 +88,11 @@ function handleDisplayBtn(parameter, legendTitle) {
   let displayBtn = document.querySelector(".display-chart-btn-container");
 
   const svgEyeOff = `
-      <svg width="24" height="24" class="display-chart-btn eye-off" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="24" height="24" class="display-chart-btn lca-viz-eye-off" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M10.7429 5.09232C11.1494 5.03223 11.5686 5 12.0004 5C17.1054 5 20.4553 9.50484 21.5807 11.2868C21.7169 11.5025 21.785 11.6103 21.8231 11.7767C21.8518 11.9016 21.8517 12.0987 21.8231 12.2236C21.7849 12.3899 21.7164 12.4985 21.5792 12.7156C21.2793 13.1901 20.8222 13.8571 20.2165 14.5805M6.72432 6.71504C4.56225 8.1817 3.09445 10.2194 2.42111 11.2853C2.28428 11.5019 2.21587 11.6102 2.17774 11.7765C2.1491 11.9014 2.14909 12.0984 2.17771 12.2234C2.21583 12.3897 2.28393 12.4975 2.42013 12.7132C3.54554 14.4952 6.89541 19 12.0004 19C14.0588 19 15.8319 18.2676 17.2888 17.2766M3.00042 3L21.0004 21M9.8791 9.87868C9.3362 10.4216 9.00042 11.1716 9.00042 12C9.00042 13.6569 10.3436 15 12.0004 15C12.8288 15 13.5788 14.6642 14.1217 14.1213" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>`;
   const svgEyeOn = `
-      <svg width="24" height="24" class="display-chart-btn eye-on" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <svg width="24" height="24" class="display-chart-btn lca-viz-eye-on" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M2.42012 12.7132C2.28394 12.4975 2.21584 12.3897 2.17772 12.2234C2.14909 12.0985 2.14909 11.9015 2.17772 11.7766C2.21584 11.6103 2.28394 11.5025 2.42012 11.2868C3.54553 9.50484 6.8954 5 12.0004 5C17.1054 5 20.4553 9.50484 21.5807 11.2868C21.7169 11.5025 21.785 11.6103 21.8231 11.7766C21.8517 11.9015 21.8517 12.0985 21.8231 12.2234C21.785 12.3897 21.7169 12.4975 21.5807 12.7132C20.4553 14.4952 17.1054 19 12.0004 19C6.8954 19 3.54553 14.4952 2.42012 12.7132Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M12.0004 15C13.6573 15 15.0004 13.6569 15.0004 12C15.0004 10.3431 13.6573 9 12.0004 9C10.3435 9 9.0004 10.3431 9.0004 12C9.0004 13.6569 10.3435 15 12.0004 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>`;
@@ -122,21 +122,21 @@ function handleDisplayBtn(parameter, legendTitle) {
 }
 
 function activeUpDownBtn() {
-  const upDownBtn = document.querySelectorAll(".up-down-btn");
-  const specialText = document.querySelectorAll(".special-text-2");
+  const upDownBtn = document.querySelectorAll(".lca-viz-up-down-btn");
+  const specialText = document.querySelectorAll(".lca-viz-special-text-2");
 
   upDownBtn.forEach((btn) => {
-    if (btn.classList.contains("active")) {
-      replaceClass(btn, "active", "inactive");
+    if (btn.classList.contains("lca-viz-active")) {
+      replaceClass(btn, "lca-viz-active", "lca-viz-inactive");
     } else {
-      replaceClass(btn, "inactive", "active");
+      replaceClass(btn, "lca-viz-inactive", "lca-viz-active");
     }
   });
   specialText.forEach((text) => {
-    if (text.classList.contains("active-st")) {
-      replaceClass(text, "active-st", "inactive-st");
+    if (text.classList.contains("lca-viz-active-st")) {
+      replaceClass(text, "lca-viz-active-st", "lca-viz-inactive-st");
     } else {
-      replaceClass(text, "inactive-st", "active-st");
+      replaceClass(text, "lca-viz-inactive-st", "lca-viz-active-st");
     }
   });
 }
@@ -155,10 +155,10 @@ function handleUpDownBtnBehavior() {
 function updateValue(change) {
   const upBtn = document.getElementById("up");
   const downBtn = document.getElementById("down");
-  if (upBtn.classList.contains("inactive") || downBtn.classList.contains("inactive")) {
+  if (upBtn.classList.contains("lca-viz-inactive") || downBtn.classList.contains("lca-viz-inactive")) {
     return;
   }
-  const parameter = document.getElementById("parameter-2");
+  const parameter = document.getElementById("lca-viz-parameter-2");
   const display = document.getElementById("display");
   display.innerText = parseInt(parameter.innerText);
 
@@ -248,16 +248,16 @@ function makeHighlightTextInteractive(parentNode, range, selection) {
 
 function createUpDownBtn(element, parameter) {
   const upDownBtn = `
-        <div class="special-text-container-2">
-          <div class="special-text-2 active-st">
-            <span id="parameter-2">${parameter}</span>
-            <div class="up-down-btn-container">
-              <div class="active up-down-btn" id="up">
+        <div class="lca-viz-special-text-container-2">
+          <div class="lca-viz-special-text-2 lca-viz-active-st">
+            <span id="lca-viz-parameter-2">${parameter}</span>
+            <div class="lca-viz-up-down-btn-container">
+              <div class="lca-viz-active lca-viz-up-down-btn" id="up">
                 <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path d="M3.60595 1.24256C3.99375 0.781809 4.7032 0.781808 5.091 1.24256L8.00777 4.70806C8.53906 5.3393 8.09032 6.30353 7.26525 6.30353L1.4317 6.30353C0.606637 6.30353 0.157892 5.33931 0.689181 4.70807L3.60595 1.24256Z" fill="currentColor"/>
                 </svg>
               </div>
-              <div class="active up-down-btn" id="down">
+              <div class="lca-viz-active lca-viz-up-down-btn" id="down">
                 <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                   <path d="M5.09107 5.74914C4.70327 6.20989 3.99382 6.20989 3.60602 5.74914L0.689251 2.28363C0.157962 1.65239 0.606707 0.688168 1.43177 0.688168L7.26532 0.688168C8.09039 0.688168 8.53913 1.65239 8.00784 2.28363L5.09107 5.74914Z" fill="currentColor"/>
                 </svg>
@@ -390,11 +390,11 @@ function createChart(chartConfig, parameter) {
     map.setAttribute('id', 'map');
 
     map.innerHTML = `
-      <canvas id="carbonChart" width="480" height="320"></canvas>
-      <div class="slidercontainer">
+      <canvas id="lca-viz-carbon-chart" width="480" height="320"></canvas>
+      <div class="lca-viz-slider-container">
         <span class="lca-lexend">Duration: <span id="display">${parameter}</span> minute(s)</span>
       </div>
-      <button id="closeMap" class="close-button">
+      <button id="lca-viz-close-map" class="lca-viz-close-button">
         <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
@@ -404,7 +404,7 @@ function createChart(chartConfig, parameter) {
     document.body.appendChild(map);
     chartContainer = document.getElementById("map");
 
-    const canvas = document.getElementById('carbonChart');
+    const canvas = document.getElementById('lca-viz-carbon-chart');
     chart = new Chart(canvas, {
         type: 'bar',
         data: chartConfig.data,
@@ -435,7 +435,7 @@ function handleCloseButton() {
     hideChart();
 
     // Hides the up-down-btn
-    currentParamNode.children[0].classList.add('hidden');
+    currentParamNode.children[0].classList.add('lca-viz-hidden');
 
     // Adds in a placeholder for the parameter
     const paramPlaceholder = document.createElement('span');
@@ -443,13 +443,13 @@ function handleCloseButton() {
     paramPlaceholder.textContent = currentValidSentenceJSON.parameter;
     currentParamNode.appendChild(paramPlaceholder);
 
-    currentHighlightedNode.classList.add('previously-highlighted');
+    currentHighlightedNode.classList.add('lca-viz-previously-highlighted');
   });
 
   // Redisplay the chart, highlighted sentence
   currentHighlightedNode.addEventListener("click", () => {
-    currentParamNode.children[0].classList.remove("hidden");
-    currentHighlightedNode.classList.remove("previously-highlighted");
+    currentParamNode.children[0].classList.remove("lca-viz-hidden");
+    currentHighlightedNode.classList.remove("lca-viz-previously-highlighted");
     document.querySelector(".temporary-text")?.remove();
 
     makeChartVisible();
