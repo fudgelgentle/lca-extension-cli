@@ -33,7 +33,7 @@
   cursor: grab;
 }
 
-#lca-viz-map.visible {
+#lca-viz-map.lca-viz-visible {
   opacity: 1;
   pointer-events: auto;
 }

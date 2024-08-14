@@ -4,6 +4,8 @@
 // 2. Freight carbon emissions
 // 3. Cloud computing carbon emissions
 
+import { isDomainValid } from "./content";
+
 // testPopup();
 // function testPopup() {
 //   const newElement = document.createElement('h1');
@@ -19,8 +21,6 @@ const fire_grey_icon = chrome.runtime.getURL('../assets/img/fire-grey-icon.png')
 const red_trash_icon = chrome.runtime.getURL('../assets/img/red-trash-icon.png');
 const most_green_icon = chrome.runtime.getURL('../assets/img/most-green-icon.png');
 const equivalent_icon = chrome.runtime.getURL('../assets/img/equivalent-icon.png');
-
-
 
 // Setting up the master container and attaching the css
 const masterContainer = document.createElement('div');
@@ -42,7 +42,6 @@ initialize();
 async function initialize() {
   await loadCSS(chrome.runtime.getURL('../assets/popup-content.css'));
   trackFreight();
-  // injectPopupContent("phone");
 }
 
 // Function to fetch and inject CSS into the shadow DOM
@@ -81,6 +80,10 @@ function injectPopupContent(popupCase, freightData) {
       showFreightEmissions();
     }, 0);
   }
+}
+
+function injectFreight() {
+
 }
 
 function stopInputPropogation(input) {
@@ -148,9 +151,9 @@ function getPhoneEmissionsSkeleton() {
       <section class="phone-container br-8 pd-16 hidden-a">
         <div class="loading-box flex-center br-8 pd-16">
           <div class="loader">
-            <div class="circle"></div>
-            <div class="circle"></div>
-            <div class="circle"></div>
+            <div class="lca-viz-circle"></div>
+            <div class="lca-viz-circle"></div>
+            <div class="lca-viz-circle"></div>
           </div>
         </div>
         <section class="phone-spec-container fz-20 hidden-a"></section>
@@ -231,6 +234,7 @@ function getReadableUnit(kg) {
 
 async function updateFreightContent(freightData) {
 
+  console.log('updateFreightContent called');
   const floatingMenu = shadowRoot.querySelector('.floating-lca-menu');
   //& New addition.... need to test if it works
   if (floatingMenu.classList.contains('visible-b')) {
@@ -246,7 +250,6 @@ async function updateFreightContent(freightData) {
   let freightContent = shadowRoot.querySelector(".freight-content");
   freightContent.classList.add('hidden');
 
-  console.log('UPDATING FREIGHT CONTENT');
   const from = freightData.from;
   const to = freightData.to;
   // co2eValue unit is kg
@@ -272,35 +275,99 @@ async function updateFreightContent(freightData) {
   freightContent.classList.remove('hidden');
 }
 
+async function updateFreightContent2(freightData) {
+  const freightContainer = shadowRoot.querySelector('.freight-container');
+  const lcaBanner = shadowRoot.querySelector('.lca-banner');
+  if (freightContainer) {
+    lcaBanner.remove();
+    freightContainer.remove();
+    injectPopupContent("freight", freightData);
+  }
+}
 
 function getFreightContent(freightData) {
   const from = freightData.from;
   const to = freightData.to;
   // co2eValue unit is kg
-  const co2eValue = freightData.co2eValue;
 
-  let trashValue = (co2eValue / 1.15);
-  const weightObject = getReadableUnit(trashValue);
-  trashValue = weightObject.weight;
-  const trashUnit = weightObject.unit;
+  // & New data
+  const airData = freightData.air;
+  const groundData = freightData.ground;
+
+  let airHTML = ``;
+  let groundHTML = ``;
+
+  function formatShippingText(option) {
+    return option.split(' ').map(word => {
+      if (word.toLowerCase() === 'fedex') {
+        return 'FedEx';
+      }
+      if (['3day', '2day', '1day'].includes(word.toLowerCase())) {
+        return word.charAt(0) + 'Day'; // Converts '3day' to '3Day', '2day' to '2Day', etc.
+      }
+      if (word.toLowerCase() === 'am') {
+        return 'AM'; // Converts 'Am' to 'AM'
+      }
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(); // Capitalize first letter
+    }).join(' ');
+  }
+
+  if (airData) {
+    const airCo2eValue = airData.co2eValue;
+    let airTrashValue = (airCo2eValue);
+    const weightObject = getReadableUnit(airTrashValue);
+    airTrashValue = weightObject.weight;
+    const trashUnit = weightObject.unit;
+    const shippingOptionsText = airData.airMode.map(formatShippingText).join(', ');
+    airHTML = `
+      <div class="options-container">
+        <p class="shipping-options fz-12"><b>Ship by Air: </b>${shippingOptionsText}</p>
+        <div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
+          <span class="fz-20 freight-co2e-value"><b>${airCo2eValue} kg CO2e</b></span>
+          <div class="flex-center cg-4">
+            <span class="trash-value">or ${airTrashValue} ${trashUnit} of trash burned</span>
+            <img src="${fire_black_icon}" class="icon-16" alt="Trash">
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  if (groundData) {
+    const groundCo2eValue = groundData.co2eValue;
+    let groundTrashValue = (groundCo2eValue);
+    const weightObject = getReadableUnit(groundTrashValue);
+    groundTrashValue = weightObject.weight;
+    const trashUnit = weightObject.unit;
+    const shippingOptionsText = groundData.groundMode.map(formatShippingText).join(', ');
+    groundHTML = `
+      <div class="options-container">
+        <p class="shipping-options fz-12"><b>Ship by Ground: </b>${shippingOptionsText}</p>
+        <div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
+          <span class="fz-20 freight-co2e-value"><b>${groundCo2eValue} kg CO2e</b></span>
+          <div class="flex-center cg-4">
+            <span class="trash-value">or ${groundTrashValue} ${trashUnit} of trash burned</span>
+            <img src="${fire_black_icon}" class="icon-16" alt="Trash">
+          </div>
+        </div>
+      </div>
+    `;
+  }
 
   const freightEmissions = `
     <div class="freight-container br-8 pd-16 hidden-a">
       <div class="loading-box-2 flex-center br-8 pd-16">
         <div class="loader">
-          <div class="circle"></div>
-          <div class="circle"></div>
-          <div class="circle"></div>
+          <div class="lca-viz-circle"></div>
+          <div class="lca-viz-circle"></div>
+          <div class="lca-viz-circle"></div>
         </div>
       </div>
       <div class="freight-content hidden-a">
         <p class="fz-16 freight-title-text"><b>Your package&apos;s estimated carbon emissions:</b></p>
-        <div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
-          <span class="fz-20 freight-co2e-value"><b>${co2eValue} kg CO2e</b></span>
-          <div class="flex-center cg-4">
-            <span class="trash-value">or ${trashValue} ${trashUnit} of trash burned</span>
-            <img src="${fire_black_icon}" class="icon-16" alt="Trash">
-          </div>
+        <div>
+          ${groundHTML}
+          ${airHTML}
         </div>
         <div class="shipping-container">
           <p class="fz-12"><b>Shipping Details</b></p>
@@ -320,25 +387,58 @@ function getFreightContent(freightData) {
 // Tracks the current web page the extension is on to see if they are 'eligible' for displaying freight emissions
 function trackFreight() {
   let allowedDomains = ["fedex.com"];
-  const currentDomain = window.location.hostname;
-  if (currentDomain.includes(allowedDomains[0])) {
-    observeFedexDOM();
+  if (isDomainValid(allowedDomains)) {
+    // observeFedexBtn();
+    observeFedexShippingOptions(() => {
+      console.log('*****************OBSERVE FEDEX SHIPPING OPTIONS*****************')
+      console.log('This is called from trackFreight');
+      // const availableOptions = document.querySelectorAll('.fdx-c-definitionlist__description--small');
+      // availableOptions.forEach((option) => {
+      //   currShippingOptions.push(option.outerText.toLowerCase().replace(/®/g, ''));
+      // })
+      handleFedexDataToFreight();
+      // * commented out
+      recordAllInputChange();
+      recordPackageTypeChange();
+      recordFromToAddressChange();
+    });
   }
+  // const currentDomain = window.location.hostname;
+  // if (currentDomain.includes(allowedDomains[0])) {
+  //   observeFedexDOM();
+  // }
 }
 
-// Function to observe the DOM and add the event listener when the button in Fedex is created
-function observeFedexDOM() {
+// Observes the Fedex 'show rates' button and add the event listener when the button is created
+function observeFedexBtn() {
   const observer = new MutationObserver((mutationsList, observer) => {
     for (const mutation of mutationsList) {
       if (mutation.type === 'childList') {
         const fedexButton = document.getElementById("e2ePackageDetailsSubmitButtonRates");
-        console.log(fedexButton);
         if (fedexButton) {
-          fedexButton.addEventListener("click", handleFedexButtonClick);
+          fedexButton.addEventListener("click", handleFedexDataToFreight);
+
           observer.disconnect(); // Stop observing once the button is found and event listener is added
           recordAllInputChange();
           recordPackageTypeChange();
           recordFromToAddressChange();
+          break;
+        }
+      }
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+}
+
+// Observes when the different shipping option appears
+function observeFedexShippingOptions(callback) {
+  const observer = new MutationObserver((mutationsList, observer) => {
+    for (const mutation of mutationsList) {
+      if (mutation.type === 'childList') {
+        const shippingOption = document.querySelector('.fdx-c-definitionlist__description--small');
+        if (shippingOption) {
+          observer.disconnect(); // Stop observing once the shipping option is found
+          callback();
           break;
         }
       }
@@ -375,9 +475,10 @@ function recordFromToAddressChange() {
       console.log('both input are valid');
       // Calling the record methods again because after a change of location, the inputs
       // were removed and added again (making the old event listeners invalid)
+      //& uncomment back
       recordAllInputChange();
       recordPackageTypeChange();
-
+      // observeAndStoreShippingOptions("recordFromToAddressChange");
       handleFedexChange();
     } else {
       console.log("At least one input is invalid");
@@ -388,10 +489,11 @@ function recordFromToAddressChange() {
   onClassChange(toAddressElement, checkBothValid);
 
   // Initial check in case the classes are already set
-  checkBothValid();
+  //& uncomment back
+  // checkBothValid();
 }
 
-// ! recordPackageTypeChange
+
 function recordPackageTypeChange() {
   const packageType = document.getElementById('package-details__package-type');
   packageType.addEventListener("change", () => {
@@ -402,14 +504,39 @@ function recordPackageTypeChange() {
 
     packageWeightElement.addEventListener("input", handleFedexChange);
     packageCountElement.addEventListener("input", handleFedexChange);
+
+    // * commented out
+    // packageWeightElement.addEventListener("input", observeAndStoreShippingOptions);
+    // packageCountElement.addEventListener("input", observeAndStoreShippingOptions);
+    // packageWeightElement.addEventListener("input", () => {
+    //   console.log('detected change in package type (inout)')
+    //   observeAndStoreShippingOptions("recordPackageTypeChange");
+    // });
+    // packageCountElement.addEventListener("input", () => {
+    //   console.log('detected change in package count (inout)')
+    //   observeAndStoreShippingOptions("recordPackageTypeChange");
+    // });
+
+  });
+}
+
+function observeAndStoreShippingOptions() {
+  observeFedexShippingOptions(() => {
+    console.log('*****************OBSERVE FEDEX SHIPPING OPTIONS*****************');
+    handleFedexDataToFreight();
   });
 }
 
 function handleFedexChange() {
   // console.log(`Changed value in ${event.target.tagName}:`, event.target.value);
   const fedexButton = document.getElementById("e2ePackageDetailsSubmitButtonRates");
-  if (fedexButton) {
-    fedexButton.addEventListener("click", handleFedexButtonClick);
+  if (fedexButton && !fedexButton.classList.contains("lca-viz-observing")) {
+    // Uses addEvent instead of addEventListener in order to ensure that we cannot add multiple event listeners
+    // addEvent will not add the same function twice.
+    fedexButton.addEventListener("click", () => {
+      observeAndStoreShippingOptions();
+    });
+    fedexButton.classList.add("lca-viz-observing");
   }
 }
 
@@ -422,14 +549,30 @@ function recordAllInputChange() {
     if (input.id != 'package-details__package-type' && input.id != 'fromGoogleAddress' && input.id != 'toGoogleAddress') {
       input.addEventListener('change', handleFedexChange);
       input.addEventListener('input', handleFedexChange);
+
+      // * commented out
+      // input.addEventListener('change', observeAndStoreShippingOptions);
+      // input.addEventListener('input', observeAndStoreShippingOptions);
+      // input.addEventListener('change', () => {
+      //   console.log('detected change in input (change)');
+      //   observeAndStoreShippingOptions("recordAllInputChange");
+      // });
+      // input.addEventListener('input', () => {
+      //   console.log('detected change in input (input)');
+      //   observeAndStoreShippingOptions("recordAllInputChange");
+      // });
     }
   });
 }
 
-async function handleFedexButtonClick() {
-  const fedexButton = document.getElementById("e2ePackageDetailsSubmitButtonRates");
-  fedexButton.removeEventListener("click", handleFedexButtonClick);
-  console.log('fedexButton is clicked');
+async function handleFedexDataToFreight() {
+  // const fedexButton = document.getElementById("e2ePackageDetailsSubmitButtonRates");
+  // fedexButton.removeEventListener("click", handleFedexButtonClick);
+  let currShippingOptions = [];
+  const availableOptions = document.querySelectorAll('.fdx-c-definitionlist__description--small');
+  availableOptions.forEach((option) => {
+    currShippingOptions.push(option.outerText.toLowerCase().replace(/®/g, ''));
+  })
 
   const fromAddressElement = document.getElementById("fromGoogleAddress");
   const fromAddress = fromAddressElement ? fromAddressElement.value : null;
@@ -446,38 +589,59 @@ async function handleFedexButtonClick() {
   const unitElement = document.querySelector('select[data-e2e-id="selectMeasurement"]');
   const unit = unitElement ? unitElement.value : null;
 
-  console.log('packageWeight original: ' + packageWeight);
-
   // If the unit is imperial, convert the package weight to kg.
   if (unit.includes('IMPERIAL')) {
     packageWeight = toKg(packageWeight);
   }
 
-  console.log('fromAddress: ' + fromAddress);
-  console.log('toAddress: ' + toAddress);
-  console.log('packageCount: ' + packageCount);
-  console.log('unit: ' + unit);
-  console.log('packageWeight in kg: ' + packageWeight);
-
+  // TODO: Probably have to use mutation observer to observe when .fdx-c-definitionlist__description--small is generated,
+  // TODO: then we can call the getFedexTransportMode()
   if (fromAddress && toAddress && packageCount && packageWeight) {
     const totalWeight = packageWeight * packageCount;
-    const freightEmissionsData = await getFreightEmissions(fromAddress, toAddress, totalWeight);
-    const co2eValue = parseFloat(freightEmissionsData.co2e.toFixed(2));
 
+    // !Somehow this method is not being called
+    const { groundMode, airMode } = await categorizeShippingOption(fromAddress, toAddress, currShippingOptions);
+
+    let freightGroundData;
+    let freightAirData;
+    let aData;
+    let gData;
+
+    if (groundMode.length > 0) {
+      const groundData = formatFreightData(fromAddress, toAddress, "ground", totalWeight);
+      freightGroundData = await getFreightEmissions(groundData);
+      gData = {
+        "co2eValue": parseFloat(freightGroundData.co2e.toFixed(2)),
+        "groundMode": groundMode
+      };
+    }
+    if (airMode.length > 0) {
+      const airData = formatFreightData(fromAddress, toAddress, "air", totalWeight);
+      freightAirData = await getFreightEmissions(airData);
+      aData = {
+        "co2eValue": parseFloat(freightAirData.co2e.toFixed(2)),
+        "airMode": airMode
+      };
+    }
+
+    // & New
     const freightData = {
       "from": fromAddress,
       "to": toAddress,
-      "co2eValue": co2eValue,
+      "air": aData,
+      "ground": gData
     }
 
+
     if (shadowRoot.querySelector('.freight-container') !== null) {
-      console.log('FREIGHT CONTAINER EXISTS, updating freight');
-      await updateFreightContent(freightData);
+      console.log('updating freight content.....');
+      await updateFreightContent2(freightData);
     } else {
-      console.log('FREIGHT CONTAINER DOESNT EXIST, injecting freight');
+      console.log('injecting freight content.....');
       injectPopupContent("freight", freightData);
     }
 
+    currShippingOptions = [];
   } else {
     console.error('Invalid input.. Information is not complete');
   }
@@ -487,6 +651,52 @@ async function handleFedexButtonClick() {
   //   action: "sendAddresses",
   //   data: { from: fromAddress, to: toAddress }
   // });
+}
+
+// totalWeight is in kg
+function formatFreightData(fromAddress, toAddress, mode, totalWeight) {
+  let transportMode;
+  if (mode === "air") {
+    transportMode = [{
+      transport_mode: "road"
+    },
+    {
+      transport_mode: "air"
+    },
+    {
+      transport_mode: "road"
+    }
+    ];
+  }
+  if (mode === "ground") {
+    transportMode = [{
+      transport_mode: "road"
+    }];
+  }
+  let rFrom = [{
+    location: {
+      query: fromAddress
+    }
+  }];
+  let rTo = [{
+    location: {
+      query: toAddress
+    }
+  }];
+  let cargo = [{
+    weight: totalWeight,
+    weight_unit: "kg"
+  }];
+
+  // Combine the route components into one array
+  let route = rFrom.concat(transportMode).concat(rTo);
+  // Create the final data object
+  const data = {
+    route: route,
+    cargo: cargo[0] // Access the first (and only) object in the cargo array
+  };
+  // console.log(JSON.stringify(data, null, 2));
+  return data;
 }
 
 function toKg(lbs) {
@@ -770,15 +980,11 @@ function displayPhoneSpecEmissions() {
 
 // Use this function to display a loading animation while waiting for the API calls
 async function hidePhoneLoadingIcon() {
-  console.log('got inside hideLoadingIcon');
   let loadingBox = shadowRoot.querySelector(".loading-box");
   if (loadingBox) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        console.log('Adding hidden-a class to loadingBox');
         loadingBox.classList.add('hidden-a');
-        console.log('hidden-a class added:', loadingBox.classList);
-        console.log('loading-box: ', loadingBox);
         resolve();
       }, 1500);
     });
@@ -789,15 +995,11 @@ async function hidePhoneLoadingIcon() {
 }
 
 function hideFreightLoadingIcon() {
-  console.log('got inside hideLoadingIcon');
   let loadingBox = shadowRoot.querySelector(".loading-box-2");
   if (loadingBox) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        console.log('Adding hidden-a class to loadingBox');
         loadingBox.classList.add('hidden-a');
-        console.log('hidden-a class added:', loadingBox.classList);
-        console.log('loading-box: ', loadingBox);
         resolve();
       }, 1500);
     });
@@ -881,6 +1083,113 @@ function isEdge() {
 
 function isSafari() {
   return /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent);
+}
+
+/**
+ * @param {String} shippingType The Fedex shipping type (e.g. "fedex ground", "fedex 1day freight")
+ * @param {String} fromValue The starting location
+ * @param {String} toValue The destination location
+ * @returns The appropriate transportation mode, either "air" or "ground"
+ */
+async function getFedexTransportMode(shippingType, fromValue, toValue) {
+  const shipping_modes = {
+    "fedex first overnight": "air",
+    "fedex first overnight freight": "air",
+    "fedex express saver": "ground",
+    "fedex ground": "ground",
+    "fedex home delivery": "ground",
+    "fedex freight priority": "ground",
+    "fedex freight economy": "ground",
+    "fedex sameday freight": "air",
+    "fedex 1day freight": "air",
+    "fedex 2day freight": "air",
+    "fedex 3day freight": "air",
+    "fedex international priority express": "air",
+    "fedex international first": "air",
+    "fedex international next flight": "air",
+    "fedex international priority": "air",
+    "fedex international economy": "air",
+    "fedex international connect plus": "air",
+    "fedex international priority freight": "air",
+    "fedex international deferred freight": "air",
+    "fedex international economy freight": "air",
+    "fedex international ground": "air"
+  }
+
+  let mode = shipping_modes[shippingType];
+  if (mode) {
+    return mode;
+  } else {
+    // If it takes longer than this amount of hours by road, then assume the shipping type is air
+    let hoursThreshold;
+    if (shippingType === "fedex sameday" || shippingType === "fedex priority overnight" || shippingType === "fedex standard overnight") {
+      hoursThreshold = 6;
+    } else if (shippingType === "fedex 2day am") {
+      hoursThreshold = 12;
+    } else if (shippingType === "fedex 2day") {
+      hoursThreshold = 18;
+    } else {
+      return null;
+    }
+    try {
+      const response = await fetch(FREIGHT_URL + "/api/travel-time", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          from: fromValue,
+          to: toValue
+        })
+      });
+      const responseData = await response.json();
+      // travelTime is in seconds by default
+      const travelTime = responseData.rows[0].elements[0].duration.value;
+      if ((travelTime / 3600) < hoursThreshold) {
+        return "ground";
+      }
+      return "air";
+    } catch (error) {
+      console.error('Error in getFedexTransportMode:', error);
+      return null;
+    }
+  }
+}
+
+/**
+ * @param {String} fromAddress The origin address
+ * @param {String} toAddress The destination address
+ * @param {Array} shippingOptions The list of all given Fedex shipping options
+ * @returns Two arrays, one containing the shipping options that have ground transport mode,
+ *          another containing the shipping options that have air transport mode.
+ */
+async function categorizeShippingOption(fromAddress, toAddress, shippingOptions) {
+  console.log('got in categorize shipping option, shippingOptions: ', shippingOptions.length);
+  let airMode = [];
+  let groundMode = [];
+
+  // Use Promise.all to wait for all async operations to complete
+  const modes = await Promise.all(shippingOptions.map(async (option) => {
+    const mode = await getFedexTransportMode(option, fromAddress, toAddress);
+    // console.log('option: ', option, '\nmode: ', mode);
+    return { option, mode };
+  }));
+
+  // Categorize the options based on the mode
+  modes.forEach(({ option, mode }) => {
+    if (mode === "air") {
+      // console.log('pushed to air');
+      airMode.push(option);
+    }
+    if (mode === "ground") {
+      // console.log('pushed to ground');
+      groundMode.push(option);
+    }
+  });
+
+  console.log('ground mode: ', groundMode);
+  console.log('airmode: ', airMode);
+  return { groundMode, airMode };
 }
 
 /**
@@ -991,39 +1300,8 @@ function getSampleData() {
  * @param {String} toLocation
  * @param {Number} cargoWeight the weight of the cargo in kg
  */
-async function getFreightEmissions(fromLocation, toLocation, cargoWeight) {
+async function getFreightEmissions(data) {
   console.log('calling testClimatiqAPI...');
-  const data = {
-    route: [
-      {
-        location: {
-          query: fromLocation,
-          // query: "Seattle, Washington, 98154, United States"
-        }
-      },
-      {
-        transport_mode: "road"
-      },
-      {
-        transport_mode: "sea"
-      },
-      {
-        transport_mode: "road"
-      },
-      {
-        location: {
-          query: toLocation
-          // query: "Suginami City, Tokyo, 168-0063, Japan"
-        }
-      }
-    ],
-    cargo: {
-      weight: cargoWeight,
-      // weight: 10,
-      weight_unit: "kg"
-    }
-  };
-
   try {
     const response = await fetch(FREIGHT_URL + "/api/freight", {
       method: 'POST',

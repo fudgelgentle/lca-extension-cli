@@ -41,8 +41,6 @@ let currentHighlightedNode;
 let currentParamNode;
 
 trackRawMaterial();
-recordCurrentMouseCoord();
-// searchAndHighlight();
 
 
 function getElementCoordinates(element) {
@@ -327,12 +325,40 @@ function normalizeText(text) {
 }
 
 function trackRawMaterial() {
-  let allowedDomains = ["nature.org", "acm.org"];
-  const currentDomain = window.location.hostname;
-  // Case: Fedex
-  if (allowedDomains.includes(currentDomain)) {
+  let allowedDomains = ["nature.com", "acm.org"];
+  if (isDomainValid(allowedDomains)) {
+    recordCurrentMouseCoord();
     handleHighlightText();
   }
+
+  // const currentDomain = getBaseDomain(window.location.hostname);
+  // // Case: Fedex
+  // if (allowedDomains.includes(currentDomain)) {
+
+  //   recordCurrentMouseCoord();
+  //   handleHighlightText();
+  // } else {
+  // }
+}
+
+export function isDomainValid(domainList) {
+  let allowedDomains = domainList;
+  const currentDomain = getBaseDomain(window.location.hostname);
+  if (allowedDomains.includes(currentDomain)) {
+    console.log('THIS DOMAIN is in the whitelist: ' + currentDomain);
+    return true;
+  } else {
+    console.log('THIS DOMAIN is NOT the whitelist: ' + currentDomain);
+    return false;
+  }
+}
+
+export function getBaseDomain(hostname) {
+  const parts = hostname.split('.');
+  if (parts.length > 2) {
+    return parts.slice(-2).join('.');
+  }
+  return hostname;
 }
 
 function handleHighlightText() {
@@ -387,7 +413,7 @@ function createChart(chartConfig, parameter) {
   clearTimeout(selectionTimeout);
   if (!chart) {
     const map = document.createElement('div');
-    map.setAttribute('id', 'map');
+    map.setAttribute('id', 'lca-viz-map');
 
     map.innerHTML = `
       <canvas id="lca-viz-carbon-chart" width="480" height="320"></canvas>
@@ -402,7 +428,7 @@ function createChart(chartConfig, parameter) {
     `;
 
     document.body.appendChild(map);
-    chartContainer = document.getElementById("map");
+    chartContainer = document.getElementById("lca-viz-map");
 
     const canvas = document.getElementById('lca-viz-carbon-chart');
     chart = new Chart(canvas, {
@@ -422,7 +448,7 @@ function createChart(chartConfig, parameter) {
 
 function setChartPosition() {
   console.log('setting chart position');
-  let paramContainer = document.querySelector('.special-text-container-2');
+  let paramContainer = document.querySelector('.lca-viz-special-text-container-2');
   let pos = getElementCoordinates(paramContainer);
   let posX = pos.x;
   let posY = pos.y;
@@ -431,7 +457,7 @@ function setChartPosition() {
 }
 
 function handleCloseButton() {
-  document.getElementById("closeMap").addEventListener("click", () => {
+  document.getElementById("lca-viz-close-map").addEventListener("click", () => {
     hideChart();
 
     // Hides the up-down-btn
@@ -439,7 +465,7 @@ function handleCloseButton() {
 
     // Adds in a placeholder for the parameter
     const paramPlaceholder = document.createElement('span');
-    paramPlaceholder.classList.add("temporary-text");
+    paramPlaceholder.classList.add("lca-viz-temporary-text");
     paramPlaceholder.textContent = currentValidSentenceJSON.parameter;
     currentParamNode.appendChild(paramPlaceholder);
 
@@ -450,7 +476,7 @@ function handleCloseButton() {
   currentHighlightedNode.addEventListener("click", () => {
     currentParamNode.children[0].classList.remove("lca-viz-hidden");
     currentHighlightedNode.classList.remove("lca-viz-previously-highlighted");
-    document.querySelector(".temporary-text")?.remove();
+    document.querySelector(".lca-viz-temporary-text")?.remove();
 
     makeChartVisible();
   });
@@ -461,7 +487,7 @@ function makeChartVisible() {
   console.log('showing the chart');
   // chartContainer.style.top = `${mouseY + scrollY + 60}px`;
   // chartContainer.style.left = `${mouseX + scrollX + 30}px`;
-  chartContainer.classList.add("visible");
+  chartContainer.classList.add("lca-viz-visible");
 
   handleDraggableMap();
 
@@ -479,7 +505,7 @@ function makeChartVisible() {
 }
 
 function hideChart() {
-    chartContainer.classList.remove("visible");
+    chartContainer.classList.remove("lca-viz-visible");
     clearTimeout(selectionTimeout);
 }
 
