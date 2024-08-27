@@ -62,6 +62,7 @@
 		]
 	},
 	"dependencies": {
+		"@googlemaps/js-api-loader": "^1.16.8",
 		"chart.js": "^4.4.3",
 		"express": "^4.19.2"
 	}

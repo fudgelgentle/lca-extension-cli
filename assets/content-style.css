@@ -16,6 +16,11 @@
 
   --eco-black: #033425;
   --scrollbar-spacing: 4px;
+
+  --eco-text-green: #124533;
+  --eco-text-green-background: #99E29B;
+  --eco-text-red: #A91910;
+  --eco-text-red-background: #FCD2C1;
 }
 
 #lca-viz-map {

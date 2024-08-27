@@ -15,16 +15,19 @@ window.onload = () => {
       document.head.appendChild(link);
     };
 
-    createLinkElement("preconnect", "https://fonts.googleapis.com");
-    createLinkElement("preconnect", "https://fonts.gstatic.com", "anonymous");
-    createLinkElement(
-      "stylesheet",
-      "https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap"
-    );
-    createLinkElement("stylesheet", chrome.runtime.getURL("assets/content-style.css"));
-    createLinkElement("stylesheet", chrome.runtime.getURL("assets/popup-content.css"));
+    // TODO: Only load in the CSS if the url is valid
+    let allowedDomains = ["nature.com", "acm.org", "fedex.com"];
+    if (isDomainValid(allowedDomains)) {
+      createLinkElement("preconnect", "https://fonts.googleapis.com");
+      createLinkElement("preconnect", "https://fonts.gstatic.com", "anonymous");
+      createLinkElement(
+        "stylesheet",
+        "https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap"
+      );
+      createLinkElement("stylesheet", chrome.runtime.getURL("assets/content-style.css"));
+      createLinkElement("stylesheet", chrome.runtime.getURL("assets/popup-content.css"));
+    }
 }
-
 
 let chart;
 let chartContainer;
