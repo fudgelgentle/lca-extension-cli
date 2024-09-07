@@ -4,35 +4,20 @@
 // 2. Freight carbon emissions
 // 3. Cloud computing carbon emissions
 
-import { isDomainValid } from "./content";
+import { isDomainValid, isURLValid } from "./content";
 
 const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
 
 const lca_48 = chrome.runtime.getURL("../assets/img/lca-48.png");
-const plus_square_icon = chrome.runtime.getURL(
-  "../assets/img/plus-square-icon.png"
-);
-const fire_black_icon = chrome.runtime.getURL(
-  "../assets/img/fire-black-icon.png"
-);
-const fire_grey_icon = chrome.runtime.getURL(
-  "../assets/img/fire-grey-icon.png"
-);
-const red_trash_icon = chrome.runtime.getURL(
-  "../assets/img/red-trash-icon.png"
-);
-const most_green_icon = chrome.runtime.getURL(
-  "../assets/img/most-green-icon.png"
-);
-const equivalent_icon = chrome.runtime.getURL(
-  "../assets/img/equivalent-icon.png"
-);
-const airplane_icon = chrome.runtime.getURL(
-  "../assets/img/airplane-icon.png"
-);
-const truck_icon = chrome.runtime.getURL(
-  "../assets/img/truck-icon.png"
-);
+const plus_square_icon = chrome.runtime.getURL("../assets/img/plus-square-icon.png");
+const fire_black_icon = chrome.runtime.getURL("../assets/img/fire-black-icon.png");
+const fire_grey_icon = chrome.runtime.getURL("../assets/img/fire-grey-icon.png");
+const red_trash_icon = chrome.runtime.getURL("../assets/img/red-trash-icon.png");
+const most_green_icon = chrome.runtime.getURL("../assets/img/most-green-icon.png");
+const equivalent_icon = chrome.runtime.getURL("../assets/img/equivalent-icon.png");
+const airplane_icon = chrome.runtime.getURL("../assets/img/airplane-icon.png");
+const truck_icon = chrome.runtime.getURL("../assets/img/truck-icon.png");
+const sync_icon = chrome.runtime.getURL("../assets/img/sync-icon.png")
 
 // Setting up the master container and attaching the css
 const masterContainer = document.createElement("div");
@@ -48,16 +33,307 @@ document.body.append(placeholder);
 const shadowRoot = placeholder.attachShadow({ mode: "open" });
 shadowRoot.appendChild(masterContainer);
 
+let regionText = "Waiting for input....";
+let cloudSizeText = "Waiting for input....";
+let isYesNoButtonClicked = false;
+let durationText = 0;
+
 init();
 
 function init() {
-  console.log("init is called");
   // Initialize the process
   initialize();
 
   async function initialize() {
     await loadCSS(chrome.runtime.getURL("../assets/popup-content.css"));
     trackFreight();
+    await trackCloud();
+  }
+
+  // Checks if the calculate button is ready to be used
+  function checkCalculateButtonReady() {
+    console.log('checkCalculateButtonReady called');
+    if (checkInputTextValid() && isYesNoButtonClicked && checkIsNumberInputFilled()) {
+      shadowRoot.querySelector('.lca-viz-calculate-container').classList.remove('disabled');
+    } else {
+      shadowRoot.querySelector('.lca-viz-calculate-container').classList.add('disabled');
+    }
+  }
+
+  function checkInputTextValid() {
+    return regionText !== "" && cloudSizeText !== "" && regionText !== "Waiting for input...." && cloudSizeText !== "Waiting for input....";
+  }
+
+  function checkIsNumberInputFilled() {
+    const numberInputContainer = shadowRoot.querySelector('.lca-viz-number-input-container');
+    const numberInput = shadowRoot.getElementById('lca-viz-number-input');
+    if (numberInput.value && numberInput.value > 0) {
+      console.log('numberInput has a value: ', numberInput.value);
+      return true;
+    } else if (numberInputContainer.classList.contains('hidden')) {
+      return true;
+    }
+    return false;
+  }
+
+  async function startCloudPopup() {
+    if (regionText !== "" && cloudSizeText !== "") {
+      await handleCloudPopup();
+      let regionSpan = shadowRoot.getElementById('lca-viz-cloud-region-value');
+      let instanceSpan = shadowRoot.getElementById('lca-viz-cloud-instance-value');
+      if (regionSpan && instanceSpan) {
+        regionSpan.textContent = regionText;
+        instanceSpan.textContent = cloudSizeText;
+        checkCalculateButtonReady();
+      } else {
+        console.log('region and instance span not found..');
+      }
+    }
+  }
+
+
+  function checkCloudUrl(callback) {
+    const currentHash = window.location.hash;
+    if (currentHash === '#create/Microsoft.VirtualMachine-ARM' ||
+      currentHash === '#create/Microsoft.VirtualMachine'
+    ) {
+      console.log('on create virtual machine page');
+      console.log('currentHash: ', currentHash);
+      callback();
+    } else {
+      console.log('not on create virtual machine page');
+      console.log('currentHash: ', currentHash);
+    }
+  }
+
+  async function trackCloud() {
+    // Check the URL on initial load and on hash changes
+    checkCloudUrl(startObservingElements);
+
+    window.navigation.addEventListener("navigate", (event) => {
+      if (window.location.href === 'https://portal.azure.com/#browse/Microsoft.Compute%2FVirtualMachines') {
+        console.log('navigation change to virtual machine page detected');
+        startObservingElements();
+      } else {
+        console.log('no navigation change to virtual machine detected');
+      }
+    });
+  }
+
+  async function startObservingElements() {
+    observeElementTextAndClassContent('Region', ["azc-form-label"], (element) => {
+      setTimeout(() => {
+        const regionInput = element?.parentElement?.parentElement?.childNodes?.[1]?.childNodes?.[0]?.childNodes?.[1].childNodes?.[1];
+        if (regionInput) {
+          regionText = regionInput.textContent.trim();
+          observeTextChange(regionInput, async (text) => {
+            const size = getElementByTextContent(".azc-form-label", "Size")?.parentElement?.parentElement?.childNodes?.[1]?.childNodes?.[0]?.childNodes?.[1].childNodes?.[1];
+            if (size) {
+              cloudSizeText = size.textContent.trim();
+            }
+            regionText = text;
+            await startCloudPopup();
+          });
+        }
+      }, 1000);
+    });
+
+    observeElementTextAndClassContent('Size', ["azc-form-label"], (element) => {
+      setTimeout(() => {
+        const cloudSizeInput = element?.parentElement?.parentElement?.childNodes?.[1]?.childNodes?.[0]?.childNodes?.[1].childNodes?.[1];
+        if (cloudSizeInput) {
+          cloudSizeText = cloudSizeInput.textContent.trim();
+          observeTextChange(cloudSizeInput, async (text) => {
+            const region = getElementByTextContent(".azc-form-label", "Region")?.parentElement?.parentElement?.childNodes?.[1]?.childNodes?.[0]?.childNodes?.[1].childNodes?.[1];
+            if (region) {
+              cloudSizeText = region.textContent.trim();
+            }
+            cloudSizeText = formatInstanceNames(text);
+            await startCloudPopup();
+          });
+        }
+      }, 1000);
+    });
+  }
+
+  // // Reusable function to observe an element and handle input changes
+  // function observeElementAndInput(labelText, callback) {
+  //   observeElementTextContent(labelText, (element) => {
+  //     setTimeout(() => {
+  //       const input = element?.parentElement?.parentElement?.childNodes?.[1]?.childNodes?.[0]?.childNodes?.[1].childNodes?.[1];
+  //       if (input) {
+  //         observeTextChange(input, callback);
+  //       }
+  //     }, 1000);
+  //   });
+  // }
+
+  function getElementByTextContent(nodeList, matchingText) {
+    const nList = document.querySelectorAll(nodeList);
+    nList.forEach((element) => {
+      if (element.textContent === matchingText) {
+        return element;
+      }
+    });
+  }
+
+  async function handleCloudPopup() {
+    if (!shadowRoot.querySelector('.lca-viz-cloud-master-container')) {
+      await injectPopupContent("cloud");
+      handleCalculateButton();
+      handleYesNoButton();
+    }
+  }
+
+  function handleCalculateButton() {
+    const calculateBtn = shadowRoot.querySelector('.lca-viz-calculate-btn');
+    const btnText = shadowRoot.querySelector('.lca-viz-calculate-btn-txt');
+    let loadingInterval;
+
+    calculateBtn.addEventListener('click', async() => {
+      // Start loading animation
+      let loadingState = 0;
+      loadingInterval = setInterval(() => {
+        loadingState = (loadingState + 1) % 4;
+        btnText.textContent = 'Calculating' + '.'.repeat(loadingState);
+      }, 500);
+
+      try {
+        const cloudData = await getCloudData();
+        const data = {
+          emissions: cloudData.total_co2e,
+          region: regionText,
+          instance: cloudSizeText,
+          duration: durationText
+        }
+        const emissionsResultHTML = getCloudEmissionsResult(data);
+        shadowRoot.querySelector('.lca-viz-cloud-master-container').classList.add('hidden-a');
+        masterContainer.insertAdjacentHTML("beforeend", emissionsResultHTML);
+        requestAnimationFrame(async() => {
+          shadowRoot.querySelector('.lca-viz-cloud-emissions-container').classList.remove('hidden-a');
+          const cloudContent = shadowRoot.querySelector(".lca-viz-cloud-results-info-container");
+          showElement(cloudContent, "a");
+        });
+      } finally {
+        // Stop loading animation and reset button text
+        clearInterval(loadingInterval);
+        btnText.textContent = 'Calculate';
+      }
+    });
+  }
+
+  function getCloudEmissionsResult(data) {
+    let cloudEmissions = data.emissions;
+    const region = data.region;
+    const instance = data.instance;
+    const duration = data.duration;
+
+    let trashValue;
+    let weightObject;
+    let trashUnit;
+    if (cloudEmissions) {
+      trashValue = (cloudEmissions / 1.15);
+      weightObject = getReadableUnit(trashValue);
+      trashValue = weightObject.weight;
+      trashUnit = weightObject.unit;
+    }
+
+    const emissionsResultHTML = `
+      <div class="lca-viz-cloud-emissions-container hidden-a">
+        <section class="lca-viz-cloud-container br-8">
+          <div class="lca-viz-cloud-results-info-container pd-16 mt-12 hidden-a">
+            <p class="fz-16 mt-0 mb-12"><b>Your cloud instance’s estimated carbon emissions:</b></p>
+
+            ${cloudEmissions ?
+              `<div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
+                <span class="fz-20 freight-co2e-value"><b>${cloudEmissions.toFixed(2)} kg CO2e <span class="fz-12">(per month)</span></b></span>
+                <div class="flex-center cg-4">
+                  <span class="trash-value fz-16">or ${trashValue} ${trashUnit} of trash burned</span>
+                  <img src="${fire_black_icon}" class="icon-16" alt="Trash">
+                </div>
+              </div>`
+              :
+              `<div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
+                <span class="fz-20 freight-co2e-value"><b>Data unavailable</b></span>
+                <div class="flex-center cg-4">
+                  <span class="trash-value fz-16">Region or instance is not supported.</span>
+                </div>
+              </div>`
+            }
+
+            <p class="fz-16 mb-2"><b>Region:</b> <br>
+              <div class="flex-center cg-8">
+                <span id="lca-viz-cloud-region-value" class="fz-12">${region}</span>
+              </div>
+            </p>
+            <p class="fz-16 mb-2"><b>Server Instance Type:</b> <br>
+              <div class="flex-center cg-8">
+                <span id="lca-viz-cloud-instance-value" class="fz-12">${instance}</span>
+              </div>
+            </p>
+            <p class="fz-16 mb-2"><b>Usage Duration:</b> <br>
+              <span class="fz-12">${duration} hours per day</span>
+            </p>
+          </div>
+        </section>
+      </div>
+    `;
+    return emissionsResultHTML;
+  }
+
+  async function getCloudData() {
+    const region = formatRegionNames(regionText);
+    const instance = cloudSizeText.toLowerCase();
+    const duration = parseInt(durationText);
+    const data = {
+      "region": region,
+      "instance": instance,
+      "duration": parseInt(durationText),
+      "duration_unit": "h"
+    }
+    if (region && instance && duration) {
+      const response = await fetch(LCA_SERVER_URL + '/api/cloud', {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(data)
+      });
+
+      let responseData;
+      if (!response.ok) {
+        responseData = '';
+      } else {
+        responseData = await response.json();
+      }
+      return responseData;
+    }
+  }
+
+  function handleYesNoButton() {
+    let yesButton = shadowRoot.querySelector('.lca-viz-yes-button');
+    let noButton = shadowRoot.querySelector('.lca-viz-no-button');
+    yesButton.addEventListener('click', () => {
+      noButton.classList.remove('selected');
+      yesButton.classList.add('selected');
+      isYesNoButtonClicked = true;
+      shadowRoot.querySelector('.lca-viz-number-input-container').classList.add('hidden');
+      durationText = 24;
+      checkCalculateButtonReady();
+    });
+    noButton.addEventListener('click', () => {
+      yesButton.classList.remove('selected');
+      noButton.classList.add('selected');
+      isYesNoButtonClicked = true;
+      shadowRoot.querySelector('.lca-viz-number-input-container').classList.remove('hidden');
+      checkCalculateButtonReady();
+
+      const numberInput = shadowRoot.getElementById('lca-viz-number-input');
+      numberInput.addEventListener('input', () => {
+        durationText = numberInput.value;
+        checkCalculateButtonReady();
+      })
+    });
   }
 
   // Function to fetch and inject CSS into the shadow DOM
@@ -79,8 +355,8 @@ function init() {
     toggleButtonState();
 
     if (popupCase === "phone") {
-      const phoneSkeleton = getPhoneEmissionsSkeleton();
-      masterContainer.insertAdjacentHTML("beforeend", phoneSkeleton);
+      const phoneSkeletonHTML = getPhoneEmissionsSkeleton();
+      masterContainer.insertAdjacentHTML("beforeend", phoneSkeletonHTML);
       // Stop input propogation of the search-phone input. Some websites have their own input behavior. We need to disable them.
       stopInputPropogation(shadowRoot.getElementById("search-phone"));
       // Delay the execution of showPhoneEmissions to ensure DOM elements are available
@@ -96,6 +372,13 @@ function init() {
         showFreightHTMLContent();
       }, 0);
       await loadGoogleMaps(freightData.originalAir, freightData.originalGround);
+    } else if (popupCase === "cloud") {
+      const cloudSkeletonHTML = getCloudEmissionsSkeleton();
+      masterContainer.insertAdjacentHTML("beforeend", cloudSkeletonHTML);
+      setTimeout(() => {
+        masterContainer.classList.remove("hidden");
+        showCloudEmissions();
+      }, 0);
     }
   }
 
@@ -154,6 +437,56 @@ function init() {
     return lcaBanner;
   }
 
+  function getCloudEmissionsSkeleton() {
+    const cloudEmissionsSkeleton = `
+      <div class="lca-viz-cloud-master-container hidden-a">
+        <section class="lca-viz-cloud-container br-8">
+          <div class="loading-box-3 flex-center br-8 pd-16 mt-12">
+            <div class="loader">
+              <div class="lca-viz-circle"></div>
+              <div class="lca-viz-circle"></div>
+              <div class="lca-viz-circle"></div>
+            </div>
+          </div>
+          <div class="lca-viz-cloud-info-container pd-16 mt-12 hidden-a">
+            <p class="fz-20 margin-0"><b>Cloud Instance Carbon Emissions</b></p>
+            <p class="fz-16 mb-2"><b>Region:</b> <br>
+              <div class="flex-center cg-8">
+                <span id="lca-viz-cloud-region-value" class="fz-12">${regionText}</span>
+                <img src="${sync_icon}" alt="Sync icon" class="icon-16">
+              </div>
+            </p>
+            <p class="fz-16 mb-2"><b>Server Instance Type:</b> <br>
+              <div class="flex-center cg-8">
+                <span id="lca-viz-cloud-instance-value" class="fz-12">${cloudSizeText}</span>
+                <img src="${sync_icon}" alt="Sync icon" class="icon-16">
+              </div>
+            </p>
+            <p class="fz-16 mb-8"><b>Usage Duration:</b> <br>
+              <span id="lca-viz-cloud-usage-value" class="fz-12">Will your server instance be operating 24/7?</span>
+              <span class="lca-viz-asterisk">*</span>
+            </p>
+            <div class="lca-viz-yes-no-container fz-12 br-8">
+              <div class="lca-viz-yes-button">Yes</div>
+              <div class="lca-viz-no-button">No</div>
+            </div>
+            <div class="lca-viz-number-input-container hidden">
+              <label for="quantity"><p class="fz-12">How long will your server instance be operating per day? <span class="lca-viz-asterisk">*</span></p></label>
+              <input type="number" id="lca-viz-number-input" class="fz-12 br-8" name="quantity" min="1" max="24"> &nbsp;<span class="fz-12">hours a day</span>
+            </div>
+            <br>
+            <div class="lca-viz-calculate-container disabled br-8 pd-4">
+              <div class="flex-center lca-viz-calculate-btn">
+                <p class="fz-16 margin-8 lca-viz-calculate-btn-txt">Calculate</p>
+              </div>
+            </div>
+          </div>
+        </section>
+      </div>
+    `;
+    return cloudEmissionsSkeleton;
+  }
+
   /**
    *
    * @returns {HTMLElement} Returns the skeleton code for phone emissions.
@@ -161,15 +494,15 @@ function init() {
   function getPhoneEmissionsSkeleton() {
     const phoneEmissionsSkeleton = `
       <div class="phone-master-container">
-        <section class="phone-container br-8 pd-16 hidden-a">
-          <div class="loading-box flex-center br-8 pd-16">
+        <section class="phone-container br-8 pd-16 mt-12 hidden-a">
+          <div class="loading-box flex-center br-8 pd-16 mt-12">
             <div class="loader">
               <div class="lca-viz-circle"></div>
               <div class="lca-viz-circle"></div>
               <div class="lca-viz-circle"></div>
             </div>
           </div>
-          <section class="phone-spec-container fz-20 hidden-a"></section>
+          <section class="phone-spec-container fz-20 mt-12 hidden-a"></section>
         </section>
 
         <section class="compare-phone br-8 hidden-a">
@@ -195,7 +528,7 @@ function init() {
           </div>
         </section>
 
-        <section class="side-by-side-section hidden-a">
+        <section class="side-by-side-section hidden-a mt-12">
           <div class="side-by-side-container flex-center">
             <div class="side-by-side-spec-container grid-1fr-1fr cg-12"></div>
           </div>
@@ -208,9 +541,7 @@ function init() {
   async function showPhoneEmissions() {
     shadowRoot.querySelector(".phone-container").classList.remove("hidden-a");
     await hidePhoneLoadingIcon();
-    const phoneSpecContainer = shadowRoot.querySelector(
-      ".phone-spec-container"
-    );
+    const phoneSpecContainer = shadowRoot.querySelector(".phone-spec-container" );
     const comparePhone = shadowRoot.querySelector(".compare-phone");
     showElement(phoneSpecContainer, "a");
     comparePhone.classList.remove("hidden-a");
@@ -221,10 +552,16 @@ function init() {
 
   async function showFreightHTMLContent() {
     shadowRoot.querySelector(".freight-container").classList.remove("hidden-a");
-
     await hideFreightLoadingIcon();
     const freightContent = shadowRoot.querySelector(".freight-content");
     showElement(freightContent, "a");
+  }
+
+  async function showCloudEmissions() {
+    shadowRoot.querySelector(".lca-viz-cloud-master-container").classList.remove("hidden-a");
+    await hideCloudLoadingIcon();
+    const cloudContent = shadowRoot.querySelector(".lca-viz-cloud-info-container");
+    showElement(cloudContent, "a");
   }
 
   /**
@@ -365,8 +702,8 @@ function init() {
     }
 
     const freightEmissions = `
-      <div class="freight-container br-8 pd-16 hidden-a">
-        <div class="loading-box-2 flex-center br-8 pd-16">
+      <div class="freight-container br-8 pd-16 mt-12 hidden-a">
+        <div class="loading-box-2 flex-center br-8 pd-16 mt-12">
           <div class="loader">
             <div class="lca-viz-circle"></div>
             <div class="lca-viz-circle"></div>
@@ -404,16 +741,7 @@ function init() {
     if (isDomainValid(allowedDomains)) {
       // observeFedexBtn();
       observeFedexShippingOptions(() => {
-        console.log(
-          "*****************OBSERVE FEDEX SHIPPING OPTIONS*****************"
-        );
-        console.log("This is called from trackFreight");
-        // const availableOptions = document.querySelectorAll('.fdx-c-definitionlist__description--small');
-        // availableOptions.forEach((option) => {
-        //   currShippingOptions.push(option.outerText.toLowerCase().replace(/®/g, ''));
-        // })
         handleFedexDataToFreight();
-        // * commented out
         recordAllInputChange();
         recordPackageTypeChange();
         recordFromToAddressChange();
@@ -421,14 +749,61 @@ function init() {
     }
   }
 
+  function observeElementLoadById(elementId, callback) {
+    const observer = new MutationObserver((mutationsList, observer) => {
+      mutationsList.forEach(mutation => {
+        if (mutation.type === 'childList') {
+          const element = document.getElementById(elementId);
+          if (element) {
+            callback(element);
+            observer.disconnect(); // Stop observing once the element is found
+          }
+        }
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  // Observes if an element contains certain .textContent and classList properties
+  /**
+   *
+   * @param {String} matchingText The matching text. For example, "Size" or "Region"
+   * @param {Array} matchingClassesArr The array containing the matching classes. For example, ["azc-form-label"];
+   * @param {callback} callback
+   */
+  function observeElementTextAndClassContent(matchingText, matchingClassesArr, callback) {
+    const observer = new MutationObserver((mutationsList, observer) => {
+      mutationsList.forEach(mutation => {
+        if (mutation.type === 'childList') {
+          mutation.addedNodes.forEach(node => {
+            if (node.nodeType === Node.ELEMENT_NODE) {  // Check if it's an element
+              if (node.textContent.includes(matchingText) && matchingClassesArr.some((className) => node.classList.contains(className))) {
+                callback(node);
+                observer.disconnect(); // Stop observing once a match is found
+              }
+            }
+          });
+        }
+      });
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function observeTextChange(element, callback) {
+    const observer = new MutationObserver(() => {
+      const textContent = element.textContent.trim();
+      callback(textContent);
+    });
+
+    observer.observe(element, { childList: true, subtree: true });
+  }
+
   // Observes when the different shipping option appears
   function observeFedexShippingOptions(callback) {
     const observer = new MutationObserver((mutationsList, observer) => {
       for (const mutation of mutationsList) {
         if (mutation.type === "childList") {
-          const shippingOption = document.querySelector(
-            ".fdx-c-definitionlist__description--small"
-          );
+          const shippingOption = document.querySelector(".fdx-c-definitionlist__description--small");
           if (shippingOption) {
             observer.disconnect(); // Stop observing once the shipping option is found
             callback();
@@ -465,25 +840,14 @@ function init() {
       const isFromValid = fromAddressElement.classList.contains("ng-valid");
       const isToValid = toAddressElement.classList.contains("ng-valid");
       if (isFromValid && isToValid) {
-        console.log("both input are valid");
-        // Calling the record methods again because after a change of location, the inputs
-        // were removed and added again (making the old event listeners invalid)
-        //& uncomment back
         recordAllInputChange();
         recordPackageTypeChange();
-        // observeAndStoreShippingOptions("recordFromToAddressChange");
         handleFedexChange();
-      } else {
-        console.log("At least one input is invalid");
       }
     };
 
     onClassChange(fromAddressElement, checkBothValid);
     onClassChange(toAddressElement, checkBothValid);
-
-    // Initial check in case the classes are already set
-    //& uncomment back
-    // checkBothValid();
   }
 
   function recordPackageTypeChange() {
@@ -492,7 +856,6 @@ function init() {
     );
     if (packageType) {
       packageType.addEventListener("change", () => {
-        console.log("packaging type is changed to: " + packageType.value);
 
         const packageWeightElement = document.getElementById(
           "package-details__weight-0"
@@ -721,12 +1084,6 @@ function init() {
     iframe.style.overflow = "hidden";
     iframe.scrolling = "no";
 
-    // .freight-container - no problem.
-    // .freight-content (and afterwards) - maps has a problem
-    // let freightContainer = shadowRoot.querySelector('.freight-container');
-    // console.log('freightContainer: ', freightContainer);
-    // freightContainer.appendChild(iframe);
-
     mapsContainer.appendChild(iframe);
   }
 
@@ -837,9 +1194,7 @@ function init() {
 
   // Handles the selection of a phone model in the list
   function handleSideBySideSelection() {
-    const phoneNodeList = shadowRoot.querySelector(
-      ".phone-model-container"
-    ).children;
+    const phoneNodeList = shadowRoot.querySelector(".phone-model-container").children;
     Array.from(phoneNodeList).forEach((phone) => {
       phone.addEventListener("click", (event) => {
         const phoneId = parseInt(event.target.id);
@@ -866,9 +1221,7 @@ function init() {
     const wrapper = shadowRoot.querySelector(".side-by-side-section");
     const phoneContainer = shadowRoot.querySelector(".phone-container");
 
-    let specContainer = shadowRoot.querySelector(
-      ".side-by-side-spec-container"
-    );
+    let specContainer = shadowRoot.querySelector(".side-by-side-spec-container");
     specContainer.innerHTML = "";
     specContainer.innerHTML += `
       <p class="margin-0 side-phone-text fz-16"><b>${currentPhone.device}</b></p>
@@ -1074,6 +1427,8 @@ function init() {
     // scrollToElement(phoneSpecTitle);
   }
 
+// TODO: ***********************************************************
+// TODO: Refactor the loading icon functions, reduce from 3 functions -> 1 function
   // Use this function to display a loading animation while waiting for the API calls
   async function hidePhoneLoadingIcon() {
     let loadingBox = shadowRoot.querySelector(".loading-box");
@@ -1105,6 +1460,22 @@ function init() {
     }
   }
 
+  function hideCloudLoadingIcon() {
+    let loadingBox = shadowRoot.querySelector(".loading-box-3");
+    if (loadingBox) {
+      return new Promise((resolve) => {
+        setTimeout(() => {
+          loadingBox.classList.add("hidden-a");
+          resolve();
+        }, 1500);
+      });
+    } else {
+      console.error("loadingBox not found");
+      return Promise.resolve();
+    }
+  }
+// TODO: ***********************************************************
+
   /**
    * Shows an element. Only works with flex and block elements
    * @param {element} element The element to be shown
@@ -1133,6 +1504,27 @@ function init() {
       });
     }
   }
+
+  function formatInstanceNames(input) {
+    // Remove the "Standard" prefix
+    let instanceName = input.replace(/^Standard_/, '');
+    // Keep only the part before the first space (which is the instance name)
+    instanceName = instanceName.split(' ')[0];
+    // Replace any "-" with "_"
+    instanceName = instanceName.replace(/-/g, '_');
+    return instanceName;
+}
+
+  function formatRegionNames(input) {
+    // Remove the part within parentheses (e.g., "(US)")
+    let regionName = input.replace(/\(.*?\)\s*/, '');
+    // Convert to lowercase
+    regionName = regionName.toLowerCase();
+    // Replace spaces with underscores
+    regionName = regionName.replace(/\s+/g, '_');
+    return regionName;
+  }
+
 
   /**
    * Hides an element. Only works with block elements

@@ -16,7 +16,7 @@ window.onload = () => {
     };
 
     // TODO: Only load in the CSS if the url is valid
-    let allowedDomains = ["nature.com", "acm.org", "fedex.com"];
+    let allowedDomains = ["nature.com", "acm.org", "fedex.com", "azure.com"];
     if (isDomainValid(allowedDomains)) {
       createLinkElement("preconnect", "https://fonts.googleapis.com");
       createLinkElement("preconnect", "https://fonts.gstatic.com", "anonymous");
@@ -348,10 +348,8 @@ export function isDomainValid(domainList) {
   let allowedDomains = domainList;
   const currentDomain = getBaseDomain(window.location.hostname);
   if (allowedDomains.includes(currentDomain)) {
-    console.log('THIS DOMAIN is in the whitelist: ' + currentDomain);
     return true;
   } else {
-    console.log('THIS DOMAIN is NOT the whitelist: ' + currentDomain);
     return false;
   }
 }

@@ -21,6 +21,9 @@
   --eco-text-green-background: #99E29B;
   --eco-text-red: #A91910;
   --eco-text-red-background: #FCD2C1;
+
+  --btn-disabled-background: #C1C1C1;
+  --btn-disabled-text: #636363;
 }
 
 #lca-viz-map {
