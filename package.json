@@ -56,6 +56,10 @@
 				"src": "./src/popup-content.js"
 			},
 			{
+				"name": "phone-utils",
+				"src": "./src/phone-utils.js"
+			},
+			{
 				"name": "popup",
 				"src": "./src/popup.js"
 			}

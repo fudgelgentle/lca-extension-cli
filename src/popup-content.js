@@ -1,10 +1,11 @@
-/* eslint-disable no-unused-vars */
+
 // popup-content.js handles the popup window that will be displayed for the following scenarios
 // 1. Phone model carbon emissions
 // 2. Freight carbon emissions
 // 3. Cloud computing carbon emissions
 
-import { isDomainValid, isURLValid } from "./content";
+import { isDomainValid } from "./content";
+import { detectPhoneModel } from "./phone-utils";
 
 const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
 
@@ -46,8 +47,16 @@ function init() {
 
   async function initialize() {
     await loadCSS(chrome.runtime.getURL("../assets/popup-content.css"));
+
     trackFreight();
+    trackPhone();
     await trackCloud();
+  }
+
+  function trackPhone() {
+    // Example usage
+    const pageTitle = document.title;
+    detectPhoneModel(pageTitle);
   }
 
   // Checks if the calculate button is ready to be used
@@ -108,16 +117,19 @@ function init() {
 
   async function trackCloud() {
     // Check the URL on initial load and on hash changes
-    checkCloudUrl(startObservingElements);
+    const allowedDomains = ["azure.com"];
+    if (isDomainValid(allowedDomains)) {
+      checkCloudUrl(startObservingElements);
 
-    window.navigation.addEventListener("navigate", (event) => {
-      if (window.location.href === 'https://portal.azure.com/#browse/Microsoft.Compute%2FVirtualMachines') {
-        console.log('navigation change to virtual machine page detected');
-        startObservingElements();
-      } else {
-        console.log('no navigation change to virtual machine detected');
-      }
-    });
+      window.navigation.addEventListener("navigate", () => {
+        if (window.location.href === 'https://portal.azure.com/#browse/Microsoft.Compute%2FVirtualMachines') {
+          console.log('navigation change to virtual machine page detected');
+          startObservingElements();
+        } else {
+          console.log('no navigation change to virtual machine detected');
+        }
+      });
+    }
   }
 
   async function startObservingElements() {
@@ -155,18 +167,6 @@ function init() {
       }, 1000);
     });
   }
-
-  // // Reusable function to observe an element and handle input changes
-  // function observeElementAndInput(labelText, callback) {
-  //   observeElementTextContent(labelText, (element) => {
-  //     setTimeout(() => {
-  //       const input = element?.parentElement?.parentElement?.childNodes?.[1]?.childNodes?.[0]?.childNodes?.[1].childNodes?.[1];
-  //       if (input) {
-  //         observeTextChange(input, callback);
-  //       }
-  //     }, 1000);
-  //   });
-  // }
 
   function getElementByTextContent(nodeList, matchingText) {
     const nList = document.querySelectorAll(nodeList);
@@ -246,7 +246,7 @@ function init() {
 
             ${cloudEmissions ?
               `<div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
-                <span class="fz-20 freight-co2e-value"><b>${cloudEmissions.toFixed(2)} kg CO2e <span class="fz-12">(per month)</span></b></span>
+                <span class="fz-20 freight-co2e-value"><b>${cloudEmissions.toFixed(3)} kg CO2e <span class="fz-12">(per month)</span></b></span>
                 <div class="flex-center cg-4">
                   <span class="trash-value fz-16">or ${trashValue} ${trashUnit} of trash burned</span>
                   <img src="${fire_black_icon}" class="icon-16" alt="Trash">
@@ -729,9 +729,9 @@ function init() {
     return freightEmissions;
   }
 
-  function toNearestHundred(number) {
-    return Math.round(number / 100) * 100;
-  }
+  // function toNearestHundred(number) {
+  //   return Math.round(number / 100) * 100;
+  // }
 
   //  ************* Analyzing Freight Data *****************
 
@@ -739,6 +739,7 @@ function init() {
   function trackFreight() {
     let allowedDomains = ["fedex.com"];
     if (isDomainValid(allowedDomains)) {
+      console.log('current domain is allowed by fedex');
       // observeFedexBtn();
       observeFedexShippingOptions(() => {
         handleFedexDataToFreight();
@@ -749,20 +750,20 @@ function init() {
     }
   }
 
-  function observeElementLoadById(elementId, callback) {
-    const observer = new MutationObserver((mutationsList, observer) => {
-      mutationsList.forEach(mutation => {
-        if (mutation.type === 'childList') {
-          const element = document.getElementById(elementId);
-          if (element) {
-            callback(element);
-            observer.disconnect(); // Stop observing once the element is found
-          }
-        }
-      });
-    });
-    observer.observe(document.body, { childList: true, subtree: true });
-  }
+  // function observeElementLoadById(elementId, callback) {
+  //   const observer = new MutationObserver((mutationsList, observer) => {
+  //     mutationsList.forEach(mutation => {
+  //       if (mutation.type === 'childList') {
+  //         const element = document.getElementById(elementId);
+  //         if (element) {
+  //           callback(element);
+  //           observer.disconnect(); // Stop observing once the element is found
+  //         }
+  //       }
+  //     });
+  //   });
+  //   observer.observe(document.body, { childList: true, subtree: true });
+  // }
 
   // Observes if an element contains certain .textContent and classList properties
   /**
@@ -868,7 +869,6 @@ function init() {
         packageCountElement.addEventListener("input", handleFedexChange);
       });
     }
-    console.log('package type input: ', packageType);
   }
 
   function observeAndStoreShippingOptions() {
@@ -976,10 +976,15 @@ function init() {
           totalWeight
         );
         freightGroundData = await getFreightEmissions(groundData);
-        gData = {
-          co2eValue: parseFloat(freightGroundData.co2e.toFixed(2)),
-          groundMode: groundMode,
-        };
+        if (freightGroundData) {
+          gData = {
+            co2eValue: parseFloat(freightGroundData.co2e.toFixed(2)),
+            groundMode: groundMode,
+          };
+        } else {
+          return;
+        }
+
       }
       if (airMode.length > 0) {
         const airData = formatFreightData(
@@ -989,10 +994,14 @@ function init() {
           totalWeight
         );
         freightAirData = await getFreightEmissions(airData);
-        aData = {
-          co2eValue: parseFloat(freightAirData.co2e.toFixed(2)),
-          airMode: airMode,
-        };
+        if (freightAirData) {
+          aData = {
+            co2eValue: parseFloat(freightAirData.co2e.toFixed(2)),
+            airMode: airMode,
+          };
+        } else {
+          return;
+        }
       }
 
       // & New
@@ -1553,27 +1562,27 @@ function init() {
     }
   }
 
-  function scrollToElement(element) {
-    const y = element.getBoundingClientRect().top + window.scrollY;
-    if (isEdge() || isSafari) {
-      element.scrollIntoView();
-    } else {
-      window.scroll({
-        top: y,
-        behavior: "smooth",
-      });
-    }
-  }
+  // function scrollToElement(element) {
+  //   const y = element.getBoundingClientRect().top + window.scrollY;
+  //   if (isEdge() || isSafari) {
+  //     element.scrollIntoView();
+  //   } else {
+  //     window.scroll({
+  //       top: y,
+  //       behavior: "smooth",
+  //     });
+  //   }
+  // }
 
-  function isEdge() {
-    return /Edg/.test(navigator.userAgent);
-  }
+  // function isEdge() {
+  //   return /Edg/.test(navigator.userAgent);
+  // }
 
-  function isSafari() {
-    return (
-      /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
-    );
-  }
+  // function isSafari() {
+  //   return (
+  //     /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
+  //   );
+  // }
 
   /**
    * @param {String} shippingType The Fedex shipping type (e.g. "fedex ground", "fedex 1day freight")
@@ -1823,7 +1832,8 @@ function init() {
       });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+        console.log(`HTTP error! Status: ${response.status}`);
+        return null;
       }
 
       const responseData = await response.json();

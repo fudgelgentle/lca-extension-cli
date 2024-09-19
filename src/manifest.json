@@ -28,7 +28,7 @@
     ],
     "content_scripts": [
       {
-        "js": ["content.js", "popup-content.js"],
+        "js": ["content.js", "popup-content.js", "phone-utils.js"],
         "matches": ["<all_urls>"]
       }
     ],

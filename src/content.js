@@ -18,6 +18,7 @@ window.onload = () => {
     // TODO: Only load in the CSS if the url is valid
     let allowedDomains = ["nature.com", "acm.org", "fedex.com", "azure.com"];
     if (isDomainValid(allowedDomains)) {
+      console.log('current domain is allowed, injecting css');
       createLinkElement("preconnect", "https://fonts.googleapis.com");
       createLinkElement("preconnect", "https://fonts.gstatic.com", "anonymous");
       createLinkElement(
@@ -124,7 +125,7 @@ function handleDisplayBtn(parameter, legendTitle) {
 
 function activeUpDownBtn() {
   const upDownBtn = document.querySelectorAll(".lca-viz-up-down-btn");
-  const specialText = document.querySelectorAll(".lca-viz-special-text-2");
+  const parameterText = document.querySelectorAll(".lca-viz-special-text-2");
 
   upDownBtn.forEach((btn) => {
     if (btn.classList.contains("lca-viz-active")) {
@@ -133,7 +134,7 @@ function activeUpDownBtn() {
       replaceClass(btn, "lca-viz-inactive", "lca-viz-active");
     }
   });
-  specialText.forEach((text) => {
+  parameterText.forEach((text) => {
     if (text.classList.contains("lca-viz-active-st")) {
       replaceClass(text, "lca-viz-active-st", "lca-viz-inactive-st");
     } else {
@@ -320,7 +321,7 @@ function getValidSentence(highlightedText) {
     ];
   }
 
-  // return normalizeText("epoxy (EPON 828, Skygeek), adipic acid (Sigma Aldrich) and 1,5,7-triazabicyclo[4.4.0]dec-5-ene (TBD, Sigma Aldrich). The epoxy was poured into a beaker, then placed in a 100 °C heated bath and stirred at 100 r.p.m. for 10 min.");
+  // return normalizeText("epoxy (EPON 828, Skygeek), adipic acid (Sigma Aldrich) and 1,5,7-triazabicyclo[4.4.0]dec-5-ene (TBD, Sigma Aldrich). The epoxy was poured into a beaker, then placed in a 100°C heated bath and stirred at 100 r.p.m. for 10 min.");
 }
 
 function normalizeText(text) {
@@ -333,15 +334,6 @@ function trackRawMaterial() {
     recordCurrentMouseCoord();
     handleHighlightText();
   }
-
-  // const currentDomain = getBaseDomain(window.location.hostname);
-  // // Case: Fedex
-  // if (allowedDomains.includes(currentDomain)) {
-
-  //   recordCurrentMouseCoord();
-  //   handleHighlightText();
-  // } else {
-  // }
 }
 
 export function isDomainValid(domainList) {

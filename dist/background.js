@@ -1,1 +1,0 @@
-chrome.action.onClicked.addListener((e=>{chrome.scripting.executeScript({target:{tabId:e.id},files:["content.js","popup-content.js"]})})),chrome.runtime.onMessage.addListener(((e,t,s)=>{"sendAddresses"===e.action&&chrome.storage.local.set({addresses:e.data})}));
