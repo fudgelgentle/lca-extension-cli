@@ -127,6 +127,28 @@
   display: none !important;
 }
 
+.lca-viz-mark {
+  background-color: var(--eco-green-100);
+  transition: all 0.5s;
+}
+
+#lca-viz-action-btn {
+  position: absolute;
+}
+
+.floating-lca-action-btn {
+  border: 1.6px solid #52B788;
+  box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
+  background-color: white;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 2147483647;
+}
+.floating-lca-action-btn:hover {
+  background-color: var(--light-green);
+  transition: all 0.5s;
+}
+
 /* * CSS Rule for the up-and-down btn ONLY */
 .lca-viz-special-text-container-2 {
   display: inline-flex;

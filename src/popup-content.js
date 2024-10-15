@@ -50,7 +50,7 @@ function init() {
 
     trackFreight();
     trackPhone();
-    await trackCloud();
+    trackCloud();
   }
 
   function trackPhone() {
@@ -115,7 +115,7 @@ function init() {
     }
   }
 
-  async function trackCloud() {
+  function trackCloud() {
     // Check the URL on initial load and on hash changes
     const allowedDomains = ["azure.com"];
     if (isDomainValid(allowedDomains)) {
