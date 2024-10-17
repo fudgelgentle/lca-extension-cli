@@ -164,31 +164,62 @@ function init() {
   }
 
   function handleUpDownBtnBehavior() {
-    const upBtn = document.getElementById("up");
-    const downBtn = document.getElementById("down");
-    upBtn.addEventListener("click", () => {
-      updateValue(1);
-    });
-    downBtn.addEventListener("click", () => {
-      updateValue(-1);
-    });
+    const upBtnList = document.querySelectorAll(".lca-viz-up");
+    const downBtnList = document.querySelectorAll(".lca-viz-down");
+    const upDownBtnCount = upBtnList.length;
+    for (let i = 0; i < upDownBtnCount; i++) {
+      upBtnList[i].addEventListener("click", () => {
+        updateValue(1, i);
+      })
+      downBtnList[i].addEventListener("click", () => {
+        updateValue(-1, i)
+      })
+    }
   }
 
-  function updateValue(change) {
-    const upBtn = document.getElementById("up");
-    const downBtn = document.getElementById("down");
-    if (upBtn.classList.contains("lca-viz-inactive") || downBtn.classList.contains("lca-viz-inactive")) {
+  /**
+   *
+   * @param {number} emissionsFactor Represents the multiplier that adjusts the emissions value based on changes in the material's weight
+   * @param {number} weightChange Indicates the amount by which the material's weight is increased or decreased.
+   * @param {number} index The index used for identifying the parameter.
+   */
+  function updateValue(weightChange, index) {
+    const paramId = "lca-viz-param-" + index;
+    const parameterNode = document.getElementById(paramId);
+    const currentWeight = parseInt(parameterNode.innerText);
+    // If we are decreasing weight, make sure the current weight won't go below 1
+    if (weightChange < 0 && currentWeight <= 1) {
       return;
     }
-    const parameter = document.getElementById("lca-viz-parameter-2");
-    const display = document.getElementById("display");
-    display.innerText = parseInt(parameter.innerText);
+    const newDisplayValue = currentWeight + weightChange;
+    parameterNode.innerText = newDisplayValue;
 
-    const newValue = parseInt(parameter.innerText) + change;
-    parameter.innerText = newValue;
-    display.innerText = newValue;
-    updateChartData(chart, newValue);
+    if (index !== -1) {
+      const emissionsValue = chart.data.datasets[0].data[index];
+      const emissionsFactor = emissionsValue / currentWeight
+      console.log('old emissions value: ', emissionsValue);
+      const newEmissionsValue = emissionsFactor * newDisplayValue;
+      console.log('new emissions value: ', newEmissionsValue);
+      chart.data.datasets[0].data[index] = newEmissionsValue;
+      chart.update();
+    }
   }
+
+  // function updateValue(change) {
+  //   const upBtn = document.getElementById("up");
+  //   const downBtn = document.getElementById("down");
+  //   if (upBtn.classList.contains("lca-viz-inactive") || downBtn.classList.contains("lca-viz-inactive")) {
+  //     return;
+  //   }
+  //   const parameter = document.getElementById("lca-viz-parameter-2");
+  //   const display = document.getElementById("display");
+  //   display.innerText = parseInt(parameter.innerText);
+
+  //   const newValue = parseInt(parameter.innerText) + change;
+  //   parameter.innerText = newValue;
+  //   display.innerText = newValue;
+  //   updateChartData(chart, newValue);
+  // }
 
   function updateChartData(chart, multiplier) {
     let chartConfig = getChartConfig();
@@ -236,9 +267,7 @@ function init() {
         const startOffset = range.startOffset;
         const endOffset = range.endOffset;
         const startContainerText = range.startContainer.textContent;
-        // console.log('startContainerText = ', startContainerText);
         const endContainerText = range.endContainer.textContent;
-        // console.log('endContainerText = ', endContainerText);
 
         // Extract the segments of the text
         const beforeText = fullText.slice(0, fullText.indexOf(startContainerText) + startOffset);
@@ -290,7 +319,6 @@ function init() {
     // ! Later on this should be a for-loop to get the key-value pair from each raw material object
     let parameter = chartData[0].emissions;
     let materialName = chartData[0].name;
-    console.log('parameter: ' + parameter + "\nmaterial name: " + materialName);
     let chartConfig = getChartConfig(materialName);
     // Remove the previous chart, reset the 'chart' global variable
     const chartContainer = document.getElementById("lca-viz-map");
@@ -299,7 +327,7 @@ function init() {
       chart.destroy();
       chart = null;
     }
-    createChart(chartConfig, parameter);
+    createChart(chartConfig, chartData);
     const resetChartPosition = true;
     makeChartVisible(resetChartPosition);
   }
@@ -324,11 +352,11 @@ function init() {
       },
       {
         "name": "Epoxy (EPON 828)",
-        "emissions": "0.02",
+        "emissions": "0.2",
       },
       {
         "name": "Adipic acid",
-        "emissions": "0.01",
+        "emissions": "0.1",
       },
       {
         "name": "1,5,7-triazabicyclo[4.4.0]dec-5-ene (TBD)",
@@ -580,9 +608,9 @@ function init() {
 
   function getLCAActionBtn() {
     const actionBtn = `
-      <div class="flex-center floating-lca-action-btn pd-12 br-8 cg-8 lca-lexend" id="lca-viz-action-btn">
+      <div class="flex-center floating-lca-action-btn pd-12 br-8 cg-8" id="lca-viz-action-btn">
         <img src="${lca_48}" alt="LCA Image" class="floating-lca-img icon-20">
-        <span class="lca-viz-hidden" id="lca-viz-action-btn-text"></span>
+        <span class="lca-viz-hidden lca-lexend fz-14" id="lca-viz-action-btn-text"></span>
       </div>
     `;
     return actionBtn;
@@ -611,28 +639,61 @@ function init() {
     return text;
   }
 
-  function createChart(chartConfig, parameter) {
+  function createChart(chartConfig, paramList) {
     clearTimeout(selectionTimeout);
     if (!chart) {
       const map = document.createElement('div');
       map.setAttribute('id', 'lca-viz-map');
+      map.classList.add('lca-lexend');
+
+      const paramContainer = document.createElement('div');
+      paramContainer.classList.add('lca-viz-param-container');
+
+      let i = 0;
+      paramList.forEach((param) => {
+        const placeholder = document.createElement('div');
+        placeholder.innerHTML = getParam(param.name, i);
+        paramContainer.appendChild(placeholder);
+        i++;
+      })
 
       map.innerHTML = `
-        <canvas id="lca-viz-carbon-chart" width="480" height="320"></canvas>
-        <div class="lca-viz-slider-container">
-          <span class="lca-lexend">Duration: <span id="display">${parameter}</span> minute(s)</span>
+        <div class="flex-center lca-viz-header cg-12 pd-12">
+        <div class="flex-center cg-12 lca-viz-header-title">
+          <img alt="logo" src="${lca_48}" class="icon-20">
+          <span><b>LCA-Viz</b></span>
         </div>
-        <button id="lca-viz-close-map" class="lca-viz-close-button">
+        <button id="lca-viz-close-map" class="lca-viz-close-button flex-center">
           <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
           </svg>
         </button>
+        </div>
+        <span class="lca-viz-raw-material-title"><b>Raw Materials Carbon Emissions</b></span>
+        <canvas id="lca-viz-carbon-chart" width="480" height="320"></canvas>
       `;
 
+      const paramSection = document.createElement('div');
+      paramSection.classList.add('param-section');
+
+      const paramSpan = document.createElement('span');
+      paramSpan.innerHTML = '<b>Parameters:</b>';
+      const paramSpan2 = document.createElement('p');
+      paramSpan2.classList.add('mt-0');
+      paramSpan2.classList.add('fz-16');
+      paramSpan2.classList.add('lca-viz-param-subtext');
+      paramSpan2.innerHTML = 'Adjust the values below to see how the emissions data change.';
+
+      paramSection.appendChild(paramSpan);
+      paramSection.appendChild(paramSpan2);
+      paramSection.appendChild(paramContainer);
+
+      map.appendChild(paramSection);
       document.body.appendChild(map);
       chartContainer = document.getElementById("lca-viz-map");
 
       const canvas = document.getElementById('lca-viz-carbon-chart');
+      Chart.defaults.font.family = "Lexend";
       chart = new Chart(canvas, {
         type: 'bar',
         data: chartConfig.data,
@@ -641,20 +702,41 @@ function init() {
 
       setChartPosition();
       handleCloseButton();
+      handleUpDownBtnBehavior();
     }
   }
 
+  function getParam(rawMaterialName, index) {
+    const paramId = "lca-viz-param-" + index;
+    const paramDiv = `
+      <div class="lca-viz-param flex-center br-8 fz-16">
+            <span>${rawMaterialName}</span>
+            <div class="flex-center">
+              <div class="lca-viz-special-text-container-2">
+                <div class="lca-viz-special-text-2 lca-viz-active-st">
+                  <div class="lca-viz-up-down-btn-container">
+                    <div class="lca-viz-active lca-viz-up-down-btn lca-viz-down">
+                      <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M5.09107 5.74914C4.70327 6.20989 3.99382 6.20989 3.60602 5.74914L0.689251 2.28363C0.157962 1.65239 0.606707 0.688168 1.43177 0.688168L7.26532 0.688168C8.09039 0.688168 8.53913 1.65239 8.00784 2.28363L5.09107 5.74914Z" fill="currentColor"/>
+                      </svg>
+                    </div>
+                    <span id="${paramId}">1</span>
+                    <div class="lca-viz-active lca-viz-up-down-btn lca-viz-up">
+                      <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M3.60595 1.24256C3.99375 0.781809 4.7032 0.781808 5.091 1.24256L8.00777 4.70806C8.53906 5.3393 8.09032 6.30353 7.26525 6.30353L1.4317 6.30353C0.606637 6.30353 0.157892 5.33931 0.689181 4.70807L3.60595 1.24256Z" fill="currentColor"/>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <span>kg</span>
+            </div>
+          </div>
+    `;
+    return paramDiv;
+  }
+
   function setChartPosition() {
-    // console.log('setting chart position');
-    // let highlightedDiv = document.querySelector('.lca-viz-mark');
-    // console.log('highlightedDiv: ', document.querySelector('.lca-viz-mark'));
-    // let pos = getElementCoordinates(highlightedDiv);
-    // let posX = pos.x;
-    // let posY = pos.y;
-    // chartContainer.style.top = `${posY + 72}px`;
-    // chartContainer.style.left = `${posX + 72}px`;
-    console.log('chartPosX = ' + chartPosX);
-    console.log('chartPosY = ' + chartPosY);
     chartContainer.style.top = `${chartPosY + chartScrollY + 8}px`;
     chartContainer.style.left = `${chartPosX + chartScrollX + 8}px`;
   }
@@ -679,8 +761,6 @@ function init() {
 
   function makeChartVisible(resetChartPosition = false) {
     console.log('showing the chart');
-    // chartContainer.style.top = `${mouseY + scrollY + 60}px`;
-    // chartContainer.style.left = `${mouseX + scrollX + 30}px`;
     if (resetChartPosition) {
       setChartPosition();
     }
@@ -689,14 +769,12 @@ function init() {
   }
 
   function hideChart() {
+    console.log('hiding chart!!!!!!');
+    const c = chartContainer;
+    console.log('chartContainer: ', c);
     chartContainer.classList.remove("lca-viz-visible");
     clearTimeout(selectionTimeout);
   }
-
-  // function removeChart() {
-  //   document.body.removeChild(chartContainer);
-  //   chart = '';
-  // }
 
   // TODO: Implement a function that takes in the carbon info as text and outputs data used to create a Chart.js chart
   /**
@@ -707,41 +785,103 @@ function init() {
   function getCarbonData(carbonInfo, legendTitle) {
     carbonInfo;
     // This is the dummy data
+    const cData = [
+      {
+        "name": "Copper foil",
+        "emissions": "0.97",
+      },
+      {
+        "name": "Vitrimer polymer",
+        "emissions": "2.5",
+      },
+      {
+        "name": "Epoxy (EPON 828)",
+        "emissions": "0.02",
+      },
+      {
+        "name": "Adipic acid",
+        "emissions": "0.01",
+      },
+      {
+        "name": "1,5,7-triazabicyclo[4.4.0]dec-5-ene (TBD)",
+        "emissions": "3.24"
+      },
+      {
+        "name": "Woven glass fibre sheets",
+        "emissions": "9.1"
+      }
+    ];
+
+    const rawLabels = cData.map(item => item.name);
+    const emissionsData = cData.map(item => item.emissions);
     const chartData = {
-      labels: ['Raw material', 'Electricity', 'Something else'],
+      labels: rawLabels,
       datasets: [{
-        label: legendTitle + ' Carbon Footprint (g CO2-eq)',
-        data: [1, 0.89, 9],
+        axis: 'y',
+        label: '',
+        data: emissionsData,
+        fill: false,
         backgroundColor: [
-          'rgba(255, 99, 132, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)'
+          'rgba(255, 99, 132, 0.2)',
+          'rgba(255, 159, 64, 0.2)',
+          'rgba(255, 205, 86, 0.2)',
+          'rgba(75, 192, 192, 0.2)',
+          'rgba(54, 162, 235, 0.2)',
+          'rgba(153, 102, 255, 0.2)',
+          'rgba(201, 203, 207, 0.2)'
         ],
         borderColor: [
-          'rgba(255, 99, 132, 1)',
-          'rgba(54, 162, 235, 1)',
-          'rgba(255, 206, 86, 1)'
+          'rgb(255, 99, 132)',
+          'rgb(255, 159, 64)',
+          'rgb(255, 205, 86)',
+          'rgb(75, 192, 192)',
+          'rgb(54, 162, 235)',
+          'rgb(153, 102, 255)',
+          'rgb(201, 203, 207)'
         ],
-        borderWidth: 1,
-      }],
+        borderWidth: 1
+      }]
     };
 
     const options = {
+      responsive: true,
       scales: {
         y: {
           beginAtZero: true,
-          max: 150 // Set the maximum value for the y-axis
+          font: {
+            weight: 'bold'
+          },
+          ticks: {
+            callback: function (value) {
+              // truncate the labels only in this axis
+              const lbl = this.getLabelForValue(value);
+              if (typeof lbl === 'string' && lbl.length > 30) {
+                return `${lbl.substring(0, 30)}...`;
+              }
+              return lbl;
+            },
+          },
+        },
+        x: {
+          title: {
+            display: true,
+            text: 'Emissions (kg CO2-eq)',
+          }
         }
       },
       plugins: {
         legend: {
-          onClick: null,
-          labels: {
-            boxHeight: 0,
-            boxWidth: 0
+          display: false
+        },
+        tooltip: {
+          callbacks: {
+            label: function(tooltipItem) {
+              return `Estimated Emissions: ${tooltipItem.raw} kg CO2-eq`; // Add unit in tooltip
+            }
           }
         }
-      }
+      },
+      indexAxis: 'y',
     };
     return { data: chartData, options: options };
   }

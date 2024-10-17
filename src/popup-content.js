@@ -729,10 +729,6 @@ function init() {
     return freightEmissions;
   }
 
-  // function toNearestHundred(number) {
-  //   return Math.round(number / 100) * 100;
-  // }
-
   //  ************* Analyzing Freight Data *****************
 
   // Tracks the current web page the extension is on to see if they are 'eligible' for displaying freight emissions
@@ -749,21 +745,6 @@ function init() {
       });
     }
   }
-
-  // function observeElementLoadById(elementId, callback) {
-  //   const observer = new MutationObserver((mutationsList, observer) => {
-  //     mutationsList.forEach(mutation => {
-  //       if (mutation.type === 'childList') {
-  //         const element = document.getElementById(elementId);
-  //         if (element) {
-  //           callback(element);
-  //           observer.disconnect(); // Stop observing once the element is found
-  //         }
-  //       }
-  //     });
-  //   });
-  //   observer.observe(document.body, { childList: true, subtree: true });
-  // }
 
   // Observes if an element contains certain .textContent and classList properties
   /**

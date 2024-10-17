@@ -26,19 +26,36 @@
   --btn-disabled-text: #636363;
 }
 
+.lca-viz-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  background-color: var(--eco-turquoise-100);
+  /* top, right, bottom, left */
+  border-radius: 8px 8px 0 0;
+  justify-content: space-between;
+}
+.lca-viz-raw-material-title {
+  margin-top: 40px;
+}
+.lca-viz-header-title {
+  margin-left: 4px;
+}
+
 #lca-viz-map {
   position: absolute;
-  /* border: 2px solid #ccc; */
   box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
-  border-radius: 8px;
+  border-radius: 10px;
   z-index: 999999;
   background-color: white;
   padding: 20px;
-  padding-right: 60px;
-  transition: opacity 0.5s ease-in-out;
+  /* pointer-events: none; */
   opacity: 0;
-  pointer-events: none;
   cursor: grab;
+  transition: opacity 0.5s ease-in-out;
+  max-width: 600px;
+  padding-top: 64px; /* Add enough padding for the header */
 }
 
 #lca-viz-map.lca-viz-visible {
@@ -47,8 +64,9 @@
 }
 
 #lca-viz-carbon-chart {
-  max-width: 360px;
+  max-width: 420px;
   max-height: 240px;
+  margin-top: 16px;
   margin-bottom: 16px;
 }
 
@@ -63,6 +81,9 @@
   -ms-user-select: none;
   user-select: none;
   text-decoration: underline dotted;
+}
+.lca-viz-param-subtext {
+  color: var(--eco-grey);
 }
 
 /* ~ Saving this for now, for the <input> implement of #parameter-2 */
@@ -85,14 +106,9 @@
 } */
 
 #lca-viz-close-map {
-  background-color: aliceblue;
-  padding: 10px;
 }
 
 .lca-viz-close-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
   background: none;
   border: none;
   cursor: pointer;
@@ -113,9 +129,12 @@
   display: inline;
 }
 .lca-lexend {
-  color: #585858;
   font-family: "Lexend", sans-serif;
+}
+
+#lca-viz-action-btn-text {
   font-size: 14px;
+  color: #585858;
 }
 
 .lca-viz-previously-highlighted {
@@ -150,31 +169,39 @@
 }
 
 /* * CSS Rule for the up-and-down btn ONLY */
+.lca-viz-param-container > * {
+  margin-top: 12px;
+}
+.lca-viz-param {
+  justify-content: space-between;
+  background-color: #EEF2F0;
+  padding-left: 12px;
+  padding-right: 12px;
+}
 .lca-viz-special-text-container-2 {
   display: inline-flex;
   align-items: center;
   padding: 2px;
-  column-gap: 5px;
+  column-gap: 4px;
   user-select: none
 }
 .lca-viz-special-text-2 {
   display: flex;
-  outline: 2px solid #39805F;
+  /* outline: 2px solid #39805F; */
   border-radius: 5px;
-  padding: 5px 5px 5px 10px;
-  margin: 3px;
+  padding: 8px;
+  margin: 4px;
   align-items: center;
   gap: 10px;
 }
 .lca-viz-up-down-btn-container {
   display: flex;
-  flex-direction: column;
-  row-gap: 3px;
+  flex-direction: row;
+  column-gap: 8px;
 }
 .lca-viz-up-down-btn {
   padding: 0px 6px 0px 6px;
   box-shadow: 0px 0.5px 3px 0px rgba(0, 0, 0, 0.25);
-  line-height: 1.2;
 }
 .lca-viz-active {
   cursor: pointer;
