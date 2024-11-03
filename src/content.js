@@ -19,8 +19,9 @@ window.onload = () => {
     };
 
     // TODO: Only load in the CSS if the url is valid
-    let allowedDomains = ["nature.com", "acm.org", "fedex.com", "azure.com"];
-    if (isDomainValid(allowedDomains)) {
+    const allowedDomains = ["nature.com", "acm.org", "fedex.com", "azure.com"];
+    const allowedDomains2 = ["amazon.com", "bestbuy.com", "apple.com", "store.google.com", "samsung.com", "oppo.com", "huawei.com", "lenovo.com"];
+    if (isDomainValid(allowedDomains) || isDomainValid(allowedDomains2)) {
       console.log('current domain is allowed, injecting css');
       createLinkElement("preconnect", "https://fonts.googleapis.com");
       createLinkElement("preconnect", "https://fonts.gstatic.com", "anonymous");
@@ -36,6 +37,7 @@ window.onload = () => {
 
 let chart;
 let chartContainer;
+let currentChartData;
 let selectionTimeout;
 let LCAToolTip;
 
@@ -59,9 +61,7 @@ let globalSelectionData = {
   selection: null     // Will store a Selection
 };
 
-let currentValidSentenceJSON;
 
-let currentParamNode;
 const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
 
 function init() {
@@ -106,43 +106,6 @@ function init() {
     });
   }
 
-  // function handleDisplayBtn(parameter, legendTitle) {
-  //   let displayBtn = document.querySelector(".display-chart-btn-container");
-
-  //   const svgEyeOff = `
-  //       <svg width="24" height="24" class="display-chart-btn lca-viz-eye-off" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  //         <path d="M10.7429 5.09232C11.1494 5.03223 11.5686 5 12.0004 5C17.1054 5 20.4553 9.50484 21.5807 11.2868C21.7169 11.5025 21.785 11.6103 21.8231 11.7767C21.8518 11.9016 21.8517 12.0987 21.8231 12.2236C21.7849 12.3899 21.7164 12.4985 21.5792 12.7156C21.2793 13.1901 20.8222 13.8571 20.2165 14.5805M6.72432 6.71504C4.56225 8.1817 3.09445 10.2194 2.42111 11.2853C2.28428 11.5019 2.21587 11.6102 2.17774 11.7765C2.1491 11.9014 2.14909 12.0984 2.17771 12.2234C2.21583 12.3897 2.28393 12.4975 2.42013 12.7132C3.54554 14.4952 6.89541 19 12.0004 19C14.0588 19 15.8319 18.2676 17.2888 17.2766M3.00042 3L21.0004 21M9.8791 9.87868C9.3362 10.4216 9.00042 11.1716 9.00042 12C9.00042 13.6569 10.3436 15 12.0004 15C12.8288 15 13.5788 14.6642 14.1217 14.1213" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  //       </svg>`;
-  //   const svgEyeOn = `
-  //       <svg width="24" height="24" class="display-chart-btn lca-viz-eye-on" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-  //         <path d="M2.42012 12.7132C2.28394 12.4975 2.21584 12.3897 2.17772 12.2234C2.14909 12.0985 2.14909 11.9015 2.17772 11.7766C2.21584 11.6103 2.28394 11.5025 2.42012 11.2868C3.54553 9.50484 6.8954 5 12.0004 5C17.1054 5 20.4553 9.50484 21.5807 11.2868C21.7169 11.5025 21.785 11.6103 21.8231 11.7766C21.8517 11.9015 21.8517 12.0985 21.8231 12.2234C21.785 12.3897 21.7169 12.4975 21.5807 12.7132C20.4553 14.4952 17.1054 19 12.0004 19C6.8954 19 3.54553 14.4952 2.42012 12.7132Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  //         <path d="M12.0004 15C13.6573 15 15.0004 13.6569 15.0004 12C15.0004 10.3431 13.6573 9 12.0004 9C10.3435 9 9.0004 10.3431 9.0004 12C9.0004 13.6569 10.3435 15 12.0004 15Z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-  //       </svg>`;
-
-  //   // initializing the default behavior
-  //   let chartConfig = getChartConfig(legendTitle);
-  //   createChart(chartConfig, parameter);
-  //   makeChartVisible();
-
-  //   displayBtn.addEventListener("click", () => {
-  //     if (displayBtn.classList.contains("lca-off")) {
-  //       replaceClass(displayBtn, "lca-off", "lca-on");
-  //       displayBtn.innerHTML = svgEyeOn;
-
-  //       if (!chart) {
-  //         let chartConfig = getChartConfig(legendTitle);
-  //         createChart(chartConfig, parameter);
-  //       }
-  //       makeChartVisible();
-  //     } else {
-  //       replaceClass(displayBtn, "lca-on", "lca-off");
-  //       displayBtn.innerHTML = svgEyeOff;
-  //       hideChart();
-  //     }
-  //     activeUpDownBtn();
-  //   });
-  // }
-
   function activeUpDownBtn() {
     const upDownBtn = document.querySelectorAll(".lca-viz-up-down-btn");
     const parameterText = document.querySelectorAll(".lca-viz-special-text-2");
@@ -168,13 +131,26 @@ function init() {
     const downBtnList = document.querySelectorAll(".lca-viz-down");
     const upDownBtnCount = upBtnList.length;
     for (let i = 0; i < upDownBtnCount; i++) {
+      const parameterNode = getParameterNode(i);
+      parameterNode.addEventListener("input", () => {
+        const newWeight = parseFloat(parameterNode.value);
+        if (newWeight >= 1) {
+          const currentWeight = newWeight;
+          updateChartData(newWeight, i);
+        }
+      })
       upBtnList[i].addEventListener("click", () => {
         updateValue(1, i);
-      })
+      });
       downBtnList[i].addEventListener("click", () => {
         updateValue(-1, i)
-      })
+      });
     }
+  }
+
+  function getParameterNode(index) {
+    const paramId = "lca-viz-param-" + index;
+    return document.getElementById(paramId);
   }
 
   /**
@@ -184,52 +160,37 @@ function init() {
    * @param {number} index The index used for identifying the parameter.
    */
   function updateValue(weightChange, index) {
-    const paramId = "lca-viz-param-" + index;
-    const parameterNode = document.getElementById(paramId);
-    const currentWeight = parseInt(parameterNode.innerText);
+    const parameterNode = getParameterNode(index);
+    const currentWeight = parseInt(parameterNode.value);
     // If we are decreasing weight, make sure the current weight won't go below 1
     if (weightChange < 0 && currentWeight <= 1) {
       return;
     }
-    const newDisplayValue = currentWeight + weightChange;
-    parameterNode.innerText = newDisplayValue;
+    const newWeight = currentWeight + weightChange;
+    parameterNode.value = newWeight;
+    updateChartData(newWeight, index);
+  }
 
+  /**
+   *
+   * @param {number} newWeight The new value that is being displayed in the UI
+   * @param {number} currentWeight The current weight of the parameter
+   * @param {number} index The index of the raw material
+   */
+  function updateChartData(newWeight, index) {
     if (index !== -1) {
-      const emissionsValue = chart.data.datasets[0].data[index];
-      const emissionsFactor = emissionsValue / currentWeight
-      console.log('old emissions value: ', emissionsValue);
-      const newEmissionsValue = emissionsFactor * newDisplayValue;
+      console.log('newWeight = ' + newWeight);
+      console.log('index = ' + index);
+      // emissionsFactor calculates the CO2-eq per kg value of a specific material.
+      const emissionsFactor = currentChartData[index].emissions_factor;
+      console.log('emissions factor = ' + emissionsFactor);
+      console.log('old emissions value: ', chart.data.datasets[0].data[index]);
+      let newEmissionsValue = emissionsFactor * newWeight;
+      newEmissionsValue = parseFloat(newEmissionsValue.toFixed(2));
       console.log('new emissions value: ', newEmissionsValue);
       chart.data.datasets[0].data[index] = newEmissionsValue;
       chart.update();
     }
-  }
-
-  // function updateValue(change) {
-  //   const upBtn = document.getElementById("up");
-  //   const downBtn = document.getElementById("down");
-  //   if (upBtn.classList.contains("lca-viz-inactive") || downBtn.classList.contains("lca-viz-inactive")) {
-  //     return;
-  //   }
-  //   const parameter = document.getElementById("lca-viz-parameter-2");
-  //   const display = document.getElementById("display");
-  //   display.innerText = parseInt(parameter.innerText);
-
-  //   const newValue = parseInt(parameter.innerText) + change;
-  //   parameter.innerText = newValue;
-  //   display.innerText = newValue;
-  //   updateChartData(chart, newValue);
-  // }
-
-  function updateChartData(chart, multiplier) {
-    let chartConfig = getChartConfig();
-    let data = chartConfig.data.datasets[0].data;
-    let newData = data.map((val) => val * multiplier);
-    const chartData = chart.data.datasets[0].data;
-    for (let i = 0; i < data.length; i++) {
-      chartData[i] = newData[i];
-    }
-    chart.update();
   }
 
   /**
@@ -262,6 +223,8 @@ function init() {
       const rawMaterialData = await getValidSentence(selection.toString());
       if (rawMaterialData) {
         console.log("%j", rawMaterialData);
+        const rawMaterialsList = rawMaterialData.data.raw_materials;
+        console.log('rawMaterialsList: ', rawMaterialsList);
 
         const fullText = parentNode.textContent;
         const startOffset = range.startOffset;
@@ -278,12 +241,26 @@ function init() {
         div.classList.add("lca-viz-inline");
         div.classList.add("lca-viz-highlight");
 
-        const mark = document.createElement("mark");
-        mark.classList.add("lca-viz-mark");
+        let modifiedText = highlightedText;
+        rawMaterialsList.forEach((material) => {
+          const escapedMaterial = escapeRegExp(material);
+          const regex = new RegExp(`\\b${escapedMaterial}\\b`, 'gi');
+          console.log('regex = ' + regex);
+          modifiedText = modifiedText.replace(regex, `<span class="lca-viz-param-bold"><b>${material}</b></span>`);
+        })
+
+        // ! commented out
+        // const mark = document.createElement("mark");
+        // mark.classList.add("lca-viz-mark");
         // Add the content to the mark element
-        const markText = document.createTextNode(highlightedText);
-        mark.appendChild(markText);
-        div.appendChild(mark);
+        // const markText = document.createTextNode(highlightedText);
+
+        const markElement = `<mark class="lca-viz-mark">${modifiedText}</mark>`;
+        div.innerHTML = markElement;
+
+        // ! commented out
+        // mark.appendChild(markText);
+        // div.appendChild(mark);
 
         currentHighlightedNode = div;
         console.log('setting currentHighlightedNode: ', div);
@@ -312,10 +289,14 @@ function init() {
     }
   }
 
+  // Escape special characters in material names for regex
+  function escapeRegExp(text) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
   function initializeChart(data) {
     const chartData = getChartEmissionsData(data);
 
-    // TODO: change this pairing name from "parameter-materialName" to "name-emissions"
     // ! Later on this should be a for-loop to get the key-value pair from each raw material object
     let parameter = chartData[0].emissions;
     let materialName = chartData[0].name;
@@ -345,26 +326,32 @@ function init() {
       {
         "name": "Copper foil",
         "emissions": "0.97",
+        "emissions_factor": "0.97"
       },
       {
         "name": "Vitrimer polymer",
         "emissions": "2.5",
+        "emissions_factor": "2.5",
       },
       {
         "name": "Epoxy (EPON 828)",
         "emissions": "0.2",
+        "emissions_factor": "0.2",
       },
       {
         "name": "Adipic acid",
         "emissions": "0.1",
+        "emissions_factor": "0.1",
       },
       {
         "name": "1,5,7-triazabicyclo[4.4.0]dec-5-ene (TBD)",
-        "emissions": "3.24"
+        "emissions": "3.24",
+        "emissions_factor": "3.24"
       },
       {
         "name": "Woven glass fibre sheets",
-        "emissions": "9.1"
+        "emissions": "9.1",
+        "emissions_factor": "9.1"
       }
     ];
     return data;
@@ -372,19 +359,23 @@ function init() {
 
   function setLCAActionBtnState(state) {
     const LCAActionBtnText = document.getElementById("lca-viz-action-btn-text");
+    const LCAActionBtn = document.getElementById("lca-viz-action-btn");
     const floatingLCAImg = document.querySelector('.floating-lca-img');
     if (state === "default") {
       floatingLCAImg.src = lca_48;
       LCAActionBtnText.textContent = "";
       LCAActionBtnText.classList.add("lca-viz-hidden");
+      LCAActionBtn.classList.add("lca-viz-interactable");
     } else if (state === "analyzing") {
       floatingLCAImg.src = loading_icon_2;
       LCAActionBtnText.textContent = "Analyzing...";
       LCAActionBtnText.classList.remove("lca-viz-hidden");
+      LCAActionBtn.classList.remove("lca-viz-interactable");
     } else if (state === "error") {
       floatingLCAImg.src = close_icon_red;
       LCAActionBtnText.textContent = "No raw materials detected."
       LCAActionBtnText.classList.remove("lca-viz-hidden");
+      LCAActionBtn.classList.remove("lca-viz-interactable");
     }
   }
 
@@ -608,7 +599,7 @@ function init() {
 
   function getLCAActionBtn() {
     const actionBtn = `
-      <div class="flex-center floating-lca-action-btn pd-12 br-8 cg-8" id="lca-viz-action-btn">
+      <div class="flex-center floating-lca-action-btn lca-viz-interactable pd-12 br-8 cg-8" id="lca-viz-action-btn">
         <img src="${lca_48}" alt="LCA Image" class="floating-lca-img icon-20">
         <span class="lca-viz-hidden lca-lexend fz-14" id="lca-viz-action-btn-text"></span>
       </div>
@@ -709,9 +700,9 @@ function init() {
   function getParam(rawMaterialName, index) {
     const paramId = "lca-viz-param-" + index;
     const paramDiv = `
-      <div class="lca-viz-param flex-center br-8 fz-16">
+      <div class="lca-viz-param-fill flex-center br-8 fz-16">
             <span>${rawMaterialName}</span>
-            <div class="flex-center">
+            <div class="flex-center cg-4">
               <div class="lca-viz-special-text-container-2">
                 <div class="lca-viz-special-text-2 lca-viz-active-st">
                   <div class="lca-viz-up-down-btn-container">
@@ -720,7 +711,7 @@ function init() {
                         <path d="M5.09107 5.74914C4.70327 6.20989 3.99382 6.20989 3.60602 5.74914L0.689251 2.28363C0.157962 1.65239 0.606707 0.688168 1.43177 0.688168L7.26532 0.688168C8.09039 0.688168 8.53913 1.65239 8.00784 2.28363L5.09107 5.74914Z" fill="currentColor"/>
                       </svg>
                     </div>
-                    <span id="${paramId}">1</span>
+                    <input class="lca-viz-parameter-text" id="${paramId}" type="number" value="1">
                     <div class="lca-viz-active lca-viz-up-down-btn lca-viz-up">
                       <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                         <path d="M3.60595 1.24256C3.99375 0.781809 4.7032 0.781808 5.091 1.24256L8.00777 4.70806C8.53906 5.3393 8.09032 6.30353 7.26525 6.30353L1.4317 6.30353C0.606637 6.30353 0.157892 5.33931 0.689181 4.70807L3.60595 1.24256Z" fill="currentColor"/>
@@ -789,28 +780,36 @@ function init() {
       {
         "name": "Copper foil",
         "emissions": "0.97",
+        "emissions_factor": "0.97"
       },
       {
         "name": "Vitrimer polymer",
         "emissions": "2.5",
+        "emissions_factor": "2.5",
       },
       {
         "name": "Epoxy (EPON 828)",
-        "emissions": "0.02",
+        "emissions": "0.2",
+        "emissions_factor": "0.2",
       },
       {
         "name": "Adipic acid",
-        "emissions": "0.01",
+        "emissions": "0.1",
+        "emissions_factor": "0.1",
       },
       {
         "name": "1,5,7-triazabicyclo[4.4.0]dec-5-ene (TBD)",
-        "emissions": "3.24"
+        "emissions": "3.24",
+        "emissions_factor": "3.24"
       },
       {
         "name": "Woven glass fibre sheets",
-        "emissions": "9.1"
+        "emissions": "9.1",
+        "emissions_factor": "9.1"
       }
     ];
+
+    currentChartData = cData;
 
     const rawLabels = cData.map(item => item.name);
     const emissionsData = cData.map(item => item.emissions);

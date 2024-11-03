@@ -1,0 +1,173 @@
+:root {
+  --eco-green-100: #E1EDE8;
+  --eco-green-200: #C3E3CA;
+  --eco-green-300: #ABD2B3;
+  --eco-green-400: #93CFA0;
+  --eco-green-500: #7CBD8A;
+  --eco-green-600: #82A589;
+
+  --eco-turquoise-100: #D3EDE5;
+  --eco-turquoise-200: #93CFC0;
+  --eco-turquoise-300: #84C2B2;
+
+  --eco-grey: #636363;
+  --light-grey: #F0F0F0;
+
+  --eco-black: #033425;
+  --scrollbar-spacing: 4px;
+}
+html {
+  width: 400px;
+  /* height: 600px; */
+  min-height: 360px;
+}
+body {
+  background-color: white;
+  font-family: "Lexend", sans-serif;
+}
+.lexend-reg {
+  font-weight: 400;
+}
+.red-text {
+  color: red;
+}
+.grey-text {
+  color: var(--eco-grey);
+}
+.eco-green-text {
+  color: #39805F;
+}
+.icon-16 {
+  width: 16px;
+  height: 16px;
+}
+.icon-20 {
+  width: 20px;
+  height: 20px;
+}
+.icon-24 {
+  width: 24px;
+  height: 24px;
+}
+.margin-0 {
+  margin: 0px;
+}
+.margin-4 {
+  margin: 4px;
+}
+.margin-8 {
+  margin: 8px;
+}
+.margin-12 {
+  margin: 12px;
+}
+.mb-16 {
+  margin-bottom: 16px;
+}
+.br-4 {
+  border-radius: 4px;
+}
+.br-8 {
+  border-radius: 8px;
+}
+.br-16 {
+  border-radius: 16px;
+}
+.pd-4 {
+  padding: 4px;
+}
+.pd-8 {
+  padding: 8px;
+}
+.pd-12 {
+  padding: 12px;
+}
+.pd-16 {
+  padding: 16px;
+}
+.pd-20 {
+  padding: 20px;
+}
+.fz-8 {
+  font-size: 8px;
+}
+.fz-12 {
+  font-size: 12px;
+}
+.fz-16 {
+  font-size: 16px;
+}
+.fz-20 {
+  font-size: 20px;
+}
+.fz-24 {
+  font-size: 24px;
+}
+.fz-32 {
+  font-size: 32px;
+}
+.cg-4 {
+  column-gap: 4px;
+}
+.cg-8 {
+  column-gap: 8px;
+}
+.cg-12 {
+  column-gap: 12px;
+}
+.eco-bold {
+  color: var(--eco-black);
+}
+.rg-4 {
+  row-gap: 4px;
+}
+.rg-8 {
+  row-gap: 8px;
+}
+.rg-12 {
+  row-gap: 12px;
+}
+
+.title-text {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+.flex-center {
+  display: flex;
+  align-items: center;
+}
+.flex-stretch {
+  display: flex;
+  align-items: stretch;
+}
+.flex-column-center {
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+.lca-banner {
+  display: flex;
+  flex-wrap: nowrap;
+  justify-content: space-between;
+}
+.master-lca {
+  padding-bottom: 16px;
+  border: solid 3px #52B788;
+}
+.title-container {
+  justify-content: center;
+  flex-grow: 3;
+}
+.title-container, .lca-banner {
+  gap: 8px;
+}
+.title-container, .close-container, .select-phone-container {
+  background-color: var(--eco-turquoise-100);
+}
+.close-container {
+  cursor: pointer;
+}
+
+li {
+  margin-top: 1em;
+}

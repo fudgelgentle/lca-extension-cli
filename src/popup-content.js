@@ -56,7 +56,11 @@ function init() {
   function trackPhone() {
     // Example usage
     const pageTitle = document.title;
-    detectPhoneModel(pageTitle);
+    const phoneModel = detectPhoneModel(pageTitle);
+    const allowedDomains = ["amazon.com", "bestbuy.com", "apple.com", "store.google.com", "samsung.com", "oppo.com", "huawei.com", "lenovo.com"];
+    if (phoneModel && isDomainValid(allowedDomains)) {
+      injectPopupContent("phone");
+    }
   }
 
   // Checks if the calculate button is ready to be used
@@ -917,12 +921,9 @@ function init() {
       ? parseInt(packageCountElement.value)
       : null;
 
-    const packageWeightElement = document.getElementById(
-      "package-details__weight-0"
-    );
-    let packageWeight = packageWeightElement
-      ? parseInt(packageWeightElement.value)
-      : null;
+    // const packageWeightElement = document.getElementById("package-details__weight-0");
+    const packageWeightElement = document.querySelector('#package-details__weight-0 .fdx-c-form__input');
+    let packageWeight = packageWeightElement ? parseInt(packageWeightElement.value) : null;
 
     const unitElement = document.querySelector(
       'select[data-e2e-id="selectMeasurement"]'
@@ -1010,6 +1011,10 @@ function init() {
       }
       currShippingOptions = [];
     } else {
+      console.log('fromAddress: ', fromAddress);
+      console.log('toAddress: ', toAddress);
+      console.log('packageCount: ', packageCount);
+      console.log('packageWeight: ', packageWeight);
       console.error("Invalid input.. Information is not complete");
     }
   }
@@ -1231,10 +1236,10 @@ function init() {
         <div class="details-container fz-16">
           <div class="flex-center most-green cg-4">
             <p><b>${currentArray[i].storage}</b>&nbsp;</p>
-            ${i === 0
-          ? `<img src="${most_green_icon}" class="icon-16" alt="Most eco-friendly option">`
-          : ""
-        }
+            ${currentArray[i].mostEco
+                ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0" alt="Most eco-friendly option">`
+                : ""
+              }
           </div>
           <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
             <p class="margin-0">${currentArray[i].co2e}</p>
@@ -1243,10 +1248,10 @@ function init() {
         <div class="details-container fz-16">
           <div class="flex-center most-green cg-4">
             <p><b>${comparedArray[i].storage}</b>&nbsp;</p>
-            ${i === 0
-          ? `<img src="${most_green_icon}" class="icon-16" alt="Most eco-friendly option">`
-          : ""
-        }
+            ${comparedArray[i].mostEco
+                ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0" alt="Most eco-friendly option">`
+                : ""
+              }
           </div>
           <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
             <p class="margin-0">${comparedArray[i].co2e}</p>
@@ -1318,11 +1323,24 @@ function init() {
       if (newArr1[i].co2e == "--") {
         newArr1[i].storage = "--";
       }
+
       if (newArr2[i].co2e == "--") {
         newArr2[i].storage = "--";
       }
     }
+
+    markMostEcoFriendlyIndex(arr1);
+    markMostEcoFriendlyIndex(arr2);
+
     return [newArr1, newArr2];
+  }
+
+  // Takes in the storage array and flags the index that has the most eco-friendly option
+  function markMostEcoFriendlyIndex(arr) {
+    const mostEcoIndex = arr.findIndex(item => item.co2e !== '--');
+    if (mostEcoIndex !== -1) {
+      arr[mostEcoIndex].mostEco = true;
+    }
   }
 
   /**
@@ -1369,7 +1387,7 @@ function init() {
     const deviceName = data.device;
 
     container.innerHTML += `
-      <p class="phone-spec-title eco-bold" id="currentPhone"><b>${deviceName} Carbon Emissions</b></p>
+      <p class="phone-spec-title" id="currentPhone"><b>${deviceName} Carbon Emissions</b></p>
     `;
 
     let mostGreenOption = footprints[0];
@@ -1391,12 +1409,12 @@ function init() {
       container.innerHTML += `
         <div class="details-container fz-16" id=${index + "-c"}>
           <div class="flex-center ${isMostGreen ? "most-green" : ""} cg-4">
-            <p class="eco-bold"><b>${option.storage} </b>&nbsp;</p>
+            <p><b>${option.storage} </b>&nbsp;</p>
             ${isMostGreen
-          ? `<img src="${most_green_icon}" class="icon-16" alt="Most eco-friendly option">`
-          : `<span class="red-text fz-12">(+${percentageIncrease.toFixed(
+          ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0" alt="Most eco-friendly option">`
+          : `<span class="emissions-diff-plus fz-12 br-4 margin-0"><b>(+${percentageIncrease.toFixed(
             0
-          )}% emissions)</span>`
+          )}% emissions)</b></span>`
         }
           </div>
           <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
@@ -1412,9 +1430,6 @@ function init() {
         </div>
         `;
     });
-
-    // const phoneSpecTitle = document.querySelector(".phone-spec-title");
-    // scrollToElement(phoneSpecTitle);
   }
 
 // TODO: ***********************************************************
@@ -1542,28 +1557,6 @@ function init() {
       });
     }
   }
-
-  // function scrollToElement(element) {
-  //   const y = element.getBoundingClientRect().top + window.scrollY;
-  //   if (isEdge() || isSafari) {
-  //     element.scrollIntoView();
-  //   } else {
-  //     window.scroll({
-  //       top: y,
-  //       behavior: "smooth",
-  //     });
-  //   }
-  // }
-
-  // function isEdge() {
-  //   return /Edg/.test(navigator.userAgent);
-  // }
-
-  // function isSafari() {
-  //   return (
-  //     /Safari/.test(navigator.userAgent) && !/Chrome/.test(navigator.userAgent)
-  //   );
-  // }
 
   /**
    * @param {String} shippingType The Fedex shipping type (e.g. "fedex ground", "fedex 1day freight")

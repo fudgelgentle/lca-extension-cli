@@ -58,11 +58,10 @@ export function detectPhoneModel(title) {
   // Loop through the map and test the title for each phone model
   for (const { regex, model } of phonePatterns) {
     if (regex.test(title)) {
-      // alert(`${model} detected`);
+      console.log(`${model} detected!!!!!!!!!!!!!!!`);
       return model;
     }
   }
-
-  // console.log("Phone model not detected");
+  console.log("Phone model not detected");
   return null;
 }

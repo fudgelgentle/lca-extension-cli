@@ -74,38 +74,30 @@
   width: 100%;
   text-align: center;
 }
-
-#lca-viz-parameter {
-  cursor: ew-resize;
-  -webkit-user-select: none;
-  -ms-user-select: none;
-  user-select: none;
-  text-decoration: underline dotted;
-}
 .lca-viz-param-subtext {
   color: var(--eco-grey);
 }
 
 /* ~ Saving this for now, for the <input> implement of #parameter-2 */
 /* <input id="parameter-2" type="number" value="${parameter}" */
-/* #parameter-2 {
+/* <span id="${paramId}">1</span> */
+.lca-viz-parameter-text {
   border: none;
   outline: none;
-  background: none;
+  background: #E2EBE7;
   font-size: inherit;
   color: inherit;
-  width: 2em;
+  border-radius: 2px;
+  text-align: center;
+  width: 3em;
 }
-#parameter-2::-webkit-inner-spin-button,
-#parameter-2::-webkit-outer-spin-button {
+.lca-viz-parameter-text::-webkit-inner-spin-button,
+.lca-viz-parameter-text::-webkit-outer-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
-#parameter-2[type=number] {
+.lca-viz-parameter-text[type=number] {
   -moz-appearance: textfield;
-} */
-
-#lca-viz-close-map {
 }
 
 .lca-viz-close-button {
@@ -151,6 +143,10 @@
   transition: all 0.5s;
 }
 
+.lca-viz-param-bold {
+  color: #52B788;
+}
+
 #lca-viz-action-btn {
   position: absolute;
 }
@@ -160,10 +156,12 @@
   box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
   background-color: white;
   justify-content: center;
-  cursor: pointer;
   z-index: 2147483647;
 }
-.floating-lca-action-btn:hover {
+.lca-viz-interactable {
+  cursor: pointer;
+}
+.lca-viz-interactable:hover {
   background-color: var(--light-green);
   transition: all 0.5s;
 }
@@ -172,11 +170,11 @@
 .lca-viz-param-container > * {
   margin-top: 12px;
 }
-.lca-viz-param {
+.lca-viz-param-fill {
   justify-content: space-between;
   background-color: #EEF2F0;
-  padding-left: 12px;
-  padding-right: 12px;
+  padding-left: 16px;
+  padding-right: 16px;
 }
 .lca-viz-special-text-container-2 {
   display: inline-flex;
@@ -209,7 +207,7 @@
   color: #39805F;
 }
 .lca-viz-active:hover {
-  background-color: #ddf2e8;
+  background-color: #E2EBE7;
   transition: 0.5s all;
 }
 .lca-viz-inactive {
