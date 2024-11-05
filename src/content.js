@@ -4,6 +4,7 @@
 
 import Chart from 'chart.js/auto';
 const lca_48 = chrome.runtime.getURL("../assets/img/lca-48.png");
+const off_lca_btn = chrome.runtime.getURL("../assets/img/off-lca-btn.png");
 const loading_icon_2 = chrome.runtime.getURL("../assets/img/loading-icon-2.gif");
 const close_icon_red = chrome.runtime.getURL("../assets/img/close-icon-red.png");
 
@@ -67,6 +68,11 @@ const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
 function init() {
   trackRawMaterial();
 
+  /**
+   * Calculates the coordinates of an HTML element relative to the entire document.
+   * @param {Element} element The target HTML element
+   * @returns {Object} An object containing the `x` and `y` coordinates.
+   */
   function getElementCoordinates(element) {
     const rect = element.getBoundingClientRect();
     return {
@@ -205,7 +211,7 @@ function init() {
   }
 
   /**
-   * Makes the highlighted text color turn green, makes the parameter inside the text editable, and displays a carbon emission chart
+   * Makes the highlighted text background color turn green, and displays a carbon emission chart
    * @param {Node} parentNode The parent node
    * @param {Range} range The range of the selected text
    * @param {Selection} selection The selected text
@@ -217,7 +223,6 @@ function init() {
         // Store the current highlighted node as the previous highlighted node
         previousHighlightedNode = currentHighlightedNode;
         previousHighlightedNode.removeEventListener("click", redisplayChart);
-
         resetHighlight(currentHighlightedNode);
       }
       const rawMaterialData = await getValidSentence(selection.toString());
@@ -241,26 +246,21 @@ function init() {
         div.classList.add("lca-viz-inline");
         div.classList.add("lca-viz-highlight");
 
-        let modifiedText = highlightedText;
+        let modifiedText = `<mark class="lca-viz-mark">${highlightedText}</mark>`;
         rawMaterialsList.forEach((material) => {
           const escapedMaterial = escapeRegExp(material);
           const regex = new RegExp(`\\b${escapedMaterial}\\b`, 'gi');
           console.log('regex = ' + regex);
           modifiedText = modifiedText.replace(regex, `<span class="lca-viz-param-bold"><b>${material}</b></span>`);
-        })
+        });
+        modifiedText = modifiedText + `
+          <div class="lca-viz-inline" id="lca-viz-end">
+            <img src="${off_lca_btn}" alt="Turn off the LCA visualizer" class="icon-10 off-lca-btn lca-viz-hidden">
+          </div>
+        `;
 
-        // ! commented out
-        // const mark = document.createElement("mark");
-        // mark.classList.add("lca-viz-mark");
-        // Add the content to the mark element
-        // const markText = document.createTextNode(highlightedText);
-
-        const markElement = `<mark class="lca-viz-mark">${modifiedText}</mark>`;
-        div.innerHTML = markElement;
-
-        // ! commented out
-        // mark.appendChild(markText);
-        // div.appendChild(mark);
+        // const markElement = `<mark class="lca-viz-mark">${modifiedText}</mark>`;
+        div.innerHTML = modifiedText;
 
         currentHighlightedNode = div;
         console.log('setting currentHighlightedNode: ', div);
@@ -279,8 +279,15 @@ function init() {
           parentNode.appendChild(document.createTextNode(afterText));
         }
 
-        hideLCAActionBtn();
+        // If the user clicks on the red 'off-lca-btn', the highlighted text will be removed entirely.
+        const offLcaBtn = document.querySelector('.off-lca-btn');
+        offLcaBtn.addEventListener("click", () => {
+          currentHighlightedNode.removeEventListener("click", redisplayChart);
+          resetHighlight(currentHighlightedNode);
+          currentHighlightedNode = null;
+        })
 
+        hideLCAActionBtn();
         initializeChart(rawMaterialData);
       } else {
         console.log('rawMaterial data is null');
@@ -735,7 +742,9 @@ function init() {
   function handleCloseButton() {
     document.getElementById("lca-viz-close-map").addEventListener("click", () => {
       hideChart();
-      currentHighlightedNode.classList.add('lca-viz-previously-highlighted');
+      document.querySelector('.lca-viz-mark').classList.add('lca-viz-previously-highlighted');
+      // currentHighlightedNode.classList.add('lca-viz-previously-highlighted');
+      document.querySelector('.off-lca-btn').classList.remove('lca-viz-hidden');
     });
 
     currentHighlightedNode.addEventListener("click", redisplayChart);
@@ -744,7 +753,8 @@ function init() {
   // Redisplay the chart that was closed by the user
   function redisplayChart(event) {
     console.log('redisplaying chart');
-    const element = event.currentTarget;
+    // const element = event.currentTarget;
+    const element = document.querySelector('.lca-viz-mark');
     element.classList.remove("lca-viz-previously-highlighted");
     makeChartVisible();
   }

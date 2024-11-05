@@ -70,6 +70,10 @@ p {
 .grey-text {
   color: var(--eco-grey);
 }
+.icon-10 {
+  width: 10px;
+  height: 10px;
+}
 .icon-14 {
   width: 14px;
   height: 14px;
@@ -225,6 +229,14 @@ p {
   display: flex;
   align-items: stretch;
 }
+
+.lca-viz-justify-center {
+  justify-content: center;
+}
+.lca-viz-space-between {
+  justify-content: space-between;
+}
+
 .flex-column-center {
   display: flex;
   align-items: center;
@@ -369,6 +381,55 @@ p {
   cursor: pointer;
 }
 
+#lca-viz-unit-select {
+  border: 1px solid #247457;
+  background-color: #ebf0ee;
+}
+
+.lca-viz-unit-container {
+  position: relative;
+  width: 200px;
+  height: 36px;
+  overflow: hidden;
+}
+.lca-viz-unit-div {
+  /* display: none; */
+  position: absolute;
+  width: 100%;
+  opacity: 0;
+}
+
+@keyframes rollIn {
+  0% {
+    transform: translateY(-20px);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0px);
+    opacity: 1;
+  }
+}
+
+@keyframes fadeOut {
+  0% {
+    transform: translateY(0px);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+}
+
+/* animation classes */
+.lca-viz-unit-div.lca-viz-show {
+  display: block;
+  animation: rollIn 0.3s forwards;
+}
+.lca-viz-unit-div.lca-viz-hide {
+  animation: fadeOut 0.3s forwards;
+}
+
 .close-phone-btn, .trash-btn {
   position: absolute;
 }
@@ -497,7 +558,7 @@ p {
 
 .emissions-diff-plus, .emissions-diff-minus {
   /* top, right, bottom, left */
-  padding: 4px 8px 4px 8px;
+  padding: 5px 8px 4px 8px;
   display: inline-block;
 }
 .emissions-diff-plus {

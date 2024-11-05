@@ -143,6 +143,10 @@
   transition: all 0.5s;
 }
 
+.lca-viz-no-underline {
+  text-decoration: none;
+}
+
 .lca-viz-param-bold {
   color: #52B788;
 }
@@ -246,4 +250,13 @@
 }
 /* * CSS Rule for the up and down btn ONLY */
 
+.off-lca-btn {
+  position: relative;
+  top: -6px;
+  cursor: pointer;
+}
 
+#lca-viz-end {
+  text-decoration: none !important;
+  background-color: unset !important;
+}

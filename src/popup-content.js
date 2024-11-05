@@ -12,7 +12,9 @@ const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
 const lca_48 = chrome.runtime.getURL("../assets/img/lca-48.png");
 const plus_square_icon = chrome.runtime.getURL("../assets/img/plus-square-icon.png");
 const fire_black_icon = chrome.runtime.getURL("../assets/img/fire-black-icon.png");
-const fire_grey_icon = chrome.runtime.getURL("../assets/img/fire-grey-icon.png");
+// const fire_grey_icon = chrome.runtime.getURL("../assets/img/fire-grey-icon.png");
+const hamburger_icon = chrome.runtime.getURL("../assets/img/hamburger-icon.png");
+const car_icon = chrome.runtime.getURL("../assets/img/car-icon.png");
 const red_trash_icon = chrome.runtime.getURL("../assets/img/red-trash-icon.png");
 const most_green_icon = chrome.runtime.getURL("../assets/img/most-green-icon.png");
 const equivalent_icon = chrome.runtime.getURL("../assets/img/equivalent-icon.png");
@@ -1206,6 +1208,73 @@ function init() {
     });
   }
 
+  // Handles the changing of different reference units for phone emissions flow.
+  // (i.e. changing between "~ kg of trash burned", "~ of miles driven", and "~ of trees cut down" every 3 seconds)
+  function handleUnitDivChange() {
+    const unitDivsContainer = shadowRoot.querySelectorAll('.lca-viz-unit-container');
+    console.log('unitDivsContainer length: ' + unitDivsContainer.length);
+    const unitSelect = shadowRoot.getElementById('lca-viz-unit-select');
+
+    // Initialize: show the first unit-div by default
+    let currentIndex = 0;
+    unitDivsContainer.forEach((container) => {
+      container.children[currentIndex].classList.add('lca-viz-show');
+    });
+
+    unitSelect.addEventListener("change", (e) => {
+      const selectedIndex = parseInt(e.target.value);
+      console.log('selectedIndex = ' + selectedIndex);
+      showSelectedUnit(selectedIndex);
+    });
+
+    // Function to change the displayed unit-div based on dropdown selection
+    function showSelectedUnit(index) {
+      unitDivsContainer.forEach((container) => {
+        console.log('currentIndex = ' + currentIndex);
+        console.log('newIndex = ' + index);
+        const oldUnitDiv = container.children[currentIndex];
+        const newUnitDiv = container.children[index];
+        console.log('unitDivs = ');
+        console.dir(oldUnitDiv);
+        // Hide the current unit-div
+        oldUnitDiv.classList.remove('lca-viz-show');
+        oldUnitDiv.classList.add('lca-viz-hide');
+
+        // After fade-out, remove the hide class and show the selected unit
+        setTimeout(() => {
+          oldUnitDiv.classList.remove('lca-viz-hide');
+          newUnitDiv.classList.add('lca-viz-show');
+          currentIndex = index;
+        }, 300);
+      });
+    }
+
+    //& Old code for the automatic "roll in / fade out" behavior of unit-divs
+    // unitDivsContainer.forEach((container) => {
+    //   const unitDivs = container.querySelectorAll('.lca-viz-unit-div');
+    //   // Initially show the first unit-div
+    //   unitDivs[0].classList.add('lca-viz-show');
+    //   let currentIndex = 0;
+    //   setInterval(() => {
+    //     currentIndex = showNextUnitDiv(unitDivs, currentIndex);
+    //   }, 5000);
+    // });
+
+    // & Utility function used with the automatic "roll in / fade out behavior"
+    // function showNextUnitDiv(unitDivs, currentIndex) {
+    //   const currentDiv = unitDivs[currentIndex];
+    //   currentDiv.classList.remove('lca-viz-show');
+    //   currentDiv.classList.add('lca-viz-hide');
+    //   currentIndex = ((currentIndex + 1) % unitDivs.length);
+    //   const nextDiv = unitDivs[currentIndex];
+    //   setTimeout(() => {
+    //     nextDiv.classList.remove('lca-viz-hide');
+    //     nextDiv.classList.add('lca-viz-show');
+    //   }, 500);
+    //   return currentIndex;
+    // }
+  }
+
   // Display a side-by-side carbon emissions comparison of two phones
   function displaySideBySideComparison(phoneId) {
     const phoneModelList = importPhoneModel();
@@ -1388,6 +1457,14 @@ function init() {
 
     container.innerHTML += `
       <p class="phone-spec-title" id="currentPhone"><b>${deviceName} Carbon Emissions</b></p>
+      <div class="flex-center cg-8 fz-16">
+        <p>Comparison: </p>
+        <select id="lca-viz-unit-select" class="br-4 pd-4">
+          <option value="0">Trash burned 🔥</option>
+          <option value="1">Miles driven 🚗</option>
+          <option value="2">Big Macs Eaten 🍔</option>
+        </select>
+      </div>
     `;
 
     let mostGreenOption = footprints[0];
@@ -1420,16 +1497,36 @@ function init() {
           <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
             <p class="margin-0">${option.co2e}</p>
             <img src="${equivalent_icon}" class="icon-16" alt="Equivalent to">
-            <div class="flex-center cg-4">
-              <p class="margin-0 grey-text fz-16">${(co2eValue / 1.15).toFixed(
-          2
-        )} kg of trash burned</p>
-              <img src="${fire_grey_icon}" class="icon-16" alt="Trash">
+            <div class="lca-viz-unit-container flex-center cg-4">
+
+              <div class="lca-viz-unit-div">
+                <div class="flex-center lca-viz-justify-center cg-8">
+                  <p class="margin-0 grey-text fz-16">${(co2eValue / 1.15).toFixed(2)} kg of trash burned</p>
+                  <img src="${fire_black_icon}" class="icon-16" alt="Trash">
+                </div>
+              </div>
+
+              <div class="lca-viz-unit-div">
+                <div class="flex-center lca-viz-justify-center cg-8">
+                  <p class="margin-0 grey-text fz-16">${Math.ceil(co2eValue * 2.35)} miles driven by a car</p>
+                  <img src="${car_icon}" class="icon-16" alt="Car">
+                </div>
+              </div>
+
+              <div class="lca-viz-unit-div">
+                <div class="flex-center lca-viz-justify-center cg-8">
+                  <p class="margin-0 grey-text fz-16">${Math.ceil(co2eValue * 0.43)} Big Macs eaten</p>
+                  <img src="${hamburger_icon}" class="icon-16" alt="Hamburger">
+                </div>
+              </div>
+
             </div>
           </div>
         </div>
         `;
     });
+
+    handleUnitDivChange();
   }
 
 // TODO: ***********************************************************
