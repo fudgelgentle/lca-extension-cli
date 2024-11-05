@@ -653,9 +653,7 @@ function init() {
       const weightObject = getReadableUnit(airTrashValue);
       airTrashValue = weightObject.weight;
       const trashUnit = weightObject.unit;
-      const shippingOptionsText = airData.airMode
-        .map(formatShippingText)
-        .join(", ");
+      const shippingOptionsText = airData.airMode.map(formatShippingText).join(", ");
       airHTML = `
         <div class="options-container">
           <p class="shipping-options fz-12 mb-4">
@@ -681,9 +679,8 @@ function init() {
       const weightObject = getReadableUnit(groundTrashValue);
       groundTrashValue = weightObject.weight;
       const trashUnit = weightObject.unit;
-      const shippingOptionsText = groundData.groundMode
-        .map(formatShippingText)
-        .join(", ");
+      console.log('ground shipping options = ' + groundData.groundMode);
+      const shippingOptionsText = groundData.groundMode.map(formatShippingText).join(", ");
       groundHTML = `
         <div class="options-container">
           <p class="shipping-options fz-12 mb-4">
@@ -940,7 +937,6 @@ function init() {
     if (fromAddress && toAddress && packageCount && packageWeight) {
       const totalWeight = packageWeight * packageCount;
 
-      // !Somehow this method is not being called
       const { groundMode, airMode } = await categorizeShippingOption(
         fromAddress,
         toAddress,
@@ -988,7 +984,6 @@ function init() {
         }
       }
 
-      // & New
       const formattedFreightData = {
         from: fromAddress,
         to: toAddress,
@@ -1301,6 +1296,8 @@ function init() {
     let comparedArray = arrayResult[1];
 
     for (let i = 0; i < currentArray.length; i++) {
+      const result = findGreener(currentArray[i].co2e, comparedArray[i].co2e);
+      // Returns a boolean checking
       specContainer.innerHTML += `
         <div class="details-container fz-16">
           <div class="flex-center most-green cg-4">
@@ -1310,7 +1307,7 @@ function init() {
                 : ""
               }
           </div>
-          <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
+          <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg ${result === "one" ? "greener" : result === "two" ? "" : ""}">
             <p class="margin-0">${currentArray[i].co2e}</p>
           </div>
         </div>
@@ -1322,7 +1319,7 @@ function init() {
                 : ""
               }
           </div>
-          <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
+          <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg ${result === "one" ? "" : result === "two" ? "greener" : ""}">
             <p class="margin-0">${comparedArray[i].co2e}</p>
           </div>
         </div>
@@ -1349,6 +1346,30 @@ function init() {
       showElement(wrapper, "a");
     }
   }
+
+  /**
+   * @param {String} emissionsOne
+   * @param {String} emissionsTwo
+   * @returns returns null if co2e value is NaN, returns "one" if emissionsOne is less than emissionsTwo, returns "two" otherwise.
+   */
+  function findGreener(emissionsOne, emissionsTwo) {
+    const eOne = parseInt(emissionsOne);
+    const eTwo = parseInt(emissionsTwo);
+    if (isNaN(eOne) || isNaN(eTwo)) {
+      // This is a .greener class used to identify which phone is more eco-friendly
+      return null;
+    } else if (eOne < eTwo) {
+      return "one";
+    } else if (eOne > eTwo) {
+      return "two";
+    }
+  }
+
+  // case 1 --> get '--' : return null
+  // case 2 --> eOne greener: return "one"
+  // case 3 --> eTwo greener: return "two"
+  // if null --> return ""
+  // if "one" --> return "greener"
 
   /**
      * Function to create aligned storage arrays from arrays of objects
@@ -1458,7 +1479,7 @@ function init() {
     container.innerHTML += `
       <p class="phone-spec-title" id="currentPhone"><b>${deviceName} Carbon Emissions</b></p>
       <div class="flex-center cg-8 fz-16">
-        <p>Comparison: </p>
+        <p>CO2e Equivalency: </p>
         <select id="lca-viz-unit-select" class="br-4 pd-4">
           <option value="0">Trash burned 🔥</option>
           <option value="1">Miles driven 🚗</option>
@@ -1778,9 +1799,30 @@ function init() {
       }
     });
 
+    showGreenestOption(groundMode);
+
     console.log("ground mode: ", groundMode);
     console.log("airmode: ", airMode);
     return { groundMode, airMode };
+  }
+
+  /** Injects a banner into the fedex webpage to highlight the most eco-friendly shipping options in the given array.
+   * @param {Array} optionsArray Array containing a list of shipping options
+   */
+  function showGreenestOption(optionsArray) {
+    const availableOptions = document.querySelectorAll(".fdx-c-definitionlist__description--small");
+    availableOptions.forEach((option) => {
+      const formattedOption = option.outerText.toLowerCase().replace(/®/g, '');
+      console.log('formattedOptn = ' + formattedOption);
+      if (optionsArray.includes(formattedOption)) {
+        const parentNode =  option.parentNode.parentNode.parentNode.parentNode;
+        const priceButton = parentNode.querySelector('.magr-c-rates__button');
+
+        const newContainerHTML = ` <div class="lca-viz-greenest-shipping mb-16"> ${priceButton.outerHTML} <div class="flex-center br-4 pd-8 cg-8 green-shipping lca-viz-justify-center"> <img src="${lca_48}" alt="Most eco friendly" class="icon-16"> <span>Most eco-friendly</span> </div> </div> `;
+        // Replace the original button with the new container
+        priceButton.outerHTML = newContainerHTML;
+      }
+    });
   }
 
   /**

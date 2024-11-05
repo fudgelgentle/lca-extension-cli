@@ -383,7 +383,8 @@ p {
 
 #lca-viz-unit-select {
   border: 1px solid #247457;
-  background-color: #ebf0ee;
+  background-color: transparent;
+  font-family: "Lexend";
 }
 
 .lca-viz-unit-container {
@@ -612,4 +613,12 @@ p {
   padding: 8px 12px 8px 12px;
   width: 32px;
   font-family: "Lexend", sans-serif;
+}
+
+.greener {
+  background-color: #ECFFE8;
+  border: 1px solid #52B788;
+}
+.green-shipping {
+  background-color: var(--eco-green-100);
 }
