@@ -12,9 +12,6 @@ const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
 const lca_48 = chrome.runtime.getURL("../assets/img/lca-48.png");
 const plus_square_icon = chrome.runtime.getURL("../assets/img/plus-square-icon.png");
 const fire_black_icon = chrome.runtime.getURL("../assets/img/fire-black-icon.png");
-// const fire_grey_icon = chrome.runtime.getURL("../assets/img/fire-grey-icon.png");
-const hamburger_icon = chrome.runtime.getURL("../assets/img/hamburger-icon.png");
-const car_icon = chrome.runtime.getURL("../assets/img/car-icon.png");
 const red_trash_icon = chrome.runtime.getURL("../assets/img/red-trash-icon.png");
 const most_green_icon = chrome.runtime.getURL("../assets/img/most-green-icon.png");
 const equivalent_icon = chrome.runtime.getURL("../assets/img/equivalent-icon.png");
@@ -1481,9 +1478,9 @@ function init() {
       <div class="flex-center cg-8 fz-16">
         <p>CO2e Equivalency: </p>
         <select id="lca-viz-unit-select" class="br-4 pd-4">
-          <option value="0">Trash burned 🔥</option>
-          <option value="1">Miles driven 🚗</option>
-          <option value="2">Big Macs Eaten 🍔</option>
+          <option value="0">Miles driven 🚗</option>
+          <option value="1">Trees offset 🌳</option>
+          <option value="2">Beefs Consumed 🥩</option>
         </select>
       </div>
     `;
@@ -1522,22 +1519,19 @@ function init() {
 
               <div class="lca-viz-unit-div">
                 <div class="flex-center lca-viz-justify-center cg-8">
-                  <p class="margin-0 grey-text fz-16">${(co2eValue / 1.15).toFixed(2)} kg of trash burned</p>
-                  <img src="${fire_black_icon}" class="icon-16" alt="Trash">
+                  <p class="margin-0 grey-text fz-16">${Math.ceil(co2eValue * 2.5)} miles driven by a car &nbsp;🚗</p>
                 </div>
               </div>
 
               <div class="lca-viz-unit-div">
                 <div class="flex-center lca-viz-justify-center cg-8">
-                  <p class="margin-0 grey-text fz-16">${Math.ceil(co2eValue * 2.35)} miles driven by a car</p>
-                  <img src="${car_icon}" class="icon-16" alt="Car">
+                  <p class="margin-0 grey-text fz-16">${(co2eValue * 0.048).toFixed(1)} trees to offset CO2 &nbsp;🌳</p>
                 </div>
               </div>
 
               <div class="lca-viz-unit-div">
                 <div class="flex-center lca-viz-justify-center cg-8">
-                  <p class="margin-0 grey-text fz-16">${Math.ceil(co2eValue * 0.43)} Big Macs eaten</p>
-                  <img src="${hamburger_icon}" class="icon-16" alt="Hamburger">
+                  <p class="margin-0 grey-text fz-16">${(co2eValue *  0.033).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
                 </div>
               </div>
 

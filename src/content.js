@@ -8,6 +8,13 @@ const off_lca_btn = chrome.runtime.getURL("../assets/img/off-lca-btn.png");
 const loading_icon_2 = chrome.runtime.getURL("../assets/img/loading-icon-2.gif");
 const close_icon_red = chrome.runtime.getURL("../assets/img/close-icon-red.png");
 
+import { convertToWatts } from "./material-utils";
+import { convertToSeconds } from "./material-utils";
+import { findByIndex } from "./material-utils";
+import { createRatioSection } from "./material-utils";
+import { getParam } from "./material-utils";
+import { extractEmissionsFactor } from "./material-utils";
+
 window.onload = () => {
     const createLinkElement = (rel, href, crossorigin) => {
       let link = document.createElement("link");
@@ -20,7 +27,7 @@ window.onload = () => {
     };
 
     // TODO: Only load in the CSS if the url is valid
-    const allowedDomains = ["nature.com", "acm.org", "fedex.com", "azure.com"];
+    const allowedDomains = ["nature.com", "acm.org", "fedex.com", "azure.com", "fly.dev"];
     const allowedDomains2 = ["amazon.com", "bestbuy.com", "apple.com", "store.google.com", "samsung.com", "oppo.com", "huawei.com", "lenovo.com"];
     if (isDomainValid(allowedDomains) || isDomainValid(allowedDomains2)) {
       console.log('current domain is allowed, injecting css');
@@ -62,12 +69,14 @@ let globalSelectionData = {
   selection: null     // Will store a Selection
 };
 
+let relatedMaterialHTML = ``;
+let independentMaterialHTML = ``;
+let processesHTML = ``;
 
 const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
 
 function init() {
   trackRawMaterial();
-
   /**
    * Calculates the coordinates of an HTML element relative to the entire document.
    * @param {Element} element The target HTML element
@@ -133,48 +142,220 @@ function init() {
   }
 
   function handleUpDownBtnBehavior() {
-    const upBtnList = document.querySelectorAll(".lca-viz-up");
-    const downBtnList = document.querySelectorAll(".lca-viz-down");
-    const upDownBtnCount = upBtnList.length;
-    for (let i = 0; i < upDownBtnCount; i++) {
-      const parameterNode = getParameterNode(i);
-      parameterNode.addEventListener("input", () => {
-        const newWeight = parseFloat(parameterNode.value);
-        if (newWeight >= 1) {
-          const currentWeight = newWeight;
-          updateChartData(newWeight, i);
+    // ! case: ratio
+    const toggleOnContainers = document.querySelectorAll('.lca-viz-param-toggle-on');
+    if (toggleOnContainers) {
+      toggleOnContainers.forEach((container) => {
+        const ratioUpBtnList = container.querySelectorAll(".lca-viz-up");
+        const ratioDownBtnList = container.querySelectorAll(".lca-viz-down");
+        for (let j = 0; j < ratioUpBtnList.length; j++) {
+          const index = parseInt(ratioUpBtnList[j].parentElement.querySelector('.lca-viz-parameter-text').id.match(/\d+$/)[0]);
+          ratioUpBtnList[j].addEventListener("click", () => {
+            updateValueRatio(1, index);
+          });
+          ratioDownBtnList[j].addEventListener("click", () => {
+            updateValueRatio(-1, index);
+          });
         }
-      })
-      upBtnList[i].addEventListener("click", () => {
-        updateValue(1, i);
+        const inputNodeList = container.querySelectorAll(".input-ratio");
+        inputNodeList.forEach((input) => {
+          input.addEventListener("input", () => {
+            const newWeight = parseFloat(input.value);
+            if (newWeight >= 1) {
+              const index = parseInt(input.id.match(/\d+$/)[0]);
+              updateValueRatio(0, index, newWeight);
+            }
+          })
+        });
       });
-      downBtnList[i].addEventListener("click", () => {
-        updateValue(-1, i)
+    }
+
+
+    // ! case: independent
+    // toggle off
+    const toggleOffContainers = document.querySelectorAll('.lca-viz-param-toggle-off');
+    if (toggleOffContainers) {
+      toggleOffContainers.forEach((container) => {
+        const ratioUpBtnList = container.querySelectorAll(".lca-viz-up");
+        const ratioDownBtnList = container.querySelectorAll(".lca-viz-down");
+        for (let j = 0; j < ratioUpBtnList.length; j++) {
+          const index = parseInt(ratioUpBtnList[j].parentElement.querySelector('.lca-viz-parameter-text').id.match(/\d+$/)[0]);
+          ratioUpBtnList[j].addEventListener("click", () => {
+            updateValue(1, index);
+          });
+          ratioDownBtnList[j].addEventListener("click", () => {
+            updateValue(-1, index);
+          });
+        }
+        const inputNodeList = container.querySelectorAll(".input-normal");
+        inputNodeList.forEach((input) => {
+          input.addEventListener("input", () => {
+            const newWeight = parseFloat(input.value);
+            if (newWeight >= 1) {
+              const index = parseInt(input.id.match(/\d+$/)[0]);
+              updateValue(0, index, newWeight);
+            }
+          });
+        });
+      });
+    }
+
+    // independent
+    const independentContainer = document.querySelector('.lca-viz-independent-container');
+    if (independentContainer) {
+      const ratioUpBtnList = independentContainer.querySelectorAll(".lca-viz-up");
+      const ratioDownBtnList = independentContainer.querySelectorAll(".lca-viz-down");
+      for (let j = 0; j < ratioUpBtnList.length; j++) {
+        const index = parseInt(ratioUpBtnList[j].parentElement.querySelector('.lca-viz-parameter-text').id.match(/\d+$/)[0]);
+        ratioUpBtnList[j].addEventListener("click", () => {
+          updateValue(1, index);
+        });
+        ratioDownBtnList[j].addEventListener("click", () => {
+          updateValue(-1, index);
+        });
+      }
+      const inputNodeList = independentContainer.querySelectorAll(".input-normal");
+      inputNodeList.forEach((input) => {
+        input.addEventListener("input", () => {
+          const newWeight = parseFloat(input.value);
+          if (newWeight >= 1) {
+            const index = parseInt(input.id.match(/\d+$/)[0]);
+            updateValue(0, index, newWeight);
+          }
+        });
+      });
+    }
+
+    // !case: proccesses
+    // TODO:
+    const processesContainers = document.querySelectorAll('.lca-viz-processes-container .lca-viz-processes');
+    if (processesContainers) {
+      processesContainers.forEach((container) => {
+        const ratioUpBtnList = container.querySelectorAll(".lca-viz-up");
+        const ratioDownBtnList = container.querySelectorAll(".lca-viz-down");
+        for (let j = 0; j < ratioUpBtnList.length; j++) {
+          const index = parseInt(ratioUpBtnList[j].parentElement.querySelector('.lca-viz-parameter-text').id.match(/\d+$/)[0]);
+          ratioUpBtnList[j].addEventListener("click", () => {
+            const inputNode = ratioUpBtnList[j].parentNode.querySelector('.input-normal');
+            updateValueProcesses(1, index, inputNode);
+          });
+          ratioDownBtnList[j].addEventListener("click", () => {
+            const inputNode = ratioDownBtnList[j].parentNode.querySelector('.input-normal');
+            updateValueProcesses(-1, index, inputNode);
+          });
+        }
+        const inputNodeList = container.querySelectorAll(".input-normal");
+        inputNodeList.forEach((input) => {
+          input.addEventListener("input", () => {
+            const newWeight = parseFloat(input.value);
+            if (newWeight >= 1) {
+              const index = parseInt(input.id.match(/\d+$/)[0]);
+              updateValueProcesses(0, index, input, newWeight);
+            }
+          });
+        });
       });
     }
   }
 
-  function getParameterNode(index) {
-    const paramId = "lca-viz-param-" + index;
-    return document.getElementById(paramId);
+  function updateValueProcesses(weightChange, index, thisInput, newWeight = null) {
+    // Gets the other input node
+    const parentContainer = thisInput.closest('.lca-viz-param-fill');
+    const inputList = parentContainer.querySelectorAll('.lca-viz-parameter-text');
+    let otherInput;
+    if (inputList[0] === thisInput) {
+      otherInput = inputList[1];
+    } else {
+      otherInput = inputList[0];
+    }
+
+    let displayWeight = parseFloat(thisInput.value);
+    if (newWeight !== null) {
+      displayWeight = newWeight;
+    } else {
+        if (weightChange < 0 && displayWeight < 1) {
+            return;
+        }
+        displayWeight += weightChange;
+    }
+    thisInput.value = displayWeight;
+
+    let power;
+    let time;
+    if (thisInput.dataset.type === 'power') {
+      power = convertToWatts(thisInput.value, thisInput.dataset.valueUnit);
+      time = convertToSeconds(otherInput.value, otherInput.dataset.valueUnit);
+    } else if (thisInput.dataset.type === 'time') {
+      power = convertToWatts(otherInput.value, otherInput.dataset.valueUnit);
+      time = convertToSeconds(thisInput.value, thisInput.dataset.valueUnit);
+    }
+    // This is the 'weight' in kWh that will be used to update chart data
+    const weightKwh = (power * time) / (1000 * 3600);
+    console.log('power = ' + power);
+    console.log('time = ' + time);
+    console.log('weightKwh = ' + weightKwh);
+    updateChartData(weightKwh, index);
+  }
+
+  function updateValueRatio(weightChange, index, newWeight = null) {
+    console.log('index = ' + index);
+    const inputNode = document.getElementById('input-ratio-no-' + index);
+    const closestToggleContainer = inputNode.closest('.lca-viz-param-toggle-on');
+    const inputNodetoggleOff = document.getElementById('lca-viz-input-' + index);
+    let currentWeight = parseInt(inputNode.value);
+
+    if (newWeight !== null) {
+      currentWeight = newWeight;
+    } else {
+        if (weightChange < 0 && currentWeight <= 1) {
+            return;
+        }
+        currentWeight += weightChange;
+    }
+
+    const ratioValue = inputNode.dataset.ratioValue;
+    const scalingFactor = currentWeight / ratioValue;
+
+    updateChartData(currentWeight, index);
+    inputNode.value = currentWeight;
+    // inputNodetoggleOff.value = currentWeight;
+
+    // calculate the new weight of the related materials
+    const otherInputs = closestToggleContainer.querySelectorAll('.input-ratio');
+    otherInputs.forEach((otherInputNode) => {
+      if ( otherInputNode.id !== ('input-ratio-no-' + index) ) {
+        console.log('currentWeight = ' + otherInputNode.value);
+        const otherNewWeight = parseFloat((otherInputNode.dataset.ratioValue * scalingFactor).toFixed(2));
+        console.log('newWeight = ' + otherNewWeight);
+        const otherIndex = parseInt(otherInputNode.id.match(/\d+$/)[0]);
+        updateChartData(otherNewWeight, otherIndex);
+        const otherInputNodeToggleOff = document.getElementById('lca-viz-input-' + otherIndex);
+        otherInputNode.value = otherNewWeight;
+        // otherInputNodeToggleOff.value = otherNewWeight;
+      }
+    });
   }
 
   /**
-   *
-   * @param {number} emissionsFactor Represents the multiplier that adjusts the emissions value based on changes in the material's weight
-   * @param {number} weightChange Indicates the amount by which the material's weight is increased or decreased.
-   * @param {number} index The index used for identifying the parameter.
+   * This update value works for independent materials, and toggle-off materials
    */
-  function updateValue(weightChange, index) {
-    const parameterNode = getParameterNode(index);
-    const currentWeight = parseInt(parameterNode.value);
-    // If we are decreasing weight, make sure the current weight won't go below 1
-    if (weightChange < 0 && currentWeight <= 1) {
-      return;
+  function updateValue(weightChange, index, newWeight = null) {
+    console.log('weightChange = ' + weightChange);
+    console.log('index = ' + index);
+    const inputNode = document.getElementById('lca-viz-input-' + index);
+    console.log('inputNode = ');
+    console.log(inputNode);
+    let currentWeight = parseInt(inputNode.value);
+    if (newWeight !== null) {
+      currentWeight = newWeight;
+    } else {
+        if (weightChange < 0 && currentWeight <= 1) {
+            return;
+        }
+        currentWeight += weightChange;
     }
-    const newWeight = currentWeight + weightChange;
-    parameterNode.value = newWeight;
-    updateChartData(newWeight, index);
+    updateChartData(currentWeight, index);
+    inputNode.value = currentWeight;
   }
 
   /**
@@ -185,20 +366,90 @@ function init() {
    */
   function updateChartData(newWeight, index) {
     if (index !== -1) {
-      console.log('newWeight = ' + newWeight);
-      console.log('index = ' + index);
+      let emissionsFactor = 0;
+      const obj = findByIndex(currentChartData, index);
+      emissionsFactor = extractEmissionsFactor(obj.carbon_emission_factor).co2e_value;
       // emissionsFactor calculates the CO2-eq per kg value of a specific material.
-      const emissionsFactor = currentChartData[index].emissions_factor;
       console.log('emissions factor = ' + emissionsFactor);
       console.log('old emissions value: ', chart.data.datasets[0].data[index]);
-      let newEmissionsValue = emissionsFactor * newWeight;
-      newEmissionsValue = parseFloat(newEmissionsValue.toFixed(2));
+
+      let newEmissionsValue = parseFloat((emissionsFactor * newWeight).toFixed(2));
       console.log('new emissions value: ', newEmissionsValue);
       chart.data.datasets[0].data[index] = newEmissionsValue;
       chart.update();
     }
   }
 
+
+  /**
+   * Handles the "toggle ratio button" that involes toggling between normal parameter vs ratio mode.
+   * ! Note: can ONLY call this method ONCE
+   */
+  function handleToggleSwitch() {
+    const toggleSwitches = document.querySelectorAll(".lca-viz-toggle-checkbox");
+    const lcaVizMap = document.getElementById("lca-viz-map");
+    const originalWidth = lcaVizMap.scrollWidth;
+    console.log('originalWidth = ' + originalWidth);
+
+    function show(element) {
+      element.classList.remove('hidden');
+    }
+    function hide(element) {
+      element.classList.add('hidden');
+    }
+
+    toggleSwitches.forEach((toggleSwitch, index) => {
+      toggleSwitch.addEventListener("change", () => {
+        console.log('detected toggle switch clicking');
+        const uniqueId = document.getElementById("lca-viz-r-section-" + index);
+        const textDetails = uniqueId.querySelector('.lca-viz-ratio-detail-text');
+        const paramToggleOn = uniqueId.querySelector('.lca-viz-param-toggle-on');
+        const paramToggleOff = uniqueId.querySelector('.lca-viz-param-toggle-off');
+        // const originalWidth = lcaVizMap.scrollWidth;
+        const ratioTextList = uniqueId.querySelectorAll('.control-section');
+        ratioTextList.forEach((div) => {
+          if (div.innerText.length > 16) {
+            div.classList.add("fz-12")
+          }
+        })
+
+        if (toggleSwitch.checked) {
+          const ratioContainer = toggleSwitch.closest(".lca-viz-ratio-container");
+          const inputList = ratioContainer.querySelectorAll(".input-ratio");
+          inputList.forEach((input) => {
+            const newWeight = input.dataset.ratioValue;
+            const index = parseInt(input.id.match(/\d+$/)[0]);
+            updateValue(0, index, newWeight);
+          });
+          setTimeout(() => {
+            show(textDetails);
+            hide(paramToggleOff);
+            show(paramToggleOn);
+            // const newWidth = lcaVizMap.scrollWidth;
+            // console.log('newWidth = ' + newWidth);
+            // lcaVizMap.style.width = `${newWidth}px`;
+          }, 0);
+          paramToggleOn.style.width = "auto";
+          textDetails.style.height = "auto";
+        } else {
+          const ratioContainer = toggleSwitch.closest(".lca-viz-ratio-container");
+          const inputList = ratioContainer.querySelectorAll(".input-normal");
+          inputList.forEach((input) => {
+            const newWeight = 1;
+            const index = parseInt(input.id.match(/\d+$/)[0]);
+            updateValue(0, index, newWeight);
+          });
+
+          setTimeout(() => {
+            hide(textDetails);
+            hide(paramToggleOn);
+            show(paramToggleOff);
+            // lcaVizMap.style.width = `${originalWidth}px`;
+          }, 100);
+        }
+      });
+    });
+  }
   /**
    * Removes the old class from the element and adds in the new class.
    * @param {HTMLElement} element the target html element
@@ -225,11 +476,11 @@ function init() {
         previousHighlightedNode.removeEventListener("click", redisplayChart);
         resetHighlight(currentHighlightedNode);
       }
-      const rawMaterialData = await getValidSentence(selection.toString());
-      if (rawMaterialData) {
-        console.log("%j", rawMaterialData);
-        const rawMaterialsList = rawMaterialData.data.raw_materials;
-        console.log('rawMaterialsList: ', rawMaterialsList);
+      const materialData = await getValidSentence(selection.toString());
+      if (materialData) {
+        console.log("%j", materialData);
+        const materialList = materialData;
+        console.log('materialList: ', materialList);
 
         const fullText = parentNode.textContent;
         const startOffset = range.startOffset;
@@ -244,15 +495,40 @@ function init() {
 
         const div = document.createElement("div");
         div.classList.add("lca-viz-inline");
-        div.classList.add("lca-viz-highlight");
+        // div.classList.add("lca-viz-highlight");
 
-        let modifiedText = `<mark class="lca-viz-mark">${highlightedText}</mark>`;
-        rawMaterialsList.forEach((material) => {
-          const escapedMaterial = escapeRegExp(material);
-          const regex = new RegExp(`\\b${escapedMaterial}\\b`, 'gi');
-          console.log('regex = ' + regex);
-          modifiedText = modifiedText.replace(regex, `<span class="lca-viz-param-bold"><b>${material}</b></span>`);
+        let modifiedText = `<div class="lca-viz-mark lca-viz-inline">${highlightedText}</div>`;
+        const { rawMaterialNames, processesNames } = getAllNames(materialList);
+        rawMaterialNames.forEach((name) => {
+          const escapedName = escapeRegExp(name);
+          const regex = new RegExp(`\\b${escapedName}\\b`, 'gi');
+          modifiedText = modifiedText.replace(regex, `<span class="lca-viz-param-bold"><b>${name}</b></span>`);
         });
+        processesNames.forEach((process) => {
+          const escapedName = escapeRegExp(process.name);
+          const regexName = new RegExp(`\\b${escapedName}\\b`, 'gi');
+          modifiedText = modifiedText.replace(regexName, `<span class="lca-viz-param-bold"><b>${process.name}</b></span>`);
+
+          const escapedPower = escapeRegExp(String(process.power_original));
+          const regexPower = new RegExp(`\\b${escapedPower}\\b`, 'gi');
+
+          // getParam(process.name, process.index, process.power_original_unit, process.power_original, true, process.time_original_unit, process.time_original);
+          modifiedText = modifiedText.replace(regexPower,
+            `<div class="lca-viz-processes-intext-${process.index} lca-viz-inline" data-value="${process.power_original}">
+            ${createUpDownBtn(process.index, process.power_original_unit, process.power_original, "power")}
+            </div>`
+          );
+          // <span class="lca-viz-original-time-text">${process.power_original}</span>
+          const escapedTime = escapeRegExp(String(process.time_original));
+          const regexTime = new RegExp(`\\b${escapedTime}\\b`, 'gi');
+          modifiedText = modifiedText.replace(regexTime,
+            `<div class="lca-viz-processes-intext-${process.index} lca-viz-inline" data-value="${process.time_original}">
+            ${createUpDownBtn(process.index, process.time_original_unit, process.time_original, "time")}
+            </div>`
+          );
+          // <span class="lca-viz-original-time-text">${process.time_original}</span>
+        });
+
         modifiedText = modifiedText + `
           <div class="lca-viz-inline" id="lca-viz-end">
             <img src="${off_lca_btn}" alt="Turn off the LCA visualizer" class="icon-10 off-lca-btn lca-viz-hidden">
@@ -288,7 +564,7 @@ function init() {
         })
 
         hideLCAActionBtn();
-        initializeChart(rawMaterialData);
+        initializeChart(materialData);
       } else {
         console.log('rawMaterial data is null');
         setLCAActionBtnState("error");
@@ -296,72 +572,64 @@ function init() {
     }
   }
 
+  function getAllNames(materialList) {
+    let rawMaterialNames = [];
+    let processesNames = [];
+    // Check for raw materials and related materials -> ratio
+    if (materialList.raw_materials?.related_materials) {
+      materialList.raw_materials.related_materials.forEach((relatedMaterial) => {
+        if (relatedMaterial.ratio) {
+          relatedMaterial.ratio.forEach((item) => {
+            rawMaterialNames.push(item.name);
+          });
+        }
+      });
+    }
+    // Check for raw materials and independent materials
+    if (materialList.raw_materials?.independent_materials) {
+      materialList.raw_materials.independent_materials.forEach((independentMaterial) => {
+        rawMaterialNames.push(independentMaterial.name);
+      });
+    }
+    // Check for processes
+    if (materialList.processes) {
+      materialList.processes.forEach((process) => {
+        processesNames.push({
+          "name": process.name,
+          "power_original": process.power_original,
+          "power_original_unit": process.power_original_unit,
+          "time_original": process.time_original,
+          "time_original_unit": process.time_original_unit,
+          "index": process.index
+        });
+      });
+    }
+    return {
+      rawMaterialNames: rawMaterialNames,
+      processesNames: processesNames
+    };
+  }
+
   // Escape special characters in material names for regex
   function escapeRegExp(text) {
     return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   }
 
-  function initializeChart(data) {
-    const chartData = getChartEmissionsData(data);
+  function initializeChart(rawMaterialData) {
+    currentChartData = rawMaterialData;
 
-    // ! Later on this should be a for-loop to get the key-value pair from each raw material object
-    let parameter = chartData[0].emissions;
-    let materialName = chartData[0].name;
-    let chartConfig = getChartConfig(materialName);
+    let chartConfig = getChartConfig();
     // Remove the previous chart, reset the 'chart' global variable
     const chartContainer = document.getElementById("lca-viz-map");
     if (chartContainer) {
       chartContainer.remove();
+      chartContainer.innerHTML = ``;
       chart.destroy();
       chart = null;
     }
-    createChart(chartConfig, chartData);
+    createChart(chartConfig);
     const resetChartPosition = true;
     makeChartVisible(resetChartPosition);
-  }
-
-  // TODO: Return the real emissions of each raw material (how many kg CO2-eq) using
-  // TODO: the '/api/material-emissions' api.
-  /**
-   *
-   * @param {JSON} rawMaterialData A list of different raw materials in JSON format.
-   * @returns The name for each raw material and its corresponding carbon emissions.
-   */
-  function getChartEmissionsData(rawMaterialData) {
-    // ! This is the mock data
-    let data = [
-      {
-        "name": "Copper foil",
-        "emissions": "0.97",
-        "emissions_factor": "0.97"
-      },
-      {
-        "name": "Vitrimer polymer",
-        "emissions": "2.5",
-        "emissions_factor": "2.5",
-      },
-      {
-        "name": "Epoxy (EPON 828)",
-        "emissions": "0.2",
-        "emissions_factor": "0.2",
-      },
-      {
-        "name": "Adipic acid",
-        "emissions": "0.1",
-        "emissions_factor": "0.1",
-      },
-      {
-        "name": "1,5,7-triazabicyclo[4.4.0]dec-5-ene (TBD)",
-        "emissions": "3.24",
-        "emissions_factor": "3.24"
-      },
-      {
-        "name": "Woven glass fibre sheets",
-        "emissions": "9.1",
-        "emissions_factor": "9.1"
-      }
-    ];
-    return data;
   }
 
   function setLCAActionBtnState(state) {
@@ -419,12 +687,16 @@ function init() {
     }
   }
 
-  function createUpDownBtn(element, parameter) {
+  /**
+   * Returns the HTML for up and down button given the parameter.
+   * @param {String || Number} parameter The parameter of the raw material
+   */
+  function createUpDownBtn(index, unit, defaultValue, type) {
     const upDownBtn = `
           <div class="lca-viz-special-text-container-2">
-            <div class="lca-viz-special-text-2 lca-viz-active-st">
-              <span id="lca-viz-parameter-2">${parameter}</span>
-              <div class="lca-viz-up-down-btn-container">
+            <div class="lca-viz-special-text-intext lca-viz-active-st">
+              <input class="lca-viz-parameter-text input-normal lca-viz-parameter-2" id="lca-viz-input-${index}" data-type="${type}" data-value-unit="${unit}" type="number" value="${defaultValue}">
+              <div class="lca-viz-up-down-btn-container-intext flex-column">
                 <div class="lca-viz-active lca-viz-up-down-btn" id="up">
                   <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                     <path d="M3.60595 1.24256C3.99375 0.781809 4.7032 0.781808 5.091 1.24256L8.00777 4.70806C8.53906 5.3393 8.09032 6.30353 7.26525 6.30353L1.4317 6.30353C0.606637 6.30353 0.157892 5.33931 0.689181 4.70807L3.60595 1.24256Z" fill="currentColor"/>
@@ -439,27 +711,29 @@ function init() {
             </div>
           </div>
     `;
-    // * Original code for the display button:
     // ~~ DO NOT DELETE
     // <div title="Click to display CO2 emissions" class="display-chart-btn-container lca-on">
     //   <svg width="24" height="24" class="display-chart-btn eye-on" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
     //     <path d="M10.7429 5.09232C11.1494 5.03223 11.5686 5 12.0004 5C17.1054 5 20.4553 9.50484 21.5807 11.2868C21.7169 11.5025 21.785 11.6103 21.8231 11.7767C21.8518 11.9016 21.8517 12.0987 21.8231 12.2236C21.7849 12.3899 21.7164 12.4985 21.5792 12.7156C21.2793 13.1901 20.8222 13.8571 20.2165 14.5805M6.72432 6.71504C4.56225 8.1817 3.09445 10.2194 2.42111 11.2853C2.28428 11.5019 2.21587 11.6102 2.17774 11.7765C2.1491 11.9014 2.14909 12.0984 2.17771 12.2234C2.21583 12.3897 2.28393 12.4975 2.42013 12.7132C3.54554 14.4952 6.89541 19 12.0004 19C14.0588 19 15.8319 18.2676 17.2888 17.2766M3.00042 3L21.0004 21M9.8791 9.87868C9.3362 10.4216 9.00042 11.1716 9.00042 12C9.00042 13.6569 10.3436 15 12.0004 15C12.8288 15 13.5788 14.6642 14.1217 14.1213" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
     //   </svg>
     // </div>
-
-    element.innerHTML = upDownBtn;
+    return upDownBtn;
   }
 
+  /**
+   * Replaces an HTML element with a new tag while retaining its styles, classes, attributes, and content.
+   * @param {*} oldNode
+   * @param {*} newTagName
+   * @param {*} newClasses
+   * @returns The modified node
+   */
   function replaceTagNameAndKeepStyles(oldNode, newTagName, newClasses) {
     const newNode = document.createElement(newTagName);
     newNode.classList.add(...newClasses);
-
     // Copy existing classes
     oldNode.classList.forEach((cls) => newNode.classList.add(cls));
-
     // Copy inline styles
     newNode.style.cssText = oldNode.style.cssText;
-
     // Copy the content of old node into the new node
     while (oldNode.firstChild) {
       newNode.appendChild(oldNode.firstChild);
@@ -474,19 +748,20 @@ function init() {
   }
 
 
-  // Uses LLM to determine the relevant sentences that can be used to display a carbon chart.
-  // Returns a JSON that contains information about each identified raw materials and their parameters.
-  // If the highlightedText does not have sufficient information, the data will return null.
+  /**
+   * Takes in a sentence and uses LLM to determine the relevant sentences that can be used to display a carbon chart.
+   * Returns a JSON that contains information about each identified raw materials and their parameters.
+   * If the highlightedText does not have sufficient information, the data will return null.
+   * @param {String} highlightedText
+   * @returns a JSON that contains information about each identified raw materials and their parameters.
+   */
   async function getValidSentence(highlightedText) {
-
     console.log('***HIGHLIGHTED TEXT****');
     console.log(highlightedText);
     console.log('***HIGHLIGHTED TEXT****');
-
     const jsonObject = {
       "text": highlightedText
     }
-
     try {
       const response = await fetch(LCA_SERVER_URL + "/api/evaluate-text", {
         method: "POST",
@@ -498,11 +773,13 @@ function init() {
 
       if (response.ok) {
         const responseData = await response.json();
-        if (responseData.data) {
+        if (responseData) {
           return responseData;
         }
+        console.log('responseData doesnt have the expected structure');
         return null; // If responseData doesn't have the expected structure
       } else {
+        console.log('response not okay');
         setLCAActionBtnState("error");
         return null;
       }
@@ -518,8 +795,9 @@ function init() {
   }
 
   function trackRawMaterial() {
-    let allowedDomains = ["nature.com", "acm.org"];
+    let allowedDomains = ["nature.com", "acm.org", "fly.dev"];
     if (isDomainValid(allowedDomains)) {
+      console.log('trackRawMaterial enabled');
       recordCurrentMouseCoord();
       handleHighlightText();
     }
@@ -625,19 +903,24 @@ function init() {
     });
   }
 
-  function getChartConfig(materialName) {
-    const textContent = document.body.innerText;
-    const carbonInfo = extractCarbonInfo(textContent);
-    const chartConfig = getCarbonData(carbonInfo, materialName);
-    return chartConfig;
-  }
-
   // TODO: Implement a function that only extract relevant keywords and parameters
   function extractCarbonInfo(text) {
     return text;
   }
 
-  function createChart(chartConfig, paramList) {
+  /**
+   * Creates an interactive chart from Chart.js given the chart configuration and info about the raw materials + parameters.
+   * @param {Object} chartConfig An object specifying the properties for Chart.js
+   * @param {Array} paramList An array of object containing the raw materials and their parameters. For example:
+   *        let data = [
+                      {
+                        "name": "Copper foil",
+                        "emissions": "0.97",
+                        "emissions_factor": "0.97"
+                      },
+                ]
+   */
+  function createChart(chartConfig) {
     clearTimeout(selectionTimeout);
     if (!chart) {
       const map = document.createElement('div');
@@ -647,13 +930,7 @@ function init() {
       const paramContainer = document.createElement('div');
       paramContainer.classList.add('lca-viz-param-container');
 
-      let i = 0;
-      paramList.forEach((param) => {
-        const placeholder = document.createElement('div');
-        placeholder.innerHTML = getParam(param.name, i);
-        paramContainer.appendChild(placeholder);
-        i++;
-      })
+      paramContainer.innerHTML = relatedMaterialHTML + independentMaterialHTML + processesHTML;
 
       map.innerHTML = `
         <div class="flex-center lca-viz-header cg-12 pd-12">
@@ -701,37 +978,8 @@ function init() {
       setChartPosition();
       handleCloseButton();
       handleUpDownBtnBehavior();
+      handleToggleSwitch();
     }
-  }
-
-  function getParam(rawMaterialName, index) {
-    const paramId = "lca-viz-param-" + index;
-    const paramDiv = `
-      <div class="lca-viz-param-fill flex-center br-8 fz-16">
-            <span>${rawMaterialName}</span>
-            <div class="flex-center cg-4">
-              <div class="lca-viz-special-text-container-2">
-                <div class="lca-viz-special-text-2 lca-viz-active-st">
-                  <div class="lca-viz-up-down-btn-container">
-                    <div class="lca-viz-active lca-viz-up-down-btn lca-viz-down">
-                      <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M5.09107 5.74914C4.70327 6.20989 3.99382 6.20989 3.60602 5.74914L0.689251 2.28363C0.157962 1.65239 0.606707 0.688168 1.43177 0.688168L7.26532 0.688168C8.09039 0.688168 8.53913 1.65239 8.00784 2.28363L5.09107 5.74914Z" fill="currentColor"/>
-                      </svg>
-                    </div>
-                    <input class="lca-viz-parameter-text" id="${paramId}" type="number" value="1">
-                    <div class="lca-viz-active lca-viz-up-down-btn lca-viz-up">
-                      <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M3.60595 1.24256C3.99375 0.781809 4.7032 0.781808 5.091 1.24256L8.00777 4.70806C8.53906 5.3393 8.09032 6.30353 7.26525 6.30353L1.4317 6.30353C0.606637 6.30353 0.157892 5.33931 0.689181 4.70807L3.60595 1.24256Z" fill="currentColor"/>
-                      </svg>
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <span>kg</span>
-            </div>
-          </div>
-    `;
-    return paramDiv;
   }
 
   function setChartPosition() {
@@ -739,6 +987,9 @@ function init() {
     chartContainer.style.left = `${chartPosX + chartScrollX + 8}px`;
   }
 
+  /**
+   * Handles closing the chart behavior
+   */
   function handleCloseButton() {
     document.getElementById("lca-viz-close-map").addEventListener("click", () => {
       hideChart();
@@ -783,43 +1034,14 @@ function init() {
    * @param {String} carbonInfo
    * @returns JSON Object
    */
-  function getCarbonData(carbonInfo, legendTitle) {
-    carbonInfo;
+  function getChartConfig() {
     // This is the dummy data
-    const cData = [
-      {
-        "name": "Copper foil",
-        "emissions": "0.97",
-        "emissions_factor": "0.97"
-      },
-      {
-        "name": "Vitrimer polymer",
-        "emissions": "2.5",
-        "emissions_factor": "2.5",
-      },
-      {
-        "name": "Epoxy (EPON 828)",
-        "emissions": "0.2",
-        "emissions_factor": "0.2",
-      },
-      {
-        "name": "Adipic acid",
-        "emissions": "0.1",
-        "emissions_factor": "0.1",
-      },
-      {
-        "name": "1,5,7-triazabicyclo[4.4.0]dec-5-ene (TBD)",
-        "emissions": "3.24",
-        "emissions_factor": "3.24"
-      },
-      {
-        "name": "Woven glass fibre sheets",
-        "emissions": "9.1",
-        "emissions_factor": "9.1"
-      }
-    ];
-
-    currentChartData = cData;
+    // const cData = currentChartData;
+    console.log('currentChartData = ');
+    console.dir(currentChartData);
+    const cData = extractNameAndEmissions(currentChartData);
+    console.log('cData = ');
+    console.dir(cData);
 
     const rawLabels = cData.map(item => item.name);
     const emissionsData = cData.map(item => item.emissions);
@@ -837,7 +1059,12 @@ function init() {
           'rgba(75, 192, 192, 0.2)',
           'rgba(54, 162, 235, 0.2)',
           'rgba(153, 102, 255, 0.2)',
-          'rgba(201, 203, 207, 0.2)'
+          'rgba(201, 203, 207, 0.2)',
+          'rgba(255, 127, 80, 0.2)',
+          'rgba(144, 238, 144, 0.2)',
+          'rgba(173, 216, 230, 0.2)',
+          'rgba(221, 160, 221, 0.2)',
+          'rgba(240, 128, 128, 0.2)'
         ],
         borderColor: [
           'rgb(255, 99, 132)',
@@ -846,7 +1073,12 @@ function init() {
           'rgb(75, 192, 192)',
           'rgb(54, 162, 235)',
           'rgb(153, 102, 255)',
-          'rgb(201, 203, 207)'
+          'rgb(201, 203, 207)',
+          'rgb(255, 127, 80)',
+          'rgb(144, 238, 144)',
+          'rgb(173, 216, 230)',
+          'rgb(221, 160, 221)',
+          'rgb(240, 128, 128)'
         ],
         borderWidth: 1
       }]
@@ -896,9 +1128,78 @@ function init() {
   }
 }
 
+function extractNameAndEmissions(data) {
+  independentMaterialHTML = ``;
+  relatedMaterialHTML = ``;
+  processesHTML = ``;
+  const results = [];
+  // Keeps track of the index of every parameter object
+  // Process raw materials - related materials ratios
+  if (data.raw_materials?.related_materials) {
+    data.raw_materials.related_materials.forEach((material, index) => {
+      if (material.ratio) {
+        const ratioList = material.ratio;
+        relatedMaterialHTML += createRatioSection(ratioList, index);
+
+        material.ratio.forEach(item => {
+          results.push({
+            name: item.name,
+            emissions: extractEmissionsFactor(item.carbon_emission_factor).co2e_value
+          });
+        });
+      }
+    });
+  }
+  // Process raw materials - independent materials
+  if (data.raw_materials?.independent_materials) {
+    const independentList = data.raw_materials.independent_materials;
+    independentMaterialHTML = "<div class='lca-viz-independent-container'>" + independentList.map((item, index) => {
+      const emissionsAmount = item.amount * extractEmissionsFactor(item.carbon_emission_factor).co2e_value
+      results.push({
+        name: item.name,
+        emissions: emissionsAmount,
+      });
+      return getParam(item.name, item.index, 'g', item.amount, undefined, undefined, undefined);
+    }).join('') + "</div>";
+  }
+  // Process processes
+  if (data.processes) {
+    const processesList = data.processes;
+    processesHTML = "<div class='lca-viz-processes-container'>" + processesList.map((process) => {
+      const emissionsFactor = extractEmissionsFactor(process.carbon_emission_factor).co2e_value;
+      const emissionsAmount = calculateProcessesEmissions(process.power, process.time, emissionsFactor);
+      results.push({
+        name: process.name,
+        emissions: emissionsAmount,
+      });
+      return getParam(process.name, process.index, process.power_original_unit, process.power_original, true, process.time_original_unit, process.time_original);
+    }).join('')  + "</div>";
+  }
+  return results;
+}
+
+/**
+ * Takes in power, time, and emissionsFactor and returns the carbon emissions
+ * @param {Number} power in watts
+ * @param {Number} time in seconds
+ * @param {Number} emissionsFactor the emissions factor (~ g CO2-eq per kWh)
+ */
+function calculateProcessesEmissions(power, time, emissionsFactor) {
+  const kWh = (power * time) / (1000 * 3600);
+  const co2e_value = parseFloat(kWh * emissionsFactor.toFixed(2));
+  return co2e_value;
+}
+
 export function isDomainValid(domainList) {
   let allowedDomains = domainList;
   const currentDomain = getBaseDomain(window.location.hostname);
+
+  console.log('currentDomain = ' + currentDomain);
+  // Manually allow the specific URL
+  if (currentDomain === "fly.dev") {
+    return true;
+  }
+
   if (allowedDomains.includes(currentDomain)) {
     return true;
   } else {

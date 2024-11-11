@@ -53,9 +53,11 @@
   /* pointer-events: none; */
   opacity: 0;
   cursor: grab;
-  transition: opacity 0.5s ease-in-out;
-  max-width: 600px;
+  transition: opacity 0.5s ease-in-out, width 0.5s ease;
   padding-top: 64px; /* Add enough padding for the header */
+  max-height: 90vh;
+  max-width: 700px;
+  overflow-y: scroll;
 }
 
 #lca-viz-map.lca-viz-visible {
@@ -90,6 +92,7 @@
   border-radius: 2px;
   text-align: center;
   width: 3em;
+  font-family: "Lexend";
 }
 .lca-viz-parameter-text::-webkit-inner-spin-button,
 .lca-viz-parameter-text::-webkit-outer-spin-button {
@@ -171,7 +174,13 @@
 }
 
 /* * CSS Rule for the up-and-down btn ONLY */
-.lca-viz-param-container > * {
+.lca-viz-param {
+  justify-content: space-between;
+  background-color: #EEF2F0;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+.lca-viz-param-container > *, .lca-viz-independent-container > *, .lca-viz-processes-container > * {
   margin-top: 12px;
 }
 .lca-viz-param-fill {
@@ -189,9 +198,17 @@
 }
 .lca-viz-special-text-2 {
   display: flex;
-  /* outline: 2px solid #39805F; */
   border-radius: 5px;
   padding: 8px;
+  margin: 4px;
+  align-items: center;
+  gap: 10px;
+}
+.lca-viz-special-text-intext {
+  display: flex;
+  outline: 2px solid #39805F;
+  border-radius: 5px;
+  padding: 5px 5px 5px 10px;
   margin: 4px;
   align-items: center;
   gap: 10px;
@@ -200,6 +217,11 @@
   display: flex;
   flex-direction: row;
   column-gap: 8px;
+}
+.lca-viz-up-down-btn-container-intext {
+  display: flex;
+  flex-direction: column;
+  row-gap: 3px;
 }
 .lca-viz-up-down-btn {
   padding: 0px 6px 0px 6px;
@@ -223,10 +245,9 @@
   background-color: #F5F5F5;
 }
 .lca-viz-active-st {
-  /* background-color: #F2FFF9; */
   background-color: white;
 }
-.lca-viz-up-down-btn-container .lca-viz-up-down-btn svg {
+.lca-viz-up-down-btn-container .lca-viz-up-down-btn svg, .lca-viz-up-down-btn-container-intext .lca-viz-up-down-btn svg {
   width: 0.7em;
   height: 0.7em;
 }
@@ -260,3 +281,100 @@
   text-decoration: none !important;
   background-color: unset !important;
 }
+
+
+/* & CSS Rule for Ratio part */
+.lca-viz-ratio-container {
+  position: relative;
+  outline: 1px solid #52B788;
+}
+.lca-viz-ratio-text {
+  /* top, right, bottom, left */
+  padding: 4px 8px 4px 8px;
+}
+.lca-viz-text-source {
+  color: #575757;
+  margin-left: 4px;
+}
+.lca-viz-empty-space {
+  width: 100px;
+}
+.lca-viz-ratio-control-container {
+}
+.lca-viz-ratio-control {
+  text-align: center;
+  /* height: 100px; */
+}
+.control-section {
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.bg-eef2f0 {
+  background-color: #EEF2F0;
+}
+.bg-d2ead7 {
+  background-color: #D2EAD7;
+}
+
+.lca-viz-param-toggle-off > * {
+  margin-top: 12px;
+}
+
+.lca-viz-param-toggle-on {
+  width: 0;
+  transition: width 0.5s ease;
+}
+.lca-viz-ratio-detail-text {
+  height: 0px;
+  transition: height 0.5s ease;
+}
+
+  /* *CSS Rule for toggle switch */
+  .lca-viz-toggle {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+  }
+  .lca-viz-toggle-container {
+    position: relative;
+    width: 32px;
+    height: 13.5px;
+  }
+  .lca-viz-toggle-checkbox {
+    display: none;
+  }
+  .lca-viz-toggle-label {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: white;
+    outline: 1px solid #52B788;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+  }
+  .lca-viz-toggle-label::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 10px;
+    height: 10px;
+    background-color: #52B788;
+    border-radius: 50%;
+    transition: transform 0.3s;
+  }
+  .lca-viz-toggle-checkbox:checked + .lca-viz-toggle-label {
+    background-color: #D3EDE5;
+    outline: none;
+  }
+  .lca-viz-toggle-checkbox:checked + .lca-viz-toggle-label::after {
+    transform: translateX(17px);
+  }
+  /* *CSS Rule for toggle switch */
+
+/* & CSS Rule for Ratio part */

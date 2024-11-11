@@ -229,7 +229,6 @@ p {
   display: flex;
   align-items: stretch;
 }
-
 .lca-viz-justify-center {
   justify-content: center;
 }
@@ -240,6 +239,9 @@ p {
 .flex-column-center {
   display: flex;
   align-items: center;
+  flex-direction: column;
+}
+.flex-column {
   flex-direction: column;
 }
 .lca-banner {

@@ -60,6 +60,10 @@
 				"src": "./src/phone-utils.js"
 			},
 			{
+				"name": "material-utils",
+				"src": "./src/material-utils.js"
+			},
+			{
 				"name": "popup",
 				"src": "./src/popup.js"
 			}
