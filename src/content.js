@@ -27,7 +27,7 @@ window.onload = () => {
     };
 
     // TODO: Only load in the CSS if the url is valid
-    const allowedDomains = ["nature.com", "acm.org", "arxiv.org", "acs.org", "fedex.com", "azure.com", "fly.dev"];
+    const allowedDomains = ["nature.com", "acm.org", "arxiv.org", "acs.org", "wiley.com", "fedex.com", "azure.com", "fly.dev"];
     const allowedDomains2 = ["amazon.com", "bestbuy.com", "apple.com", "store.google.com", "samsung.com", "oppo.com", "huawei.com", "lenovo.com"];
     if (isDomainValid(allowedDomains) || isDomainValid(allowedDomains2)) {
       console.log('current domain is allowed, injecting css');
@@ -933,7 +933,7 @@ function init() {
   }
 
   function trackRawMaterial() {
-    let allowedDomains = ["nature.com", "acm.org", "arxiv.org", "acs.org", "fly.dev"];
+    let allowedDomains = ["nature.com", "acm.org", "arxiv.org", "acs.org", "wiley.com", "fly.dev"];
     if (isDomainValid(allowedDomains)) {
       console.log('trackRawMaterial enabled');
       recordCurrentMouseCoord();
