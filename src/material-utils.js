@@ -91,7 +91,7 @@ export function getParam(rawMaterialName, index, unit, defaultVal = 1, isProcess
         <span>${rawMaterialName}</span>
         <div class="flex-center cg-4">
           <div class="lca-viz-special-text-container-2 ${isProcesses ? 'lca-viz-processes': ''}">
-            <div class="lca-viz-special-text-2 lca-viz-active-st">
+            <div class="lca-viz-special-text-2 lca-viz-active-st lca-viz-control-${index}-power">
               <div class="lca-viz-up-down-btn-container">
                 <div class="lca-viz-active lca-viz-up-down-btn lca-viz-down">
                   <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
@@ -110,7 +110,7 @@ export function getParam(rawMaterialName, index, unit, defaultVal = 1, isProcess
           <span>${unit}</span>
           ${ isProcesses ?
           `<div class="lca-viz-special-text-container-2 ${isProcesses ? 'lca-viz-processes': ''}">
-            <div class="lca-viz-special-text-2 lca-viz-active-st">
+            <div class="lca-viz-special-text-2 lca-viz-active-st lca-viz-control-${index}-time">
               <div class="lca-viz-up-down-btn-container">
                 <div class="lca-viz-active lca-viz-up-down-btn lca-viz-down">
                   <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">

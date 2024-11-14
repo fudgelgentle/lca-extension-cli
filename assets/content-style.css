@@ -50,19 +50,25 @@
   z-index: 999999;
   background-color: white;
   padding: 20px;
-  /* pointer-events: none; */
   opacity: 0;
+  pointer-events: none;
+  user-select: none;
   cursor: grab;
-  transition: opacity 0.5s ease-in-out, width 0.5s ease;
+  transition: opacity 0.5s ease, width 0.5s ease;
   padding-top: 64px; /* Add enough padding for the header */
   max-height: 90vh;
   max-width: 700px;
   overflow-y: scroll;
 }
 
-#lca-viz-map.lca-viz-visible {
+#lca-viz-map.lca-viz-map-hidden {
+  opacity: 0;
+}
+
+#lca-viz-map.lca-viz-map-visible {
   opacity: 1;
   pointer-events: auto;
+  user-select: auto;
 }
 
 #lca-viz-carbon-chart {

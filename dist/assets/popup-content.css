@@ -244,6 +244,9 @@ p {
 .flex-column {
   flex-direction: column;
 }
+.lca-viz-text-align-center {
+  text-align: center;
+}
 .lca-banner {
   display: flex;
   flex-wrap: nowrap;

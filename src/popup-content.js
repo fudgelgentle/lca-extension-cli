@@ -6,6 +6,8 @@
 
 import { isDomainValid } from "./content";
 import { detectPhoneModel } from "./phone-utils";
+import { getPhoneCarbonData } from "./phone-utils";
+import { getRecommendedModels } from "./phone-utils";
 
 const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
 
@@ -33,6 +35,9 @@ document.body.append(placeholder);
 const shadowRoot = placeholder.attachShadow({ mode: "open" });
 shadowRoot.appendChild(masterContainer);
 
+let currentPhoneData;
+let currentRecommendedPhones;
+
 let regionText = "Waiting for input....";
 let cloudSizeText = "Waiting for input....";
 let isYesNoButtonClicked = false;
@@ -48,16 +53,22 @@ function init() {
     await loadCSS(chrome.runtime.getURL("../assets/popup-content.css"));
 
     trackFreight();
-    trackPhone();
+    await trackPhone();
     trackCloud();
   }
 
-  function trackPhone() {
+  async function trackPhone() {
     // Example usage
     const pageTitle = document.title;
     const phoneModel = detectPhoneModel(pageTitle);
     const allowedDomains = ["amazon.com", "bestbuy.com", "apple.com", "store.google.com", "samsung.com", "oppo.com", "huawei.com", "lenovo.com"];
     if (phoneModel && isDomainValid(allowedDomains)) {
+      try {
+        currentPhoneData = await getPhoneCarbonData(phoneModel);
+        currentRecommendedPhones = await getRecommendedModels(currentPhoneData.device);
+      } catch (error) {
+        console.error(error);
+      }
       injectPopupContent("phone");
     }
   }
@@ -522,7 +533,7 @@ function init() {
               </svg>
             </div>
             <p class="margin-0 fz-20">Select phone model</p>
-            <p class="phone-spec-title fz-12">Comparing with: <b>iPhone 15 Pro</b></p>
+            <p class="phone-spec-title fz-12">Comparing with: <span id="lca-viz-compare-with"><b>iPhone 15 Pro</b></span></p>
             <div class="search-container br-8 pd-16 fz-16">
               <input type="text" id="search-phone" class="grey-text fz-16" placeholder="Search..." title="Type to search for phone models">
               <div class="phone-model-container">
@@ -549,7 +560,7 @@ function init() {
     showElement(phoneSpecContainer, "a");
     comparePhone.classList.remove("hidden-a");
     displayPhoneSpecEmissions();
-    handlePhoneCompare();
+    await handlePhoneCompare();
     handlePhoneSearch();
   }
 
@@ -1159,14 +1170,15 @@ function init() {
   /**
    * Handles the interaction of the phone comparison, including the compare and close button
    */
-  function handlePhoneCompare() {
+  async function handlePhoneCompare() {
     const compareBtn = shadowRoot.querySelector(".compare-btn");
     const comparePhone = shadowRoot.querySelector(".compare-phone");
     const compareContainer = shadowRoot.querySelector(".compare-container");
     const slideContent = shadowRoot.querySelector(".slide-content");
 
+    await populatePhoneModel();
     compareBtn.addEventListener("click", async () => {
-      await populatePhoneModel();
+      // await populatePhoneModel();
       comparePhone.classList.add("down");
       compareContainer.classList.add("hide");
       slideContent.classList.add("slide-down");
@@ -1269,9 +1281,11 @@ function init() {
 
   // Display a side-by-side carbon emissions comparison of two phones
   function displaySideBySideComparison(phoneId) {
-    const phoneModelList = importPhoneModel();
+    // const phoneModelList = getRecommendedModels();
+    const phoneModelList = currentRecommendedPhones;
 
-    const currentPhone = getSampleData();
+    // const currentPhone = getMockData();
+    const currentPhone = currentPhoneData;
     const comparedPhone = phoneModelList.find((phone) => phone.id === phoneId);
 
     const wrapper = shadowRoot.querySelector(".side-by-side-section");
@@ -1285,10 +1299,7 @@ function init() {
       <img src="${red_trash_icon}" class="icon-16 trash-btn" alt="remove device">
     `;
 
-    let arrayResult = alignStorageArrays(
-      currentPhone.carbonFootprint,
-      comparedPhone.carbonFootprint
-    );
+    let arrayResult = alignStorageArrays(currentPhone.specs, comparedPhone.specs);
     let currentArray = arrayResult[0];
     let comparedArray = arrayResult[1];
 
@@ -1305,7 +1316,7 @@ function init() {
               }
           </div>
           <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg ${result === "one" ? "greener" : result === "two" ? "" : ""}">
-            <p class="margin-0">${currentArray[i].co2e}</p>
+            <p class="margin-0">${currentArray[i].co2e !== '--' ? currentArray[i].co2e + ' kg CO2e': '--'} </p>
           </div>
         </div>
         <div class="details-container fz-16">
@@ -1317,13 +1328,10 @@ function init() {
               }
           </div>
           <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg ${result === "one" ? "" : result === "two" ? "greener" : ""}">
-            <p class="margin-0">${comparedArray[i].co2e}</p>
+            <p class="margin-0">${comparedArray[i].co2e !== '--' ? comparedArray[i].co2e + ' kg CO2e': '--'}</p>
           </div>
         </div>
       `;
-
-      // const sidePhoneText = document.querySelector('.side-phone-text');
-      // scrollToElement(sidePhoneText);
     }
 
     const trashBtn = specContainer.querySelector(".trash-btn");
@@ -1450,10 +1458,12 @@ function init() {
    * Populates the phone model that can be used for side-by-side emissions comparison
    */
   async function populatePhoneModel() {
-    const phoneModel = importPhoneModel();
-    const phoneModelContainer = shadowRoot.querySelector(
-      ".phone-model-container"
-    );
+    // const phoneModel = await getRecommendedModels(currentPhoneData.device);
+    const phoneModel = currentRecommendedPhones;
+    console.log('recommeded phone model = ');
+    console.log(currentRecommendedPhones);
+
+    const phoneModelContainer = shadowRoot.querySelector(".phone-model-container");
     phoneModelContainer.innerHTML = "";
     phoneModel.forEach((phone, index) => {
       const phoneElement = document.createElement("p");
@@ -1467,10 +1477,12 @@ function init() {
 
   // Displays the carbon emission of the phone being analyzed in the web page.
   function displayPhoneSpecEmissions() {
-    const data = getSampleData();
+    const data = currentPhoneData;
+    console.log('phone data = ');
+    console.log(data);
 
     const container = shadowRoot.querySelector(".phone-spec-container");
-    const footprints = data.carbonFootprint;
+    const specs = data.specs;
     const deviceName = data.device;
 
     container.innerHTML += `
@@ -1485,26 +1497,32 @@ function init() {
       </div>
     `;
 
-    let mostGreenOption = footprints[0];
-    footprints.forEach((option) => {
-      const co2eValue = parseFloat(option.co2e.split(" ")[0]);
-      const mostGreenCo2eValue = parseFloat(mostGreenOption.co2e.split(" ")[0]);
-      if (co2eValue < mostGreenCo2eValue) {
-        mostGreenOption = option;
+    const compareWith = shadowRoot.getElementById('lca-viz-compare-with');
+    compareWith.innerHTML = deviceName;
+
+    // let mostGreenOption = footprints[0];
+    let mostGreenOption = specs[0];
+    specs.forEach((spec, index) => {
+      if (index !== 0) {
+        const co2eValue = parseFloat(spec.co2e);
+        const mostGreenCo2eValue = parseFloat(mostGreenOption.co2e);
+        if (co2eValue < mostGreenCo2eValue) {
+          mostGreenOption = spec;
+        }
       }
     });
 
-    footprints.forEach((option, index) => {
-      const co2eValue = parseFloat(option.co2e.split(" ")[0]);
-      const mostGreenCo2eValue = parseFloat(mostGreenOption.co2e.split(" ")[0]);
+    specs.forEach((spec, index) => {
+      const co2eValue = parseFloat(spec.co2e);
+      const mostGreenCo2eValue = parseFloat(mostGreenOption.co2e);
       const percentageIncrease =
         ((co2eValue - mostGreenCo2eValue) / mostGreenCo2eValue) * 100;
 
-      const isMostGreen = option.storage === mostGreenOption.storage;
+      const isMostGreen = spec.storage === mostGreenOption.storage;
       container.innerHTML += `
         <div class="details-container fz-16" id=${index + "-c"}>
           <div class="flex-center ${isMostGreen ? "most-green" : ""} cg-4">
-            <p><b>${option.storage} </b>&nbsp;</p>
+            <p><b>${spec.storage} </b>&nbsp;</p>
             ${isMostGreen
           ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0" alt="Most eco-friendly option">`
           : `<span class="emissions-diff-plus fz-12 br-4 margin-0"><b>(+${percentageIncrease.toFixed(
@@ -1513,25 +1531,25 @@ function init() {
         }
           </div>
           <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
-            <p class="margin-0">${option.co2e}</p>
+            <p class="margin-0">${co2eValue} kg CO2e</p>
             <img src="${equivalent_icon}" class="icon-16" alt="Equivalent to">
             <div class="lca-viz-unit-container flex-center cg-4">
 
               <div class="lca-viz-unit-div">
                 <div class="flex-center lca-viz-justify-center cg-8">
-                  <p class="margin-0 grey-text fz-16">${Math.ceil(co2eValue * 2.5)} miles driven by a car &nbsp;🚗</p>
+                  <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">${Math.ceil(co2eValue * 2.5)} miles driven by a car &nbsp;🚗</p>
                 </div>
               </div>
 
               <div class="lca-viz-unit-div">
                 <div class="flex-center lca-viz-justify-center cg-8">
-                  <p class="margin-0 grey-text fz-16">${(co2eValue * 0.048).toFixed(1)} trees to offset CO2 &nbsp;🌳</p>
+                  <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">${(co2eValue * 0.048).toFixed(1)} trees to offset CO2 &nbsp;🌳</p>
                 </div>
               </div>
 
               <div class="lca-viz-unit-div">
                 <div class="flex-center lca-viz-justify-center cg-8">
-                  <p class="margin-0 grey-text fz-16">${(co2eValue *  0.033).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
+                  <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">${(co2eValue *  0.033).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
                 </div>
               </div>
 
@@ -1823,103 +1841,104 @@ function init() {
    * Returns a JSON Object that contains the phone model and their respective carbon emissions
    * @returns {JSON} JSON Object
    */
-  function importPhoneModel() {
-    const phoneModel = [
-      {
-        id: 1,
-        device: "Samsung Galaxy S24 Ultra",
-        carbonFootprint: [
-          {
-            storage: "256 GB",
-            co2e: "26 kg CO2e",
-          },
-          {
-            storage: "512 GB",
-            co2e: "50 kg CO2e",
-          },
-          {
-            storage: "1 TB",
-            co2e: "98 kg CO2e",
-          },
-        ],
-      },
-      {
-        id: 2,
-        device: "Samsung Galaxy Z Flip 5",
-        carbonFootprint: [
-          {
-            storage: "256 GB",
-            co2e: "22 kg CO2e",
-          },
-          {
-            storage: "512 GB",
-            co2e: "44 kg CO2e",
-          },
-        ],
-      },
-      {
-        id: 3,
-        device: "OnePlus 12R",
-        carbonFootprint: [
-          {
-            storage: "128 GB",
-            co2e: "18 kg CO2e",
-          },
-          {
-            storage: "256 GB",
-            co2e: "36 kg CO2e",
-          },
-        ],
-      },
-      {
-        id: 4,
-        device: "Google Pixel 8 Pro",
-        carbonFootprint: [
-          {
-            storage: "128 GB",
-            co2e: "20 kg CO2e",
-          },
-          {
-            storage: "256 GB",
-            co2e: "40 kg CO2e",
-          },
-          {
-            storage: "512 GB",
-            co2e: "80 kg CO2e",
-          },
-        ],
-      },
-    ];
-    return phoneModel;
-  }
+  // function getRecommendedModels() {
+  //   const recommended = await fetch(LCA_SERVER_URL + )
+  //   // const phoneModel = [
+  //   //   {
+  //   //     id: 1,
+  //   //     device: "Samsung Galaxy S24 Ultra",
+  //   //     carbonFootprint: [
+  //   //       {
+  //   //         storage: "256 GB",
+  //   //         co2e: "26 kg CO2e",
+  //   //       },
+  //   //       {
+  //   //         storage: "512 GB",
+  //   //         co2e: "50 kg CO2e",
+  //   //       },
+  //   //       {
+  //   //         storage: "1 TB",
+  //   //         co2e: "98 kg CO2e",
+  //   //       },
+  //   //     ],
+  //   //   },
+  //   //   {
+  //   //     id: 2,
+  //   //     device: "Samsung Galaxy Z Flip 5",
+  //   //     carbonFootprint: [
+  //   //       {
+  //   //         storage: "256 GB",
+  //   //         co2e: "22 kg CO2e",
+  //   //       },
+  //   //       {
+  //   //         storage: "512 GB",
+  //   //         co2e: "44 kg CO2e",
+  //   //       },
+  //   //     ],
+  //   //   },
+  //   //   {
+  //   //     id: 3,
+  //   //     device: "OnePlus 12R",
+  //   //     carbonFootprint: [
+  //   //       {
+  //   //         storage: "128 GB",
+  //   //         co2e: "18 kg CO2e",
+  //   //       },
+  //   //       {
+  //   //         storage: "256 GB",
+  //   //         co2e: "36 kg CO2e",
+  //   //       },
+  //   //     ],
+  //   //   },
+  //   //   {
+  //   //     id: 4,
+  //   //     device: "Google Pixel 8 Pro",
+  //   //     carbonFootprint: [
+  //   //       {
+  //   //         storage: "128 GB",
+  //   //         co2e: "20 kg CO2e",
+  //   //       },
+  //   //       {
+  //   //         storage: "256 GB",
+  //   //         co2e: "40 kg CO2e",
+  //   //       },
+  //   //       {
+  //   //         storage: "512 GB",
+  //   //         co2e: "80 kg CO2e",
+  //   //       },
+  //   //     ],
+  //   //   },
+  //   // ];
+  //   return phoneModel;
+  // }
 
   /**
    * Returns a sample data containing the phone's model, storage, and carbon footprint.
    * @returns {JSON} a JSON Object
    */
-  function getSampleData() {
-    return {
-      device: "iPhone 15 Pro",
-      carbonFootprint: [
-        {
-          storage: "128 GB",
-          co2e: "12 kg CO2e",
-        },
-        {
-          storage: "256 GB",
-          co2e: "24 kg CO2e",
-        },
-        {
-          storage: "512 GB",
-          co2e: "48 kg CO2e",
-        },
-        {
-          storage: "1 TB",
-          co2e: "96 kg CO2e",
-        },
-      ],
-    };
-  }
+  // function getSampleData() {
+  //   return {
+  //     device: "iPhone 15 Pro",
+  //     carbonFootprint: [
+  //       {
+  //         storage: "128 GB",
+  //         co2e: "12 kg CO2e",
+  //       },
+  //       {
+  //         storage: "256 GB",
+  //         co2e: "24 kg CO2e",
+  //       },
+  //       {
+  //         storage: "512 GB",
+  //         co2e: "48 kg CO2e",
+  //       },
+  //       {
+  //         storage: "1 TB",
+  //         co2e: "96 kg CO2e",
+  //       },
+  //     ],
+  //   };
+  // }
 
   /**
    *
