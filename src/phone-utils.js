@@ -16,8 +16,8 @@ export function detectPhoneModel(title) {
     { regex: /iPhone\s?16/i, model: "iPhone 16" },
 
     // Samsung Galaxy models
-    { regex: /Galaxy\s?Z[\s-]?Flip6/i, model: "Galaxy Z-Flip 6" },
-    { regex: /Galaxy\s?Z[\s-]?Flip5/i, model: "Galaxy Z-Flip 5" },
+    { regex: /Galaxy\s?Z[\s-]?Flip6/i, model: "Galaxy Z Flip6" },
+    { regex: /Galaxy\s?Z[\s-]?Flip5/i, model: "Galaxy Z Flip5" },
     { regex: /Galaxy\s?S24\s?Ultra/i, model: "Galaxy S24 Ultra" },
     { regex: /Galaxy\s?S23\s?Ultra/i, model: "Galaxy S23 Ultra" },
     { regex: /Galaxy\s?A14\s?5G/i, model: "Galaxy A14 5G" },

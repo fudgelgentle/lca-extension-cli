@@ -7,6 +7,7 @@
   position: fixed;
   padding: 12px;
   overflow-y: auto;
+  padding-bottom: 16px;
   font-family: "Lexend", sans-serif;
 }
 
@@ -251,9 +252,6 @@ p {
   display: flex;
   flex-wrap: nowrap;
   justify-content: space-between;
-}
-.master-lca {
-  padding-bottom: 16px;
 }
 .title-container {
   justify-content: center;
