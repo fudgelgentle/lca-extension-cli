@@ -1543,7 +1543,7 @@ function init() {
 
               <div class="lca-viz-unit-div">
                 <div class="flex-center lca-viz-justify-center cg-8">
-                  <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">${(co2eValue * 0.048).toFixed(1)} trees to offset CO2 &nbsp;🌳</p>
+                  <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">${(co2eValue * 0.048).toFixed(1)} trees annually &nbsp;🌳</p>
                 </div>
               </div>
 

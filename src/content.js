@@ -170,7 +170,6 @@ function init() {
       });
     }
 
-
     // ! case: independent - togle off
     const toggleOffContainers = document.querySelectorAll('.lca-viz-param-toggle-off');
     if (toggleOffContainers) {
@@ -509,7 +508,6 @@ function init() {
     }
   }
 
-
   /**
    * Handles the "toggle ratio button" that involes toggling between normal parameter vs ratio mode.
    * ! Note: can ONLY call this method ONCE
@@ -707,6 +705,11 @@ function init() {
     }
   }
 
+  /**
+   * Takes in materialList and returns two arrays containing the name of all the raw materials and processes.
+   * @param {Object} materialList
+   * @returns two arrays containing the name of all the raw materials and processes.
+   */
   function getAllNames(materialList) {
     let rawMaterialNames = [];
     let processesNames = [];
@@ -739,6 +742,10 @@ function init() {
         });
       });
     }
+    console.log('rawMaterialNames: ');
+    console.log(rawMaterialNames);
+    console.log('processesNames: ');
+    console.log(processesNames);
     return {
       rawMaterialNames: rawMaterialNames,
       processesNames: processesNames
@@ -1063,6 +1070,7 @@ function init() {
     if (!chart) {
       const map = document.createElement('div');
       map.setAttribute('id', 'lca-viz-map');
+      map.setAttribute('role', 'main');
       map.classList.add('lca-lexend');
 
       const paramContainer = document.createElement('div');
@@ -1108,7 +1116,7 @@ function init() {
       const canvas = document.getElementById('lca-viz-carbon-chart');
       Chart.defaults.font.family = "Lexend";
       chart = new Chart(canvas, {
-        type: 'bar',
+        type: 'pie',
         data: chartConfig.data,
         options: chartConfig.options
       });
@@ -1192,7 +1200,6 @@ function init() {
     const chartData = {
       labels: rawLabels,
       datasets: [{
-        axis: 'y',
         label: '',
         data: emissionsData,
         fill: false,
@@ -1228,45 +1235,63 @@ function init() {
       }]
     };
 
+    // const options = {
+    //   responsive: true,
+    //   indexAxis: 'y',
+    //   scales: {
+    //     y: {
+    //       beginAtZero: true,
+    //       font: {
+    //         weight: 'bold'
+    //       },
+    //       ticks: {
+    //         callback: function (value) {
+    //           // truncate the labels only in this axis
+    //           const lbl = this.getLabelForValue(value);
+    //           if (typeof lbl === 'string' && lbl.length > 30) {
+    //             return `${lbl.substring(0, 30)}...`;
+    //           }
+    //           return lbl;
+    //         },
+    //       },
+    //     },
+    //     x: {
+    //       title: {
+    //         display: true,
+    //         text: 'Emissions (kg CO2-eq)',
+    //       }
+    //     }
+    //   },
+    //   plugins: {
+    //     legend: {
+    //       display: false
+    //     },
+    //     tooltip: {
+    //       callbacks: {
+    //         label: function(tooltipItem) {
+    //           return `Estimated Emissions: ${tooltipItem.raw} kg CO2-eq`; // Add unit in tooltip
+    //         }
+    //       }
+    //     }
+    //   }
+    // };
     const options = {
       responsive: true,
-      scales: {
-        y: {
-          beginAtZero: true,
-          font: {
-            weight: 'bold'
-          },
-          ticks: {
-            callback: function (value) {
-              // truncate the labels only in this axis
-              const lbl = this.getLabelForValue(value);
-              if (typeof lbl === 'string' && lbl.length > 30) {
-                return `${lbl.substring(0, 30)}...`;
-              }
-              return lbl;
-            },
-          },
-        },
-        x: {
-          title: {
-            display: true,
-            text: 'Emissions (kg CO2-eq)',
-          }
-        }
-      },
       plugins: {
         legend: {
-          display: false
+          display: true, // Show legend for pie/donut chart
+          position: 'top'
         },
         tooltip: {
           callbacks: {
             label: function(tooltipItem) {
-              return `Estimated Emissions: ${tooltipItem.raw} kg CO2-eq`; // Add unit in tooltip
+              const label = tooltipItem.label || '';
+              const value = tooltipItem.raw;
+              return `${label}: ${value} kg CO2-eq`; // Add unit in tooltip
             }
           }
         }
-      },
-      indexAxis: 'y',
+      }
     };
     return { data: chartData, options: options };
   }
