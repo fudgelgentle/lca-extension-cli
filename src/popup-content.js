@@ -37,6 +37,7 @@ document.body.append(placeholder);
 const shadowRoot = placeholder.attachShadow({ mode: "open" });
 shadowRoot.appendChild(masterContainer);
 
+
 let currentPhoneData;
 let currentRecommendedPhones;
 
@@ -543,7 +544,7 @@ function init() {
             </div>
           </div>
           <div class="mt-24 mb-16 lca-viz-competitor-section">
-            <p class="margin-0 fz-20 mb-16 pdl-4"><b>Compare similar models:</b></p>
+            <p class="margin-0 fz-20 mb-16 pdl-4"><b>Compare similar phones:</b></p>
             <div class="lca-viz-competitor-container rg-12">
           </div>
 
@@ -1501,8 +1502,8 @@ function init() {
     phoneCompetitorContainer.innerHTML = "";
     phoneModel.forEach((phone) => {
       const phoneElement = `
-        <div class="lca-viz-competitor-phone br-8" id="${i}">
-          <p>${phone.device}</p>
+        <div class="lca-viz-competitor-phone br-8" id="${phone.index}">
+          <p class="fz-16">${phone.device}</p>
         </div>
       `;
       phoneCompetitorContainer.innerHTML += phoneElement;

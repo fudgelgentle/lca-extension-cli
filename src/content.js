@@ -31,14 +31,26 @@ window.onload = () => {
     const allowedDomains2 = ["amazon.com", "bestbuy.com", "apple.com", "store.google.com", "samsung.com", "oppo.com", "huawei.com", "lenovo.com"];
     if (isDomainValid(allowedDomains) || isDomainValid(allowedDomains2)) {
       console.log('current domain is allowed, injecting css');
-      createLinkElement("preconnect", "https://fonts.googleapis.com");
-      createLinkElement("preconnect", "https://fonts.gstatic.com", "anonymous");
-      createLinkElement(
-        "stylesheet",
-        "https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap"
-      );
+      // createLinkElement("preconnect", "https://fonts.googleapis.com");
+      // createLinkElement("preconnect", "https://fonts.gstatic.com", "anonymous");
+      // createLinkElement(
+      //   "stylesheet",
+      //   "https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap"
+      // );
       createLinkElement("stylesheet", chrome.runtime.getURL("assets/content-style.css"));
       createLinkElement("stylesheet", chrome.runtime.getURL("assets/popup-content.css"));
+
+      let fontRegular = new FontFace("Lexend", `url(${chrome.runtime.getURL("assets/fonts/lexend-regular.woff")})`, {
+        weight: "400"
+      });
+      let fontBold = new FontFace("Lexend", `url(${chrome.runtime.getURL("assets/fonts/lexend-bold.woff")})`, {
+        weight: "700"
+      });
+      document.fonts.add(fontRegular);
+      document.fonts.add(fontBold);
+      fontRegular.load();
+      fontBold.load();
+
       init();
     }
 }

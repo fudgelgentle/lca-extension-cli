@@ -1,4 +1,7 @@
 /* * CSS Rules from popup.css *************************************************/
+b {
+  font-weight: 700;
+}
 
 .master-lca {
   width: 380px;
@@ -61,6 +64,7 @@
 
 p {
   line-height: 1.5;
+  color: black;
 }
 .lexend-reg {
   font-weight: 400;
