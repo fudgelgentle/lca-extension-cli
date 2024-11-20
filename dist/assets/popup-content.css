@@ -123,6 +123,12 @@ p {
 .mt-12 {
   margin-top: 12px;
 }
+.mt-16 {
+  margin-top: 16px;
+}
+.mt-24 {
+  margin-top: 24px;
+}
 .mb-0 {
   margin-bottom: 0px;
 }
@@ -163,6 +169,9 @@ p {
 }
 .pd-20 {
   padding: 20px;
+}
+.pdl-4 {
+  padding-left: 4px;
 }
 .fz-8 {
   font-size: 8px;
@@ -313,7 +322,7 @@ p {
   position: relative;
 }
 .compare-phone {
-  height: 68px;
+  /* height: 68px; */
   transition: all 0.3s;
 }
 .compare-phone.down {
@@ -432,6 +441,10 @@ p {
 }
 .lca-viz-unit-div.lca-viz-hide {
   animation: fadeOut 0.3s forwards;
+}
+
+.lca-viz-hidden {
+  display: none !important;
 }
 
 .close-phone-btn, .trash-btn {
@@ -624,4 +637,18 @@ p {
 }
 .green-shipping {
   background-color: var(--eco-green-100);
+}
+
+.lca-viz-competitor-container {
+  display: flex;
+  flex-direction: column;
+}
+.lca-viz-competitor-phone {
+  cursor: pointer;
+  padding-left: 16px;
+  background-color: var(--eco-turquoise-100);
+}
+.lca-viz-competitor-phone:hover {
+  transition: all 0.5s;
+  background-color: var(--eco-turquoise-200);
 }

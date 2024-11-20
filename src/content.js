@@ -1127,6 +1127,7 @@ function init() {
 
       requestAnimationFrame(() => {
         chartContainer.classList.add('visible');
+        map.focus();
       });
     }
   }

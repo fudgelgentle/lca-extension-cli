@@ -23,6 +23,8 @@ const sync_icon = chrome.runtime.getURL("../assets/img/sync-icon.png")
 
 // Setting up the master container and attaching the css
 const masterContainer = document.createElement("div");
+masterContainer.setAttribute("role", "main");
+masterContainer.setAttribute("tabindex", "0");
 masterContainer.classList.add("master-lca");
 masterContainer.classList.add("br-8");
 masterContainer.classList.add("hidden");
@@ -66,10 +68,10 @@ function init() {
       try {
         currentPhoneData = await getPhoneCarbonData(phoneModel);
         currentRecommendedPhones = await getRecommendedModels(currentPhoneData.device);
+        await injectPopupContent("phone");
       } catch (error) {
         console.error(error);
       }
-      injectPopupContent("phone");
     }
   }
 
@@ -520,13 +522,13 @@ function init() {
         </section>
 
         <section class="compare-phone br-8 hidden-a">
-          <div class="compare-container br-8 pd-4">
+          <div class="compare-container br-8 pd-4 lca-viz-hidden">
             <div class="flex-center compare-btn">
               <img src="${plus_square_icon}" class="icon-20">
               <p class="fz-16 margin-8">Compare</p>
             </div>
           </div>
-          <div class="select-phone-container br-8 pd-16 slide-content">
+          <div class="select-phone-container br-8 pd-16 slide-content lca-viz-hidden">
             <div class="flex-center close-phone-btn">
               <svg class="icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -539,6 +541,12 @@ function init() {
               <div class="phone-model-container">
               </div>
             </div>
+          </div>
+          <div class="mt-24 mb-16 lca-viz-competitor-section">
+            <p class="margin-0 fz-20 mb-16 pdl-4"><b>Compare similar models:</b></p>
+            <div class="lca-viz-competitor-container rg-12">
+          </div>
+
           </div>
         </section>
 
@@ -559,6 +567,7 @@ function init() {
     const comparePhone = shadowRoot.querySelector(".compare-phone");
     showElement(phoneSpecContainer, "a");
     comparePhone.classList.remove("hidden-a");
+    masterContainer.focus();
     displayPhoneSpecEmissions();
     await handlePhoneCompare();
     handlePhoneSearch();
@@ -566,6 +575,7 @@ function init() {
 
   async function showFreightHTMLContent() {
     shadowRoot.querySelector(".freight-container").classList.remove("hidden-a");
+    masterContainer.focus();
     await hideFreightLoadingIcon();
     const freightContent = shadowRoot.querySelector(".freight-content");
     showElement(freightContent, "a");
@@ -573,6 +583,7 @@ function init() {
 
   async function showCloudEmissions() {
     shadowRoot.querySelector(".lca-viz-cloud-master-container").classList.remove("hidden-a");
+    masterContainer.focus();
     await hideCloudLoadingIcon();
     const cloudContent = shadowRoot.querySelector(".lca-viz-cloud-info-container");
     showElement(cloudContent, "a");
@@ -1191,6 +1202,19 @@ function init() {
       compareContainer.classList.remove("hide");
       slideContent.classList.remove("slide-down");
     });
+
+    // For the new 2 recommended phone models
+    const competitorNodeList = shadowRoot.querySelectorAll(".lca-viz-competitor-phone");
+    const competitorSection = shadowRoot.querySelector('.lca-viz-competitor-section');
+    competitorNodeList.forEach((phone) => {
+      phone.addEventListener("click", () => {
+        const phoneId = parseInt(phone.id);
+
+        console.log('phone Id = ' + phoneId);
+        competitorSection.classList.add('hidden-a');
+        displaySideBySideComparison(phoneId);
+      })
+    });
   }
 
   // Handles the selection of a phone model in the list
@@ -1281,12 +1305,8 @@ function init() {
 
   // Display a side-by-side carbon emissions comparison of two phones
   function displaySideBySideComparison(phoneId) {
-    // const phoneModelList = getRecommendedModels();
-    const phoneModelList = currentRecommendedPhones;
-
-    // const currentPhone = getMockData();
     const currentPhone = currentPhoneData;
-    const comparedPhone = phoneModelList.find((phone) => phone.id === phoneId);
+    const comparedPhone = currentRecommendedPhones.find(phone => phone.index === phoneId);
 
     const wrapper = shadowRoot.querySelector(".side-by-side-section");
     const phoneContainer = shadowRoot.querySelector(".phone-container");
@@ -1334,10 +1354,14 @@ function init() {
       `;
     }
 
+    const competitorSection = shadowRoot.querySelector(".lca-viz-competitor-section");
+
     const trashBtn = specContainer.querySelector(".trash-btn");
     trashBtn.addEventListener("click", () => {
       hideElement(wrapper, "a");
       showElement(phoneContainer, "a");
+
+      competitorSection.classList.remove('hidden-a');
     });
 
     const lcaBanner = shadowRoot.querySelector(".lca-banner");
@@ -1469,9 +1493,19 @@ function init() {
       const phoneElement = document.createElement("p");
       phoneElement.className = `phone-model-text br-4${index === phoneModel.length - 1 ? " last" : ""
         }`;
-      phoneElement.id = phone.id;
       phoneElement.textContent = phone.device;
       phoneModelContainer.appendChild(phoneElement);
+    });
+
+    const phoneCompetitorContainer = shadowRoot.querySelector(".lca-viz-competitor-container");
+    phoneCompetitorContainer.innerHTML = "";
+    phoneModel.forEach((phone) => {
+      const phoneElement = `
+        <div class="lca-viz-competitor-phone br-8" id="${i}">
+          <p>${phone.device}</p>
+        </div>
+      `;
+      phoneCompetitorContainer.innerHTML += phoneElement;
     });
   }
 

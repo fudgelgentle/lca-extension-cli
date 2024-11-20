@@ -16,14 +16,14 @@ export function detectPhoneModel(title) {
     { regex: /iPhone\s?16/i, model: "iPhone 16" },
 
     // Samsung Galaxy models
-    { regex: /Galaxy\s?Z[\s-]?Flip6/i, model: "Galaxy Z Flip6" },
-    { regex: /Galaxy\s?Z[\s-]?Flip5/i, model: "Galaxy Z Flip5" },
-    { regex: /Galaxy\s?S24\s?Ultra/i, model: "Galaxy S24 Ultra" },
-    { regex: /Galaxy\s?S23\s?Ultra/i, model: "Galaxy S23 Ultra" },
-    { regex: /Galaxy\s?A14\s?5G/i, model: "Galaxy A14 5G" },
-    { regex: /Galaxy\s?A14\s?4G/i, model: "Galaxy A14 4G" },
-    { regex: /Galaxy\s?A34\s?5G/i, model: "Galaxy A34 5G" },
-    { regex: /Galaxy\s?A04e/i, model: "Galaxy A04e" },
+    { regex: /Galaxy\s?Z[\s-]?Flip6/i, model: "Samsung Galaxy Z Flip6" },
+    { regex: /Galaxy\s?Z[\s-]?Flip5/i, model: "Samsung Galaxy Z Flip5" },
+    { regex: /Galaxy\s?S24\s?Ultra/i, model: "Samsung Galaxy S24 Ultra" },
+    { regex: /Galaxy\s?S23\s?Ultra/i, model: "Samsung Galaxy S23 Ultra" },
+    { regex: /Galaxy\s?A14\s?5G/i, model: "Samsung Galaxy A14 5G" },
+    { regex: /Galaxy\s?A14\s?4G/i, model: "Samsung Galaxy A14 4G" },
+    { regex: /Galaxy\s?A34\s?5G/i, model: "Samsung Galaxy A34 5G" },
+    { regex: /Galaxy\s?A04e/i, model: "Samsung Galaxy A04e" },
 
     // Oppo models
     { regex: /Oppo\s?Find\s?X5\s?Pro|Oppo\s?FindX5\s?Pro/i, model: "Oppo Find X5 Pro" },
@@ -96,8 +96,9 @@ export async function getPhoneCarbonData(phoneModel) {
 }
 
 /**
-   * Returns a JSON Object that contains the phone model and their respective carbon emissions
-   * @returns {JSON} JSON Object
+   * Returns a JSON Object that contains the carbon data of two recommended phone models based on the input phoneModel
+   * @param {String} phoneModel the phone model
+   * @returns {JSON} JSON Object of the two recommended phone models
    */
 export async function getRecommendedModels(phoneModel) {
   const jsonPhoneModel = {
