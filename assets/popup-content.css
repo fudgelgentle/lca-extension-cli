@@ -177,6 +177,9 @@ p {
 .pdl-4 {
   padding-left: 4px;
 }
+.pdt-12 {
+  padding-top: 12px !important;
+}
 .fz-8 {
   font-size: 8px;
 }
@@ -276,7 +279,7 @@ p {
 .title-container, .close-container, .select-phone-container {
   background-color: var(--eco-turquoise-100);
 }
-.close-container, .floating-lca-menu, .close-phone-btn, .trash-btn, .lca-viz-action-btn {
+.close-container, .floating-lca-menu, .close-phone-btn, .trash-btn, .lca-viz-action-btn, .lca-viz-MEF {
   cursor: pointer;
 }
 .co2e-data-container {
@@ -655,4 +658,14 @@ p {
 .lca-viz-competitor-phone:hover {
   transition: all 0.5s;
   background-color: var(--eco-turquoise-200);
+}
+
+a.lca-link {
+  color: #247457;
+}
+a.lca-link:visited {
+  color: #247457;
+}
+a.lca-link:active {
+  color: #247457;
 }

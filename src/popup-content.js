@@ -1304,6 +1304,23 @@ function init() {
     // }
   }
 
+  /**
+   * Takes in phone object and returns the html code for data source.
+   * @param {Object} phoneObject The phone object
+   * @returns the html code for data source.
+   */
+  function getDataSource(phoneObject) {
+    if (phoneObject.method && phoneObject.method === "given") {
+      const txtSourceHTML = `
+        <div class="lca-viz-txt-source pdt-12">
+          <a href="${phoneObject.source}" class="lca-link fz-16" target="_blank">Data source</a>
+        </div>`;
+        return txtSourceHTML;
+    } else {
+      return `<div></div>`;
+    }
+  }
+
   // Display a side-by-side carbon emissions comparison of two phones
   function displaySideBySideComparison(phoneId) {
     const currentPhone = currentPhoneData;
@@ -1332,7 +1349,7 @@ function init() {
           <div class="flex-center most-green cg-4">
             <p><b>${currentArray[i].storage}</b>&nbsp;</p>
             ${currentArray[i].mostEco
-                ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0" alt="Most eco-friendly option">`
+                ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="Most eco-friendly option" alt="Most eco-friendly option">`
                 : ""
               }
           </div>
@@ -1344,7 +1361,7 @@ function init() {
           <div class="flex-center most-green cg-4">
             <p><b>${comparedArray[i].storage}</b>&nbsp;</p>
             ${comparedArray[i].mostEco
-                ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0" alt="Most eco-friendly option">`
+                ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="Most eco-friendly option" alt="Most eco-friendly option">`
                 : ""
               }
           </div>
@@ -1354,6 +1371,11 @@ function init() {
         </div>
       `;
     }
+
+    const currentPhoneDataSource = getDataSource(currentPhone);
+    const comparedPhoneDataSource = getDataSource(comparedPhone);
+    specContainer.innerHTML += currentPhoneDataSource;
+    specContainer.innerHTML += comparedPhoneDataSource;
 
     const competitorSection = shadowRoot.querySelector(".lca-viz-competitor-section");
 
@@ -1559,7 +1581,7 @@ function init() {
           <div class="flex-center ${isMostGreen ? "most-green" : ""} cg-4">
             <p><b>${spec.storage} </b>&nbsp;</p>
             ${isMostGreen
-          ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0" alt="Most eco-friendly option">`
+          ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="Most eco-friendly option" alt="Most eco-friendly option">`
           : `<span class="emissions-diff-plus fz-12 br-4 margin-0"><b>(+${percentageIncrease.toFixed(
             0
           )}% emissions)</b></span>`
@@ -1593,6 +1615,9 @@ function init() {
         </div>
         `;
     });
+
+    const dataSource = getDataSource(currentPhoneData);
+    container.innerHTML += dataSource;
 
     handleUnitDivChange();
   }
