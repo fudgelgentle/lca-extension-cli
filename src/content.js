@@ -53,7 +53,7 @@ let chart;
 let chartContainer;
 let currentChartData;
 let selectionTimeout;
-let LCAToolTip;
+let LCAActionBtn;
 
 let mouseX;
 let mouseY;
@@ -554,13 +554,13 @@ function init() {
             const index = parseInt(input.id.match(/\d+$/)[0]);
             updateValue(0, index, newWeight);
           });
+          lcaVizMap.style.width = `${originalWidth}px`;
           setTimeout(() => {
             show(textDetails);
             hide(paramToggleOff);
             show(paramToggleOn);
-            // const newWidth = lcaVizMap.scrollWidth;
-            // console.log('newWidth = ' + newWidth);
-            // lcaVizMap.style.width = `${newWidth}px`;
+            const newWidth = paramToggleOn.scrollWidth + 40;
+            lcaVizMap.style.width = `${newWidth}px`;
           }, 0);
           paramToggleOn.style.width = "auto";
           textDetails.style.height = "auto";
@@ -577,8 +577,8 @@ function init() {
             hide(textDetails);
             hide(paramToggleOn);
             show(paramToggleOff);
-            // lcaVizMap.style.width = `${originalWidth}px`;
-          }, 100);
+            lcaVizMap.style.width = `${originalWidth}px`;
+          }, 0);
         }
       });
     });
@@ -768,10 +768,10 @@ function init() {
 
     let chartConfig = getChartConfig();
     // Remove the previous chart, reset the 'chart' global variable
-    const chartContainer = document.getElementById("lca-viz-map");
-    if (chartContainer) {
-      chartContainer.remove();
-      chartContainer.innerHTML = ``;
+    const map = document.getElementById("lca-viz-map");
+    if (map) {
+      map.remove();
+      map.innerHTML = ``;
       chart.destroy();
       chart = null;
     }
@@ -782,7 +782,7 @@ function init() {
 
   function setLCAActionBtnState(state) {
     const LCAActionBtnText = document.getElementById("lca-viz-action-btn-text");
-    const LCAActionBtn = document.getElementById("lca-viz-action-btn");
+    // const LCAActionBtn = document.getElementById("lca-viz-action-btn");
     const floatingLCAImg = document.querySelector('.floating-lca-img');
     if (state === "default") {
       floatingLCAImg.src = lca_48;
@@ -804,15 +804,17 @@ function init() {
 
   function hideLCAActionBtn() {
     setLCAActionBtnState("default");
-    if (LCAToolTip) {
-      LCAToolTip.classList.add('lca-viz-hidden');
+    if (LCAActionBtn) {
+      LCAActionBtn.classList.add('lca-viz-hidden');
     }
   }
 
   function showLCAActionBtn() {
     setLCAActionBtnState("default");
-    if (LCAToolTip) {
-      LCAToolTip.classList.remove('lca-viz-hidden');
+    if (LCAActionBtn) {
+      console.log('SHOWING LCA ACTION BTN: ');
+      console.log(LCAActionBtn);
+      LCAActionBtn.classList.remove('lca-viz-hidden');
     }
   }
 
@@ -941,57 +943,58 @@ function init() {
     }
   }
 
-  function normalizeText(text) {
-    return text.toLowerCase().replace(/\s+/g, " ").trim();
-  }
-
   function trackRawMaterial() {
     let allowedDomains = ["nature.com", "acm.org", "arxiv.org", "acs.org", "wiley.com", "fly.dev"];
     if (isDomainValid(allowedDomains)) {
       console.log('trackRawMaterial enabled');
+      handleLCAActionBtn();
       recordCurrentMouseCoord();
       handleHighlightText();
     }
   }
 
-  function isEmptyString() {
+  function isNotEmptyString() {
     const selection = window.getSelection();
     return selection.toString().length > 0 && /\S/.test(selection.toString());
   }
 
   function handleHighlightText() {
-    document.addEventListener('selectionchange', async () => {
+    document.addEventListener('mouseup', async (e) => {
       if (highlightTimeout) {
         clearTimeout(highlightTimeout);
       }
       highlightTimeout = setTimeout(() => {
         const selection = window.getSelection();
-        if (isEmptyString()) {
-          if (LCAToolTip) {
-            LCAToolTip.classList.remove('lca-viz-hidden');
+        if (isNotEmptyString()) {
+          if (LCAActionBtn && !LCAActionBtn.contains(e.target)) {
+            LCAActionBtn.style.top = `${mouseY + scrollY + 8}px`;
+            LCAActionBtn.style.left = `${mouseX + scrollX + 4}px`;
+            showLCAActionBtn();
           }
           const range = selection.getRangeAt(0);
           const highlightedNode = range.commonAncestorContainer;
           let parentNode;
           // CASE: If the highlighted text is a standalone html node
           if (highlightedNode.nodeType === 1) {
-            console.log('highlighted text is a standalone html node');
             parentNode = highlightedNode;
             // CASE: If the highlighted text is in a section of an html node
           } else {
-            console.log('highlighted text is in a section of an html node')
             parentNode = highlightedNode.parentNode;
           }
           globalSelectionData.parentNode = parentNode;
           globalSelectionData.range = range;
           globalSelectionData.selection = selection;
-          handleLCAActionBtn();
         }
-      }, 500);
+      }, 200);
     });
     document.addEventListener('click', (e) => {
       // Checks if the click is outside of tooltip. If so, hide the tooltip.
-      if (LCAToolTip && !LCAToolTip.contains(e.target) && window.getSelection().toString() === '') {
+      if (LCAActionBtn && !LCAActionBtn.contains(e.target) && window.getSelection().toString() === '') {
+        hideLCAActionBtn();
+      }
+    });
+    document.addEventListener('mousedown', (e) => {
+      if (!LCAActionBtn.contains(e.target)) {
         hideLCAActionBtn();
       }
     });
@@ -999,17 +1002,16 @@ function init() {
 
   function handleLCAActionBtn() {
     console.log('handleLCAActionBtn called');
-    if (!LCAToolTip) {
+    if (!LCAActionBtn) {
       const actionBtnHTML = getLCAActionBtn();
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = actionBtnHTML;
       document.body.appendChild(tempDiv.firstElementChild);
+      LCAActionBtn = document.getElementById('lca-viz-action-btn');
       setLCAActionBtnState("default");
 
-      LCAToolTip = document.getElementById('lca-viz-action-btn');
-
-      LCAToolTip.addEventListener("click", async () => {
-        if (isEmptyString()) {
+      LCAActionBtn.addEventListener("click", async () => {
+        if (isNotEmptyString()) {
           chartPosX = mouseX;
           chartScrollX = scrollX;
           chartPosY = mouseY;
@@ -1024,18 +1026,17 @@ function init() {
       });
 
     } else {
-      if (LCAToolTip.classList.contains('lca-viz-hidden')) {
+      if (LCAActionBtn.classList.contains('lca-viz-hidden')) {
         showLCAActionBtn();
       }
     }
-
-    LCAToolTip.style.top = `${mouseY + scrollY + 8}px`;
-    LCAToolTip.style.left = `${mouseX + scrollX + 4}px`;
+    // LCAActionBtn.style.top = `${mouseY + scrollY + 8}px`;
+    // LCAActionBtn.style.left = `${mouseX + scrollX + 4}px`;
   }
 
   function getLCAActionBtn() {
     const actionBtn = `
-      <div class="flex-center floating-lca-action-btn lca-viz-interactable pd-12 br-8 cg-8" id="lca-viz-action-btn">
+      <div class="flex-center lca-viz-interactable pd-12 br-8 cg-8 lca-viz-hidden" id="lca-viz-action-btn">
         <img src="${lca_48}" alt="LCA Image" class="floating-lca-img icon-20">
         <span class="lca-viz-hidden lca-lexend fz-14" id="lca-viz-action-btn-text"></span>
       </div>
@@ -1097,7 +1098,10 @@ function init() {
         </button>
         </div>
         <span class="lca-viz-raw-material-title"><b>Raw Materials Carbon Emissions</b></span>
-        <canvas id="lca-viz-carbon-chart" width="480" height="320"></canvas>
+        <div class="lca-viz-canvas flex-center lca-viz-justify-center">
+          <canvas id="lca-viz-carbon-chart"></canvas>
+        </div>
+
       `;
 
       const paramSection = document.createElement('div');
@@ -1109,7 +1113,7 @@ function init() {
       paramSpan2.classList.add('mt-0');
       paramSpan2.classList.add('fz-16');
       paramSpan2.classList.add('lca-viz-param-subtext');
-      paramSpan2.innerHTML = 'Adjust the values below to see how the emissions data change.';
+      paramSpan2.innerHTML = 'Adjust the values below to see the carbon emissions of different materials.';
 
       paramSection.appendChild(paramSpan);
       paramSection.appendChild(paramSpan2);
@@ -1117,6 +1121,7 @@ function init() {
 
       map.appendChild(paramSection);
       document.body.appendChild(map);
+
       chartContainer = document.getElementById("lca-viz-map");
 
       const canvas = document.getElementById('lca-viz-carbon-chart');
@@ -1242,46 +1247,6 @@ function init() {
       }]
     };
 
-    // const options = {
-    //   responsive: true,
-    //   indexAxis: 'y',
-    //   scales: {
-    //     y: {
-    //       beginAtZero: true,
-    //       font: {
-    //         weight: 'bold'
-    //       },
-    //       ticks: {
-    //         callback: function (value) {
-    //           // truncate the labels only in this axis
-    //           const lbl = this.getLabelForValue(value);
-    //           if (typeof lbl === 'string' && lbl.length > 30) {
-    //             return `${lbl.substring(0, 30)}...`;
-    //           }
-    //           return lbl;
-    //         },
-    //       },
-    //     },
-    //     x: {
-    //       title: {
-    //         display: true,
-    //         text: 'Emissions (kg CO2-eq)',
-    //       }
-    //     }
-    //   },
-    //   plugins: {
-    //     legend: {
-    //       display: false
-    //     },
-    //     tooltip: {
-    //       callbacks: {
-    //         label: function(tooltipItem) {
-    //           return `Estimated Emissions: ${tooltipItem.raw} kg CO2-eq`; // Add unit in tooltip
-    //         }
-    //       }
-    //     }
-    //   }
-    // };
     const options = {
       responsive: true,
       plugins: {
@@ -1304,6 +1269,12 @@ function init() {
   }
 }
 
+/**
+ * Takes in raw materials data and extracts the name of each raw material and emissions, then returns it
+ * as an array of objects.
+ * @param {Object} data The raw materials data
+ * @returns An array of objects containing raw materials and their emissions.
+ */
 function extractNameAndEmissions(data) {
   independentMaterialHTML = ``;
   relatedMaterialHTML = ``;
@@ -1315,7 +1286,8 @@ function extractNameAndEmissions(data) {
     data.raw_materials.related_materials.forEach((material, index) => {
       if (material.ratio) {
         const ratioList = material.ratio;
-        relatedMaterialHTML += createRatioSection(ratioList, index);
+        const textSource = material.text_source;
+        relatedMaterialHTML += createRatioSection(ratioList, textSource, index);
 
         material.ratio.forEach(item => {
           results.push({

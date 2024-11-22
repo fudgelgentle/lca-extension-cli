@@ -44,10 +44,6 @@
 	"xtbuild": {
 		"js_bundles": [
 			{
-				"name": "background",
-				"src": "./src/background.js"
-			},
-			{
 				"name": "content",
 				"src": "./src/content.js"
 			},

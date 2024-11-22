@@ -3,8 +3,10 @@
 /**
  * Returns the HTML code for ratio section given a list of ratios
  * @param {Array} ratioList The list of raw materials that have ratio with each other
+ * @param {String} textSource The original text containing the information about ratios
+ * @param {Number} index The identifier of this ratio section
  */
-export function createRatioSection(ratioList, index) {
+export function createRatioSection(ratioList, textSource, index) {
   const ratioSection = `
     <div id="lca-viz-r-section-${index}" class="lca-viz-ratio-container br-4 pd-16">
             <div class="lca-viz-toggle flex-center cg-8">
@@ -27,7 +29,7 @@ export function createRatioSection(ratioList, index) {
                 </div>
                 <div class="lca-viz-empty-space"></div>
               </div>
-              <p class="lca-viz-text-source fz-12">Text source: “1:1:5 mol% to the acid”</p>
+              <p class="lca-viz-text-source fz-12"><b>Text source:</b> <i>“${textSource}”</i></p>
             </div>
             <!-- & param for toggle ratio off -->
             <div class="lca-viz-param-toggle-off">

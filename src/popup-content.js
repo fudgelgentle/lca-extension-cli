@@ -1349,7 +1349,7 @@ function init() {
           <div class="flex-center most-green cg-4">
             <p><b>${currentArray[i].storage}</b>&nbsp;</p>
             ${currentArray[i].mostEco
-                ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="Most eco-friendly option" alt="Most eco-friendly option">`
+                ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
                 : ""
               }
           </div>
@@ -1361,7 +1361,7 @@ function init() {
           <div class="flex-center most-green cg-4">
             <p><b>${comparedArray[i].storage}</b>&nbsp;</p>
             ${comparedArray[i].mostEco
-                ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="Most eco-friendly option" alt="Most eco-friendly option">`
+                ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
                 : ""
               }
           </div>
@@ -1549,7 +1549,7 @@ function init() {
         <select id="lca-viz-unit-select" class="br-4 pd-4">
           <option value="0">Miles driven 🚗</option>
           <option value="1">Trees offset 🌳</option>
-          <option value="2">Beefs Consumed 🥩</option>
+          <option value="2">Beef Consumed 🥩</option>
         </select>
       </div>
     `;
@@ -1581,7 +1581,7 @@ function init() {
           <div class="flex-center ${isMostGreen ? "most-green" : ""} cg-4">
             <p><b>${spec.storage} </b>&nbsp;</p>
             ${isMostGreen
-          ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="Most eco-friendly option" alt="Most eco-friendly option">`
+          ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
           : `<span class="emissions-diff-plus fz-12 br-4 margin-0"><b>(+${percentageIncrease.toFixed(
             0
           )}% emissions)</b></span>`

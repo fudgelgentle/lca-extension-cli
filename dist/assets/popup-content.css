@@ -62,7 +62,7 @@ b {
   background-color: #888; /* Darker color when the thumb is being dragged */
 }
 
-p {
+.master-lca p {
   line-height: 1.5;
   color: black;
 }

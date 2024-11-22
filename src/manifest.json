@@ -12,9 +12,6 @@
     "icons": {
         "128": "assets/img/lca-128.png"
     },
-    "background": {
-        "service_worker": "background.js"
-    },
     "action": {
         "default_popup": "popup.html",
         "default_icon": "assets/img/lca-16.png",
