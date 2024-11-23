@@ -73,7 +73,7 @@
 
 #lca-viz-carbon-chart {
   max-width: 420px;
-  max-height: 240px;
+  max-height: 265px;
 }
 .lca-viz-canvas {
   margin-top: 16px;
@@ -170,12 +170,13 @@
   background-color: white;
   justify-content: center;
   z-index: 2147483647;
-  /* opacity: 0;
+  opacity: 0;
   visibility: hidden;
-  transition: opacity 0.3s ease, visibility 0.3s ease; */
+  transition: opacity 0.3s ease, visibility 0.3s ease;
 }
-/* #lca-viz-action-btn.show {
+/* #lca-viz-action-btn.lca-viz-show {
   opacity: 1;
+  visibility: visible;
 } */
 .lca-viz-interactable {
   cursor: pointer;

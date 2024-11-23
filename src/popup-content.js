@@ -13,7 +13,6 @@ const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
 
 const lca_48 = chrome.runtime.getURL("../assets/img/lca-48.png");
 const plus_square_icon = chrome.runtime.getURL("../assets/img/plus-square-icon.png");
-const fire_black_icon = chrome.runtime.getURL("../assets/img/fire-black-icon.png");
 const red_trash_icon = chrome.runtime.getURL("../assets/img/red-trash-icon.png");
 const most_green_icon = chrome.runtime.getURL("../assets/img/most-green-icon.png");
 const equivalent_icon = chrome.runtime.getURL("../assets/img/equivalent-icon.png");
@@ -226,6 +225,7 @@ function init() {
         const emissionsResultHTML = getCloudEmissionsResult(data);
         shadowRoot.querySelector('.lca-viz-cloud-master-container').classList.add('hidden-a');
         masterContainer.insertAdjacentHTML("beforeend", emissionsResultHTML);
+        handleCO2eEquivalencyChange();
         requestAnimationFrame(async() => {
           shadowRoot.querySelector('.lca-viz-cloud-emissions-container').classList.remove('hidden-a');
           const cloudContent = shadowRoot.querySelector(".lca-viz-cloud-results-info-container");
@@ -245,28 +245,52 @@ function init() {
     const instance = data.instance;
     const duration = data.duration;
 
-    let trashValue;
+    let beefValue;
     let weightObject;
-    let trashUnit;
+    let beefUnit;
     if (cloudEmissions) {
-      trashValue = (cloudEmissions / 1.15);
-      weightObject = getReadableUnit(trashValue);
-      trashValue = weightObject.weight;
-      trashUnit = weightObject.unit;
+      beefValue = cloudEmissions * 0.033;
+      weightObject = getReadableUnit(beefValue);
+      beefValue = weightObject.weight;
+      beefUnit = weightObject.unit;
     }
 
     const emissionsResultHTML = `
       <div class="lca-viz-cloud-emissions-container hidden-a">
         <section class="lca-viz-cloud-container br-8">
           <div class="lca-viz-cloud-results-info-container pd-16 mt-12 hidden-a">
-            <p class="fz-16 mt-0 mb-12"><b>Your cloud instance’s estimated carbon emissions:</b></p>
+            <p class="fz-16 mt-0 mb-0"><b>Your cloud instance's estimated carbon emissions:</b></p>
+            <div class="flex-center cg-8 fz-16 mb-12">
+              <p>CO2e Equivalency: </p>
+              <select id="lca-viz-unit-select" class="br-4 pd-4">
+                <option value="0">Miles driven 🚗</option>
+                <option value="1">Trees offset 🌳</option>
+                <option value="2">Beef Consumed 🥩</option>
+              </select>
+            </div>
 
             ${cloudEmissions ?
               `<div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
                 <span class="fz-20 freight-co2e-value"><b>${cloudEmissions.toFixed(3)} kg CO2e <span class="fz-12">(per month)</span></b></span>
-                <div class="flex-center cg-4">
-                  <span class="trash-value fz-16">or ${trashValue} ${trashUnit} of trash burned</span>
-                  <img src="${fire_black_icon}" class="icon-16" alt="Trash">
+
+                <div class="lca-viz-unit-container cloud flex-center cg-4">
+                  <div class="lca-viz-unit-div">
+                    <div class="flex-center lca-viz-justify-center cg-8">
+                      <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(cloudEmissions * 2.5).toFixed(2)} miles driven by a car &nbsp;🚗</p>
+                    </div>
+                  </div>
+
+                  <div class="lca-viz-unit-div">
+                    <div class="flex-center lca-viz-justify-center cg-8">
+                      <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(cloudEmissions * 0.048).toFixed(3)} trees annually &nbsp;🌳</p>
+                    </div>
+                  </div>
+
+                  <div class="lca-viz-unit-div">
+                    <div class="flex-center lca-viz-justify-center cg-8">
+                      <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(beefValue)} ${beefUnit} of beef consumed &nbsp;🥩</p>
+                    </div>
+                  </div>
                 </div>
               </div>`
               :
@@ -385,6 +409,7 @@ function init() {
       const freightContent = injectFreightHTMLContent(freightData.formatted);
       masterContainer.insertAdjacentHTML("beforeend", freightContent);
       setTimeout(() => {
+        handleCO2eEquivalencyChange();
         masterContainer.classList.remove("hidden");
         showFreightHTMLContent();
       }, 0);
@@ -637,13 +662,13 @@ function init() {
       const groundEmission = groundData.co2eValue;
       const difference = airEmission - groundEmission;
       const airDiff = (parseInt((difference / groundEmission) * 100));
-      const groundDiff = (parseInt((difference / airEmission) * 100));
+      // const groundDiff = (parseInt((difference / airEmission) * 100));
       if (airEmission > groundEmission) {
         airDiffHTML = `<p class="emissions-diff-plus fz-12 br-4 margin-0"><b>+${airDiff}% emissions</b></p>`;
-        groundDiffHTML = `<p class="emissions-diff-minus fz-12 br-4 margin-0"><b>-${groundDiff}% emissions</b></p>`;
+        // groundDiffHTML = `<p class="emissions-diff-minus fz-12 br-4 margin-0"><b>-${groundDiff}% emissions</b></p>`;
       } else {
         airDiffHTML = `<p class="emissions-diff-minus fz-12 br-4 margin-0"><b>-${airDiff}% emissions</b></p>`;
-        groundDiffHTML = `<p class="emissions-diff-plus fz-12 br-4 margin-0"><b>+${groundDiff}% emissions</b></p>`;
+        // groundDiffHTML = `<p class="emissions-diff-plus fz-12 br-4 margin-0"><b>+${groundDiff}% emissions</b></p>`;
       }
     }
 
@@ -672,7 +697,7 @@ function init() {
       let airTrashValue = (airCo2eValue / 1.15);
       const weightObject = getReadableUnit(airTrashValue);
       airTrashValue = weightObject.weight;
-      const trashUnit = weightObject.unit;
+      // const trashUnit = weightObject.unit;
       const shippingOptionsText = airData.airMode.map(formatShippingText).join(", ");
       airHTML = `
         <div class="options-container">
@@ -683,10 +708,25 @@ function init() {
           ${airDiffHTML}
           <p class="fz-12 mt-4 mb-4">${shippingOptionsText}</p>
           <div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
-            <span class="fz-20 freight-co2e-value"><b>${airCo2eValue} kg CO2e</b></span>
-            <div class="flex-center cg-4">
-              <span class="trash-value">or ${airTrashValue} ${trashUnit} of trash burned</span>
-              <img src="${fire_black_icon}" class="icon-16" alt="Trash">
+            <span class="fz-20 freight-co2e-value mt-4"><b>${airCo2eValue} kg CO2e</b></span>
+            <div class="lca-viz-unit-container freight flex-center cg-4">
+              <div class="lca-viz-unit-div">
+                <div class="flex-center lca-viz-justify-center cg-8">
+                  <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${Math.ceil(airCo2eValue * 2.5)} miles driven by a car &nbsp;🚗</p>
+                </div>
+              </div>
+
+              <div class="lca-viz-unit-div">
+                <div class="flex-center lca-viz-justify-center cg-8">
+                  <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(airCo2eValue * 0.048).toFixed(1)} trees annually &nbsp;🌳</p>
+                </div>
+              </div>
+
+              <div class="lca-viz-unit-div">
+                <div class="flex-center lca-viz-justify-center cg-8">
+                  <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(airCo2eValue *  0.033).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
+                </div>
+              </div>
             </div>
           </div>
           <div class="lca-viz-google-maps-air flex-center mt-8"></div>
@@ -698,7 +738,7 @@ function init() {
       let groundTrashValue = (groundCo2eValue / 1.15);
       const weightObject = getReadableUnit(groundTrashValue);
       groundTrashValue = weightObject.weight;
-      const trashUnit = weightObject.unit;
+      // const trashUnit = weightObject.unit;
       console.log('ground shipping options = ' + groundData.groundMode);
       const shippingOptionsText = groundData.groundMode.map(formatShippingText).join(", ");
       groundHTML = `
@@ -710,10 +750,25 @@ function init() {
           ${groundDiffHTML}
           <p class="fz-12 mt-4 mb-4">${shippingOptionsText}</p>
           <div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
-            <span class="fz-20 freight-co2e-value"><b>${groundCo2eValue} kg CO2e</b></span>
-            <div class="flex-center cg-4">
-              <span class="trash-value">or ${groundTrashValue} ${trashUnit} of trash burned</span>
-              <img src="${fire_black_icon}" class="icon-16" alt="Trash">
+            <span class="fz-20 freight-co2e-value mt-4"><b>${groundCo2eValue} kg CO2e</b></span>
+            <div class="lca-viz-unit-container freight flex-center cg-4">
+              <div class="lca-viz-unit-div">
+                <div class="flex-center lca-viz-justify-center cg-8">
+                  <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${Math.ceil(groundCo2eValue * 2.5)} miles driven by a car &nbsp;🚗</p>
+                </div>
+              </div>
+
+              <div class="lca-viz-unit-div">
+                <div class="flex-center lca-viz-justify-center cg-8">
+                  <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(groundCo2eValue * 0.048).toFixed(1)} trees annually &nbsp;🌳</p>
+                </div>
+              </div>
+
+              <div class="lca-viz-unit-div">
+                <div class="flex-center lca-viz-justify-center cg-8">
+                  <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(groundCo2eValue *  0.033).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
+                </div>
+              </div>
             </div>
           </div>
           <div class="lca-viz-google-maps-ground flex-center mt-8"></div>
@@ -734,7 +789,15 @@ function init() {
           </div>
         </div>
         <div class="freight-content hidden-a">
-          <p class="fz-16 freight-title-text"><b>${titleText}</b></p>
+          <p class="fz-16 mt-0 mb-16"><b>${titleText}</b></p>
+          <div class="flex-center cg-8 fz-16">
+            <p>CO2e Equivalency: </p>
+            <select id="lca-viz-unit-select" class="br-4 pd-4">
+              <option value="0">Miles driven 🚗</option>
+              <option value="1">Trees offset 🌳</option>
+              <option value="2">Beef Consumed 🥩</option>
+            </select>
+          </div>
           <div>
             ${groundHTML}
             ${airHTML}
@@ -969,12 +1032,7 @@ function init() {
       let gData;
 
       if (groundMode.length > 0) {
-        const groundData = formatFreightData(
-          fromAddress,
-          toAddress,
-          "ground",
-          totalWeight
-        );
+        const groundData = formatFreightData(fromAddress, toAddress, "ground", totalWeight);
         freightGroundData = await getFreightEmissions(groundData);
         if (freightGroundData) {
           gData = {
@@ -987,12 +1045,7 @@ function init() {
 
       }
       if (airMode.length > 0) {
-        const airData = formatFreightData(
-          fromAddress,
-          toAddress,
-          "air",
-          totalWeight
-        );
+        const airData = formatFreightData(fromAddress, toAddress, "air", totalWeight);
         freightAirData = await getFreightEmissions(airData);
         if (freightAirData) {
           aData = {
@@ -1020,11 +1073,9 @@ function init() {
       if (shadowRoot.querySelector(".freight-container") !== null) {
         console.log("updating freight content.....");
         await updateFreightContent(freightData);
-        // await sendsGoogleMapsDataHelper(freightAirData, freightGroundData);
       } else {
         console.log("injecting freight content.....");
         await injectPopupContent("freight", freightData);
-        // await sendsGoogleMapsDataHelper(freightAirData, freightGroundData);
       }
       currShippingOptions = [];
     } else {
@@ -1039,13 +1090,11 @@ function init() {
   async function loadGoogleMaps(freightAirData, freightGroundData) {
     if (freightAirData) {
       await sendGoogleMapsData(freightAirData, "air", () => {
-        // reloadIframe("lca-viz-air-map");
         injectGoogleMaps("air");
       });
     }
     if (freightGroundData) {
       await sendGoogleMapsData(freightGroundData, "ground", () => {
-        // reloadIframe("lca-viz-ground-map");
         injectGoogleMaps("ground");
       });
     }
@@ -1239,22 +1288,25 @@ function init() {
 
   // Handles the changing of different reference units for phone emissions flow.
   // (i.e. changing between "~ kg of trash burned", "~ of miles driven", and "~ of trees cut down" every 3 seconds)
-  function handleUnitDivChange() {
-    const unitDivsContainer = shadowRoot.querySelectorAll('.lca-viz-unit-container');
-    console.log('unitDivsContainer length: ' + unitDivsContainer.length);
+  function handleCO2eEquivalencyChange() {
     const unitSelect = shadowRoot.getElementById('lca-viz-unit-select');
-
+    const unitDivsContainer = shadowRoot.querySelectorAll('.lca-viz-unit-container');
     // Initialize: show the first unit-div by default
     let currentIndex = 0;
-    unitDivsContainer.forEach((container) => {
-      container.children[currentIndex].classList.add('lca-viz-show');
-    });
+    if (unitSelect && unitDivsContainer) {
+      console.log('CALLING handleCO2EquivalencyChange');
+      unitDivsContainer.forEach((container) => {
+        container.children[currentIndex].classList.add('lca-viz-show');
+      });
 
-    unitSelect.addEventListener("change", (e) => {
-      const selectedIndex = parseInt(e.target.value);
-      console.log('selectedIndex = ' + selectedIndex);
-      showSelectedUnit(selectedIndex);
-    });
+      unitSelect.addEventListener("change", (e) => {
+        const selectedIndex = parseInt(e.target.value);
+        console.log('selectedIndex = ' + selectedIndex);
+        showSelectedUnit(selectedIndex);
+      });
+    } else {
+      console.log('handleCO2EquivalencyChange CANNOT be called');
+    }
 
     // Function to change the displayed unit-div based on dropdown selection
     function showSelectedUnit(index) {
@@ -1277,31 +1329,6 @@ function init() {
         }, 300);
       });
     }
-
-    //& Old code for the automatic "roll in / fade out" behavior of unit-divs
-    // unitDivsContainer.forEach((container) => {
-    //   const unitDivs = container.querySelectorAll('.lca-viz-unit-div');
-    //   // Initially show the first unit-div
-    //   unitDivs[0].classList.add('lca-viz-show');
-    //   let currentIndex = 0;
-    //   setInterval(() => {
-    //     currentIndex = showNextUnitDiv(unitDivs, currentIndex);
-    //   }, 5000);
-    // });
-
-    // & Utility function used with the automatic "roll in / fade out behavior"
-    // function showNextUnitDiv(unitDivs, currentIndex) {
-    //   const currentDiv = unitDivs[currentIndex];
-    //   currentDiv.classList.remove('lca-viz-show');
-    //   currentDiv.classList.add('lca-viz-hide');
-    //   currentIndex = ((currentIndex + 1) % unitDivs.length);
-    //   const nextDiv = unitDivs[currentIndex];
-    //   setTimeout(() => {
-    //     nextDiv.classList.remove('lca-viz-hide');
-    //     nextDiv.classList.add('lca-viz-show');
-    //   }, 500);
-    //   return currentIndex;
-    // }
   }
 
   /**
@@ -1590,7 +1617,7 @@ function init() {
           <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
             <p class="margin-0">${co2eValue} kg CO2e</p>
             <img src="${equivalent_icon}" class="icon-16" alt="Equivalent to">
-            <div class="lca-viz-unit-container flex-center cg-4">
+            <div class="lca-viz-unit-container phone flex-center cg-4">
 
               <div class="lca-viz-unit-div">
                 <div class="flex-center lca-viz-justify-center cg-8">
@@ -1619,7 +1646,7 @@ function init() {
     const dataSource = getDataSource(currentPhoneData);
     container.innerHTML += dataSource;
 
-    handleUnitDivChange();
+    handleCO2eEquivalencyChange();
   }
 
 // TODO: ***********************************************************

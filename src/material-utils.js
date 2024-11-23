@@ -7,6 +7,16 @@
  * @param {Number} index The identifier of this ratio section
  */
 export function createRatioSection(ratioList, textSource, index) {
+
+  // normalizing the ratio list before passing on the data
+  const firstElement = ratioList[0].ratio_value;
+  const nRatioList = ratioList.map((item) => {
+    return {
+      ...item,
+      ratio_value: parseFloat((item.ratio_value / firstElement).toFixed(2)),
+    };
+  });
+
   const ratioSection = `
     <div id="lca-viz-r-section-${index}" class="lca-viz-ratio-container br-4 pd-16">
             <div class="lca-viz-toggle flex-center cg-8">
@@ -21,9 +31,9 @@ export function createRatioSection(ratioList, textSource, index) {
                 <div class="lca-viz-converted-ratio lca-viz-space-between br-4 fz-16 pd-8 flex-center cg-8 bg-eef2f0">
                   <span>Converted ratio: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
                   <div class="lca-viz-ratio-values flex-center cg-8">
-                    ${ratioList.map((element) =>
+                    ${nRatioList.map((element) =>
                       `<span class="lca-viz-ratio-text br-4 bg-d2ead7">${element.ratio_value}</span>
-                      ${element.index < ratioList.length - 1 ? `<span>:</span>` : ``}`
+                      ${element.index < nRatioList.length - 1 ? `<span>:</span>` : ``}`
                     ).join('')}
                   </div>
                 </div>
@@ -34,14 +44,14 @@ export function createRatioSection(ratioList, textSource, index) {
             <!-- & param for toggle ratio off -->
             <div class="lca-viz-param-toggle-off">
               <br>
-              ${ratioList.map((element) =>
+              ${nRatioList.map((element) =>
                 getParam(element.name, element.index, 'g', 1, undefined, undefined, undefined)
               ).join('')}
             </div>
 
             <!-- & param for toggle ratio on -->
             <div class="lca-viz-param-toggle-on lca-viz-space-between hidden flex-center bg-eef2f0 pd-16 br-8 cg-8 mt-12">
-            ${ratioList.map((element, i) =>
+            ${nRatioList.map((element, i) =>
               `<div class="lca-viz-ratio-control fz-16 bg-d2ead7 br-8 pd-16">
                 <div class="control-section">${element.name}</div>
                 <div class="flex-center cg-4 mt-8 lca-viz-justify-center">
@@ -66,7 +76,7 @@ export function createRatioSection(ratioList, textSource, index) {
                   <!-- ? ^^^^^^^ -->
                   <span>g</span>
                 </div>
-              </div>${i < ratioList.length - 1 ? `<span>:</span>` : ``}`
+              </div>${i < nRatioList.length - 1 ? `<span>:</span>` : ``}`
             ).join('')}
             </div>
           </div>

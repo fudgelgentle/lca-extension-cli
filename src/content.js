@@ -3,6 +3,7 @@
 // 1. Displaying carbon chart on raw materials
 
 import Chart from 'chart.js/auto';
+import ChartDataLabels from 'chartjs-plugin-datalabels';
 const lca_48 = chrome.runtime.getURL("../assets/img/lca-48.png");
 const off_lca_btn = chrome.runtime.getURL("../assets/img/off-lca-btn.png");
 const loading_icon_2 = chrome.runtime.getURL("../assets/img/loading-icon-2.gif");
@@ -80,6 +81,8 @@ let independentMaterialHTML = ``;
 let processesHTML = ``;
 
 const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
+
+Chart.register(ChartDataLabels);
 
 function init() {
   trackRawMaterial();
@@ -552,14 +555,14 @@ function init() {
           inputList.forEach((input) => {
             const newWeight = input.dataset.ratioValue;
             const index = parseInt(input.id.match(/\d+$/)[0]);
-            updateValue(0, index, newWeight);
+            updateValueRatio(0, index, newWeight);
           });
           lcaVizMap.style.width = `${originalWidth}px`;
           setTimeout(() => {
             show(textDetails);
             hide(paramToggleOff);
             show(paramToggleOn);
-            const newWidth = paramToggleOn.scrollWidth + 40;
+            const newWidth = paramToggleOn.scrollWidth + 100;
             lcaVizMap.style.width = `${newWidth}px`;
           }, 0);
           paramToggleOn.style.width = "auto";
@@ -805,7 +808,9 @@ function init() {
   function hideLCAActionBtn() {
     setLCAActionBtnState("default");
     if (LCAActionBtn) {
-      LCAActionBtn.classList.add('lca-viz-hidden');
+      // LCAActionBtn.classList.add('lca-viz-hidden');
+      LCAActionBtn.style.opacity = "0";
+      LCAActionBtn.style.visibility = "hidden";
     }
   }
 
@@ -814,7 +819,9 @@ function init() {
     if (LCAActionBtn) {
       console.log('SHOWING LCA ACTION BTN: ');
       console.log(LCAActionBtn);
-      LCAActionBtn.classList.remove('lca-viz-hidden');
+      // LCAActionBtn.classList.remove('lca-viz-hidden');
+      LCAActionBtn.style.opacity = "1";
+      LCAActionBtn.style.visibility = "visible";
     }
   }
 
@@ -985,7 +992,7 @@ function init() {
           globalSelectionData.range = range;
           globalSelectionData.selection = selection;
         }
-      }, 200);
+      }, 0);
     });
     document.addEventListener('click', (e) => {
       // Checks if the click is outside of tooltip. If so, hide the tooltip.
@@ -1002,7 +1009,7 @@ function init() {
 
   function handleLCAActionBtn() {
     console.log('handleLCAActionBtn called');
-    if (!LCAActionBtn) {
+    // if (!LCAActionBtn) {
       const actionBtnHTML = getLCAActionBtn();
       const tempDiv = document.createElement('div');
       tempDiv.innerHTML = actionBtnHTML;
@@ -1025,18 +1032,19 @@ function init() {
         }
       });
 
-    } else {
-      if (LCAActionBtn.classList.contains('lca-viz-hidden')) {
-        showLCAActionBtn();
-      }
-    }
+    // } else {
+    //   if (LCAActionBtn.classList.contains('lca-viz-hidden')) {
+    //     showLCAActionBtn();
+    //   }
+    // }
+
     // LCAActionBtn.style.top = `${mouseY + scrollY + 8}px`;
     // LCAActionBtn.style.left = `${mouseX + scrollX + 4}px`;
   }
 
   function getLCAActionBtn() {
     const actionBtn = `
-      <div class="flex-center lca-viz-interactable pd-12 br-8 cg-8 lca-viz-hidden" id="lca-viz-action-btn">
+      <div class="flex-center lca-viz-interactable pd-12 br-8 cg-8" id="lca-viz-action-btn">
         <img src="${lca_48}" alt="LCA Image" class="floating-lca-img icon-20">
         <span class="lca-viz-hidden lca-lexend fz-14" id="lca-viz-action-btn-text"></span>
       </div>
@@ -1097,7 +1105,7 @@ function init() {
           </svg>
         </button>
         </div>
-        <span class="lca-viz-raw-material-title"><b>Raw Materials Carbon Emissions</b></span>
+        <span class="lca-viz-raw-material-title"><b>Raw Materials Estimated Carbon Emissions</b></span>
         <div class="lca-viz-canvas flex-center lca-viz-justify-center">
           <canvas id="lca-viz-carbon-chart"></canvas>
         </div>
@@ -1129,7 +1137,8 @@ function init() {
       chart = new Chart(canvas, {
         type: 'pie',
         data: chartConfig.data,
-        options: chartConfig.options
+        options: chartConfig.options,
+        plugins: [increaseHeight]
       });
       setChartPosition();
       handleCloseButton();
@@ -1192,6 +1201,19 @@ function init() {
     clearTimeout(selectionTimeout);
   }
 
+
+  const increaseHeight = {
+    beforeInit(chart) {
+      // Get a reference to the original fit function
+      const origFit = chart.legend.fit;
+      chart.legend.fit = function fit() {
+        origFit.bind(chart.legend)();
+        // Increase the height of the legend
+        this.height += 25; // Adjust this value as needed
+      };
+    }
+  };
+
   // TODO: Implement a function that takes in the carbon info as text and outputs data used to create a Chart.js chart
   /**
    *
@@ -1249,21 +1271,36 @@ function init() {
 
     const options = {
       responsive: true,
+      layout: {
+        padding: {
+          bottom: 25
+        }
+      },
       plugins: {
         legend: {
           display: true, // Show legend for pie/donut chart
-          position: 'top'
+          position: 'top',
+          labels: {
+            padding: 10
+          }
         },
         tooltip: {
           callbacks: {
             label: function(tooltipItem) {
               const label = tooltipItem.label || '';
               const value = tooltipItem.raw;
-              return `${label}: ${value} kg CO2-eq`; // Add unit in tooltip
+              return `${label}: ${value} kg CO2e`; // Add unit in tooltip
             }
           }
+        },
+        datalabels: {
+          anchor: 'end',
+          align: 'end',
+          formatter: function(value) {
+            return `${value} kg CO2e`;
+          }
         }
-      }
+      },
     };
     return { data: chartData, options: options };
   }

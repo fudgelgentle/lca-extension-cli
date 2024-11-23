@@ -1,7 +1,3 @@
-/* * CSS Rules from popup.css *************************************************/
-b {
-  font-weight: 700;
-}
 
 .master-lca {
   width: 380px;
@@ -12,6 +8,10 @@ b {
   overflow-y: auto;
   padding-bottom: 16px;
   font-family: "Lexend", sans-serif;
+}
+
+.master-lca b {
+  font-weight: 700;
 }
 
 .master-lca > * {
@@ -145,6 +145,9 @@ b {
 .mb-8 {
   margin-bottom: 8px;
 }
+.mb-12 {
+  margin-bottom: 8px;
+}
 .mb-16 {
   margin-bottom: 16px;
 }
@@ -226,10 +229,6 @@ b {
 .title-text {
   margin-top: 0;
   margin-bottom: 0;
-}
-.freight-title-text {
-  margin-top: 0;
-  margin-bottom: 28px;
 }
 .from-to-text {
   /* top, right, bottom, left */
@@ -408,9 +407,15 @@ b {
 
 .lca-viz-unit-container {
   position: relative;
+  overflow: hidden;
+}
+.lca-viz-unit-container.phone {
   width: 200px;
   height: 36px;
-  overflow: hidden;
+}
+.lca-viz-unit-container.freight, .lca-viz-unit-container.cloud {
+  width: 240px;
+  height: 20px;
 }
 .lca-viz-unit-div {
   /* display: none; */
@@ -586,11 +591,11 @@ b {
   display: inline-block;
 }
 .emissions-diff-plus {
-  color: var(--eco-text-red);
+  color: var(--eco-text-red) !important;
   background-color: var(--eco-text-red-background);
 }
 .emissions-diff-minus {
-  color: var(--eco-text-green);
+  color: var(--eco-text-green) !important;
   background-color: var(--eco-text-green-background);
 }
 
