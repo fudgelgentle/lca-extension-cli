@@ -1570,7 +1570,7 @@ function init() {
     const deviceName = data.device;
 
     container.innerHTML += `
-      <p class="phone-spec-title" id="currentPhone"><b>${deviceName} Carbon Emissions</b></p>
+      <p class="phone-spec-title" id="currentPhone"><b>${deviceName} Estimated Carbon Emissions</b></p>
       <div class="flex-center cg-8 fz-16">
         <p>CO2e Equivalency: </p>
         <select id="lca-viz-unit-select" class="br-4 pd-4">
