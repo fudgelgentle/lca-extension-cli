@@ -7,7 +7,6 @@
  * @param {Number} index The identifier of this ratio section
  */
 export function createRatioSection(ratioList, textSource, index) {
-
   // normalizing the ratio list before passing on the data
   const firstElement = ratioList[0].ratio_value;
   const nRatioList = ratioList.map((item) => {

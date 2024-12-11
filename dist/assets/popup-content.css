@@ -674,3 +674,64 @@ a.lca-link:visited {
 a.lca-link:active {
   color: #247457;
 }
+
+/* & CSS Rule for the tooltip ONLY -- used in both content.js and popup-content.js */
+.lca-viz-title-and-question {
+  justify-content: space-between;
+}
+.lca-viz-tooltip img {
+  display: inline-block;
+  vertical-align: middle;
+}
+.lca-viz-tooltip {
+  display:inline-block;
+  position:relative;
+  /* border-bottom:1px dotted #666; */
+  text-align:left;
+}
+.lca-viz-tooltip .left {
+  min-width: 280px;
+  top:0;
+  right:100%;
+  margin-right:20px;
+  /* transform:translate(0, -50%); */
+  padding:10px 20px;
+  color:#000000;
+  background-color:#EDFFF2;
+  font-weight:normal;
+  font-size:13px;
+  border-radius: 8px;
+  position:absolute;
+  z-index:99999999;
+  box-sizing:border-box;
+  border:1px solid #77A183; box-shadow:0 1px 4px rgba(0,0,0,0.3);
+  visibility:hidden; opacity:0; transition:opacity 0.8s;
+}
+.lca-viz-tooltip:hover .left {
+  visibility:visible; opacity:1;
+}
+.lca-viz-tooltip .left i {
+  position:absolute;
+  top: 10%;
+  left:100%;
+  margin-top:-12px;
+  width:12px;
+  height:16px;
+  overflow:hidden;
+}
+.lca-viz-tooltip .left i::after {
+  content:'';
+  position:absolute;
+  width:12px;
+  height:12px;
+  left:0;
+  top: 50%;
+  transform:translate(-50%,-50%) rotate(-45deg);
+  background-color:#EDFFF2;
+  border:1px solid #77A183;box-shadow:0 1px 4px rgba(0,0,0,0.3);
+}
+/* & CSS Rule for the tooltip ONLY */
+
+.lca-lexend {
+  font-family: "Lexend", sans-serif;
+}

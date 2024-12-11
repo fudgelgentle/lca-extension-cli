@@ -18,7 +18,8 @@ const most_green_icon = chrome.runtime.getURL("../assets/img/most-green-icon.png
 const equivalent_icon = chrome.runtime.getURL("../assets/img/equivalent-icon.png");
 const airplane_icon = chrome.runtime.getURL("../assets/img/airplane-icon.png");
 const truck_icon = chrome.runtime.getURL("../assets/img/truck-icon.png");
-const sync_icon = chrome.runtime.getURL("../assets/img/sync-icon.png")
+const sync_icon = chrome.runtime.getURL("../assets/img/sync-icon.png");
+const question_icon = chrome.runtime.getURL("../assets/img/question-icon.png");
 
 // Setting up the master container and attaching the css
 const masterContainer = document.createElement("div");
@@ -35,7 +36,6 @@ document.body.append(placeholder);
 
 const shadowRoot = placeholder.attachShadow({ mode: "open" });
 shadowRoot.appendChild(masterContainer);
-
 
 let currentPhoneData;
 let currentRecommendedPhones;
@@ -259,7 +259,19 @@ function init() {
       <div class="lca-viz-cloud-emissions-container hidden-a">
         <section class="lca-viz-cloud-container br-8">
           <div class="lca-viz-cloud-results-info-container pd-16 mt-12 hidden-a">
-            <p class="fz-16 mt-0 mb-0"><b>Your cloud instance's estimated carbon emissions:</b></p>
+
+            <div class="flex-stretch lca-viz-title-and-question mt-8">
+              <p class="fz-16 mt-0 mb-0"><b>Your cloud instance's estimated carbon emissions:</b></p>
+              <div class="btn btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
+                <div class="left">
+                  <h3 class="fz-12 lca-lexend">How are cloud instance emissions calculated?</h3>
+                  <p class="fz-12 lca-lexend">We are using Climatiq's Cloud Computing Services, which provides emissions metrics for services like Amazon Web Services (AWS), Microsoft Azure, and Google Cloud Platform (GCP).
+                  <i></i>
+                </div>
+              </div>
+            </div>
+
+
             <div class="flex-center cg-8 fz-16 mb-12">
               <p>CO2e Equivalency: </p>
               <select id="lca-viz-unit-select" class="br-4 pd-4">
@@ -690,7 +702,7 @@ function init() {
         .join(" ");
     }
 
-    let titleText = "Your package&apos;s estimated carbon emissions:"
+    let titleText = "Your package&apos;s estimated carbon emissions"
 
     if (airData) {
       const airCo2eValue = airData.co2eValue;
@@ -789,7 +801,18 @@ function init() {
           </div>
         </div>
         <div class="freight-content hidden-a">
-          <p class="fz-16 mt-0 mb-16"><b>${titleText}</b></p>
+
+          <div class="flex-stretch lca-viz-title-and-question mt-8">
+            <p class="fz-16 mt-0 mb-16"><b>${titleText}</b></p>
+            <div class="btn btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
+              <div class="left">
+                <h3 class="fz-12 lca-lexend">How are package emissions calculated?</h3>
+                <p class="fz-12 lca-lexend">We are using Climatiq's Intermodal Services, which collects data from various sources to calculate the package emissions, including GLEC v3 Framework, ISO 14083 standard, Emission Factor Database (EFDB), OpenStreetMap, and more.</p>
+                <i></i>
+              </div>
+            </div>
+          </div>
+
           <div class="flex-center cg-8 fz-16">
             <p>CO2e Equivalency: </p>
             <select id="lca-viz-unit-select" class="br-4 pd-4">
@@ -1570,7 +1593,16 @@ function init() {
     const deviceName = data.device;
 
     container.innerHTML += `
-      <p class="phone-spec-title" id="currentPhone"><b>${deviceName} Estimated Carbon Emissions</b></p>
+      <div class="flex-stretch lca-viz-title-and-question mt-8">
+        <p class="phone-spec-title" id="currentPhone"><b>${deviceName} Estimated Carbon Emissions</b></p>
+        <div class="btn btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
+          <div class="left">
+            <h3 class="fz-12 lca-lexend">How are phone emissions calculated?</h3>
+            <p class="fz-12 lca-lexend">We use data from phone companies' product carbon footprint reports. If there is no data, a large language model (LLM) is used to estimate emissions based on publicly available data online.</p>
+            <i></i>
+          </div>
+        </div>
+      </div>
       <div class="flex-center cg-8 fz-16">
         <p>CO2e Equivalency: </p>
         <select id="lca-viz-unit-select" class="br-4 pd-4">

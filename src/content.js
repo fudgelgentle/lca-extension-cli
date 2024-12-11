@@ -8,6 +8,7 @@ const lca_48 = chrome.runtime.getURL("../assets/img/lca-48.png");
 const off_lca_btn = chrome.runtime.getURL("../assets/img/off-lca-btn.png");
 const loading_icon_2 = chrome.runtime.getURL("../assets/img/loading-icon-2.gif");
 const close_icon_red = chrome.runtime.getURL("../assets/img/close-icon-red.png");
+const question_icon = chrome.runtime.getURL("../assets/img/question-icon.png");
 
 import { convertToWatts } from "./material-utils";
 import { convertToSeconds } from "./material-utils";
@@ -32,9 +33,6 @@ window.onload = () => {
     const allowedDomains2 = ["amazon.com", "bestbuy.com", "apple.com", "store.google.com", "samsung.com", "oppo.com", "huawei.com", "lenovo.com"];
     if (isDomainValid(allowedDomains) || isDomainValid(allowedDomains2)) {
       console.log('current domain is allowed, injecting css');
-      createLinkElement("stylesheet", chrome.runtime.getURL("assets/content-style.css"));
-      createLinkElement("stylesheet", chrome.runtime.getURL("assets/popup-content.css"));
-
       let fontRegular = new FontFace("Lexend", `url(${chrome.runtime.getURL("assets/fonts/lexend-regular.woff")})`, {
         weight: "400"
       });
@@ -45,6 +43,9 @@ window.onload = () => {
       document.fonts.add(fontBold);
       fontRegular.load();
       fontBold.load();
+
+      createLinkElement("stylesheet", chrome.runtime.getURL("assets/content-style.css"));
+      createLinkElement("stylesheet", chrome.runtime.getURL("assets/popup-content.css"));
 
       init();
     }
@@ -960,6 +961,13 @@ function init() {
     }
   }
 
+  // Enables the highlight text behavior for all scenarios: raw materials, freight, energy
+  function trackAllScenario() {
+    handleLCAActionBtn();
+    recordCurrentMouseCoord();
+    handleHighlightText();
+  }
+
   function isNotEmptyString() {
     const selection = window.getSelection();
     return selection.toString().length > 0 && /\S/.test(selection.toString());
@@ -1105,7 +1113,16 @@ function init() {
           </svg>
         </button>
         </div>
-        <span class="lca-viz-raw-material-title"><b>Raw Materials Estimated Carbon Emissions</b></span>
+        <div class="flex-stretch lca-viz-title-and-question mt-8">
+          <span class="lca-viz-raw-material-title"><b>Raw Materials Estimated Carbon Emissions</b></span>
+          <div class="btn btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
+            <div class="left">
+              <h3 class="fz-12 lca-lexend">How are raw material emissions calculated?</h3>
+              <p class="fz-12">We are using a large language model (LLM) to extract relevant raw materials and conduct a life cycle assessment (LCA) of the raw materials using available public datasets on the internet.</p>
+              <i></i>
+            </div>
+          </div>
+        </div>
         <div class="lca-viz-canvas flex-center lca-viz-justify-center">
           <canvas id="lca-viz-carbon-chart"></canvas>
         </div>
