@@ -54,9 +54,16 @@ function init() {
   async function initialize() {
     await loadCSS(chrome.runtime.getURL("../assets/popup-content.css"));
 
-    trackFreight();
-    await trackPhone();
-    trackCloud();
+    const storedStates = await chrome.storage.sync.get('autodetect');
+    const isAutoDetectEnabled = storedStates.autodetect || false;
+    console.log(`Auto-detect is ${isAutoDetectEnabled ? 'enabled' : 'disabled'}`);
+
+    if (isAutoDetectEnabled) {
+      trackFreight();
+      await trackPhone();
+      trackCloud();
+    }
+
   }
 
   async function trackPhone() {

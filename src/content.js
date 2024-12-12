@@ -17,7 +17,7 @@ import { createRatioSection } from "./material-utils";
 import { getParam } from "./material-utils";
 import { extractEmissionsFactor } from "./material-utils";
 
-window.onload = () => {
+window.onload = async () => {
     const createLinkElement = (rel, href, crossorigin) => {
       let link = document.createElement("link");
       link.rel = rel;
@@ -47,7 +47,7 @@ window.onload = () => {
       createLinkElement("stylesheet", chrome.runtime.getURL("assets/content-style.css"));
       createLinkElement("stylesheet", chrome.runtime.getURL("assets/popup-content.css"));
 
-      init();
+      await init();
     }
 }
 
@@ -85,8 +85,30 @@ const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
 
 Chart.register(ChartDataLabels);
 
-function init() {
-  trackRawMaterial();
+let isBrushEnabled = false;
+
+async function init() {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('receiving a message from popup.js')
+    if (message.feature === 'brush') {
+      console.log('message is a brush');
+      isBrushEnabled = message.state;
+      console.log(`Brush tracking ${isBrushEnabled ? 'enabled' : 'disabled'}`);
+    } else if (message.feature === 'autodetect') {
+      console.log('message is an autodetect');
+    }
+    sendResponse({ success: true });
+  });
+
+  const storedStates = await chrome.storage.sync.get('brush');
+  isBrushEnabled = storedStates.brush || false;
+  if (isBrushEnabled) {
+    console.log('brush enabled. turning on trackRawMaterial()');
+    trackRawMaterial();
+  } else {
+    console.log('brush disabled.');
+  }
+
   /**
    * Calculates the coordinates of an HTML element relative to the entire document.
    * @param {Element} element The target HTML element
@@ -1039,15 +1061,6 @@ function init() {
           );
         }
       });
-
-    // } else {
-    //   if (LCAActionBtn.classList.contains('lca-viz-hidden')) {
-    //     showLCAActionBtn();
-    //   }
-    // }
-
-    // LCAActionBtn.style.top = `${mouseY + scrollY + 8}px`;
-    // LCAActionBtn.style.left = `${mouseX + scrollX + 4}px`;
   }
 
   function getLCAActionBtn() {

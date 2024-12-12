@@ -130,6 +130,9 @@
 .mt-16 {
   margin-top: 16px;
 }
+.mt-20 {
+  margin-top: 20px;
+}
 .mt-24 {
   margin-top: 24px;
 }
@@ -310,7 +313,6 @@
 .lca-viz-calculate-container.disabled {
   background-color: var(--btn-disabled-background);
   color: var(--btn-disabled-text);
-
 }
 .lca-viz-calculate-container.disabled:hover {
   background-color: var(--btn-disabled-background);
