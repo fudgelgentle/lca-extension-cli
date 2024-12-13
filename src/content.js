@@ -9,6 +9,9 @@ const off_lca_btn = chrome.runtime.getURL("../assets/img/off-lca-btn.png");
 const loading_icon_2 = chrome.runtime.getURL("../assets/img/loading-icon-2.gif");
 const close_icon_red = chrome.runtime.getURL("../assets/img/close-icon-red.png");
 const question_icon = chrome.runtime.getURL("../assets/img/question-icon.png");
+export const expand_icon_wide = chrome.runtime.getURL("../assets/img/expand-icon-wide.png");
+const collapse_icon_wide = chrome.runtime.getURL("../assets/img/collapse-icon-wide.png");
+export const lca_32 = chrome.runtime.getURL("../assets/img/lca-32.png");
 
 import { convertToWatts } from "./material-utils";
 import { convertToSeconds } from "./material-utils";
@@ -16,6 +19,9 @@ import { findByIndex } from "./material-utils";
 import { createRatioSection } from "./material-utils";
 import { getParam } from "./material-utils";
 import { extractEmissionsFactor } from "./material-utils";
+import { getQuestionLCA } from "./material-utils";
+import { getFreightData } from './popup-content';
+import { getLCABanner } from './popup-content';
 
 window.onload = async () => {
     const createLinkElement = (rel, href, crossorigin) => {
@@ -29,9 +35,11 @@ window.onload = async () => {
     };
 
     // TODO: Only load in the CSS if the url is valid
-    const allowedDomains = ["nature.com", "acm.org", "arxiv.org", "acs.org", "wiley.com", "fedex.com", "azure.com", "fly.dev"];
-    const allowedDomains2 = ["amazon.com", "bestbuy.com", "apple.com", "store.google.com", "samsung.com", "oppo.com", "huawei.com", "lenovo.com"];
-    if (isDomainValid(allowedDomains) || isDomainValid(allowedDomains2)) {
+    // const allowedDomains = ["nature.com", "acm.org", "arxiv.org", "acs.org", "wiley.com", "fedex.com", "azure.com", "fly.dev"];
+    // const allowedDomains2 = ["amazon.com", "bestbuy.com", "apple.com", "store.google.com", "samsung.com", "oppo.com", "huawei.com", "lenovo.com"];
+    // if (isDomainValid(allowedDomains) || isDomainValid(allowedDomains2)) {
+    const blackListedDomains = ["chatgpt.com", "youtube.com"]
+    if (!isDomainValid(blackListedDomains)) {
       console.log('current domain is allowed, injecting css');
       let fontRegular = new FontFace("Lexend", `url(${chrome.runtime.getURL("assets/fonts/lexend-regular.woff")})`, {
         weight: "400"
@@ -47,7 +55,13 @@ window.onload = async () => {
       createLinkElement("stylesheet", chrome.runtime.getURL("assets/content-style.css"));
       createLinkElement("stylesheet", chrome.runtime.getURL("assets/popup-content.css"));
 
-      await init();
+      const blackList = ["azure.com", "fedex.com", "amazon.com", "bestbuy.com", "apple.com", "store.google.com", "samsung.com", "oppo.com", "huawei.com", "lenovo.com"];
+      if (!isDomainValid(blackList)) {
+        console.log('domain NOT in blacklist');
+        await init();
+      } else {
+        console.log('domain in blacklist');
+      }
     }
 }
 
@@ -71,6 +85,8 @@ let highlightTimeout;
 let previousHighlightedNode = null;
 let currentHighlightedNode = null;
 
+let currentAssistant = false;
+
 let globalSelectionData = {
   parentNode: null,         // Will store a Node
   range: null,        // Will store a Range
@@ -86,8 +102,41 @@ const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
 Chart.register(ChartDataLabels);
 
 let isBrushEnabled = false;
+let masterQContainer;
+let shadowRoot;
 
+
+
+{/* <div id="lca-viz-question-container" class="lexend br-8 fz-16"></div> */}
 async function init() {
+  console.log('creating shadow root........');
+  // * Shadow root creation process
+  masterQContainer = document.createElement("div");
+  masterQContainer.setAttribute("role", "main");
+  masterQContainer.setAttribute("id", "lca-viz-question-container");
+  masterQContainer.classList.add("lexend", "br-8", "fz-16");
+  masterQContainer.setAttribute("tabindex", "0");
+  // masterContainer.classList.add("hidden");
+  document.body.append(masterQContainer);
+  const placeholder = document.createElement("div");
+  placeholder.setAttribute("id", "placeholder-2");
+  document.body.append(placeholder);
+  shadowRoot = placeholder.attachShadow({ mode: "open" });
+  shadowRoot.appendChild(masterQContainer);
+
+  await injectCSSToShadowDOM(chrome.runtime.getURL("../assets/content-style.css"));
+  await injectCSSToShadowDOM(chrome.runtime.getURL("../assets/popup-content.css"));
+  // ********************************
+
+  // Function to fetch and inject CSS into the shadow DOM
+  async function injectCSSToShadowDOM(url) {
+    const response = await fetch(url);
+    const cssText = await response.text();
+    const style = document.createElement("style");
+    style.textContent = cssText;
+    shadowRoot.appendChild(style);
+  }
+
   chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     console.log('receiving a message from popup.js')
     if (message.feature === 'brush') {
@@ -104,7 +153,8 @@ async function init() {
   isBrushEnabled = storedStates.brush || false;
   if (isBrushEnabled) {
     console.log('brush enabled. turning on trackRawMaterial()');
-    trackRawMaterial();
+    // trackRawMaterial();
+    trackAllScenario();
   } else {
     console.log('brush disabled.');
   }
@@ -621,120 +671,200 @@ async function init() {
   }
 
   /**
-   * Makes the highlighted text background color turn green, and displays a carbon emission chart
+   * Makes the highlighted text background color turn green, and displays carbon information based on scenarios
+   * that is returned from the JSON (scenarios can either be: raw material, freight, or energy)
    * @param {Node} parentNode The parent node
    * @param {Range} range The range of the selected text
    * @param {Selection} selection The selected text
    */
   async function makeHighlightTextInteractive(parentNode, range, selection) {
     if (selection.toString() !== "" && selection.toString().length > 2) {
-      // Reset the previous highlighted node if it exists
+      // Visually reset the previous highlighted node if it exists
+      // * For raw materials
       if (currentHighlightedNode) {
         // Store the current highlighted node as the previous highlighted node
         previousHighlightedNode = currentHighlightedNode;
         previousHighlightedNode.removeEventListener("click", redisplayChart);
         resetHighlight(currentHighlightedNode);
       }
+      // * For freight and energy
+      if (currentAssistant) {
+        console.log('current assistant is true, clearing master container');
+        setTimeout(() => {
+          hideMasterContainer();
+        }, 0);
+      }
       const materialData = await getValidSentence(selection.toString());
-      if (materialData) {
-        console.log("%j", materialData);
-        const materialList = materialData;
-        console.log('materialList: ', materialList);
-
-        const fullText = parentNode.textContent;
-        const startOffset = range.startOffset;
-        const endOffset = range.endOffset;
-        const startContainerText = range.startContainer.textContent;
-        const endContainerText = range.endContainer.textContent;
-
-        // Extract the segments of the text
-        const beforeText = fullText.slice(0, fullText.indexOf(startContainerText) + startOffset);
-        const highlightedText = selection.toString();
-        const afterText = fullText.slice(fullText.indexOf(endContainerText) + endOffset);
-
-        const div = document.createElement("div");
-        div.classList.add("lca-viz-inline");
-        // div.classList.add("lca-viz-highlight");
-
-        let modifiedText = `<div class="lca-viz-mark lca-viz-inline">${highlightedText}</div>`;
-        const { rawMaterialNames, processesNames } = getAllNames(materialList);
-        rawMaterialNames.forEach((name) => {
-          const escapedName = escapeRegExp(name);
-          const regex = new RegExp(`\\b${escapedName}\\b`, 'gi');
-          modifiedText = modifiedText.replace(regex, `<span class="lca-viz-param-bold"><b>${name}</b></span>`);
-        });
-        processesNames.forEach((process) => {
-          const escapedName = escapeRegExp(process.name);
-          const regexName = new RegExp(`\\b${escapedName}\\b`, 'gi');
-          modifiedText = modifiedText.replace(regexName, `<span class="lca-viz-param-bold"><b>${process.name}</b></span>`);
-
-          const escapedPower = escapeRegExp(String(process.power_original));
-          const regexPower = new RegExp(`\\b${escapedPower}\\b`, 'gi');
-
-          // getParam(process.name, process.index, process.power_original_unit, process.power_original, true, process.time_original_unit, process.time_original);
-          modifiedText = modifiedText.replace(regexPower,
-            `
-              <span class="lca-viz-origin-number lca-viz-hidden">${process.power_original}</span>
-              <div class="lca-viz-processes-intext-${process.index} lca-viz-inline" data-value="${process.power_original}">
-              ${createUpDownBtn(process.index, process.power_original_unit, process.power_original, "power")}
-              </div>
-            `
-          );
-          // <span class="lca-viz-original-time-text">${process.power_original}</span>
-          const escapedTime = escapeRegExp(String(process.time_original));
-          const regexTime = new RegExp(`\\b${escapedTime}\\b`, 'gi');
-          modifiedText = modifiedText.replace(regexTime,
-            `
-              <span class="lca-viz-origin-number lca-viz-hidden">${process.time_original}</span>
-              <div class="lca-viz-processes-intext-${process.index} lca-viz-inline" data-value="${process.time_original}">
-              ${createUpDownBtn(process.index, process.time_original_unit, process.time_original, "time")}
-              </div>
-            `
-          );
-          // <span class="lca-viz-original-time-text">${process.time_original}</span>
-        });
-
-        modifiedText = modifiedText + `
-          <div class="lca-viz-inline" id="lca-viz-end">
-            <img src="${off_lca_btn}" alt="Turn off the LCA visualizer" class="icon-10 off-lca-btn lca-viz-hidden">
-          </div>
-        `;
-
-        // const markElement = `<mark class="lca-viz-mark">${modifiedText}</mark>`;
-        div.innerHTML = modifiedText;
-
-        currentHighlightedNode = div;
-        console.log('setting currentHighlightedNode: ', div);
-
-        const newClasses = ["lca-viz-highlight-container"];
-        const newParentNode = replaceTagNameAndKeepStyles(parentNode, "div", newClasses);
-        parentNode.parentNode.replaceChild(newParentNode, parentNode);
-        parentNode = newParentNode;
-
-        parentNode.innerHTML = "";
-        if (beforeText) {
-          parentNode.appendChild(document.createTextNode(beforeText));
-        }
-        parentNode.appendChild(div);
-        if (afterText) {
-          parentNode.appendChild(document.createTextNode(afterText));
-        }
-
-        // If the user clicks on the red 'off-lca-btn', the highlighted text will be removed entirely.
-        const offLcaBtn = document.querySelector('.off-lca-btn');
-        offLcaBtn.addEventListener("click", () => {
-          currentHighlightedNode.removeEventListener("click", redisplayChart);
-          resetHighlight(currentHighlightedNode);
-          currentHighlightedNode = null;
-        })
-
-        hideLCAActionBtn();
-        initializeChart(materialData);
+      // * Case: raw materials
+      if (materialData.raw_materials) {
+        handleRawMaterialHighlight(materialData, parentNode, range, selection);
+      // * Case: freight
+      } else if (materialData.transport_phase) {
+        masterQContainer.innerHTML = "";
+        handleFreightHighlight(materialData, selection.toString());
+      // * Case: energy
+      } else if (materialData.use_phase) {
+        // TODO: implement
       } else {
-        console.log('rawMaterial data is null');
+        console.log('material data is null');
         setLCAActionBtnState("error");
       }
     }
+  }
+
+  // Handles the behavior for highlighting raw material data.
+  function handleRawMaterialHighlight(materialData, parentNode, range, selection) {
+    console.log("%j", materialData);
+    const materialList = materialData;
+    console.log('materialList: ', materialList);
+
+    const fullText = parentNode.textContent;
+    const startOffset = range.startOffset;
+    const endOffset = range.endOffset;
+    const startContainerText = range.startContainer.textContent;
+    const endContainerText = range.endContainer.textContent;
+
+    // Extract the segments of the text
+    const beforeText = fullText.slice(0, fullText.indexOf(startContainerText) + startOffset);
+    const highlightedText = selection.toString();
+    const afterText = fullText.slice(fullText.indexOf(endContainerText) + endOffset);
+
+    const div = document.createElement("div");
+    div.classList.add("lca-viz-inline");
+    // div.classList.add("lca-viz-highlight");
+
+    let modifiedText = `<div class="lca-viz-mark lca-viz-inline">${highlightedText}</div>`;
+    const { rawMaterialNames, processesNames } = getAllNames(materialList);
+    rawMaterialNames.forEach((name) => {
+      const escapedName = escapeRegExp(name);
+      const regex = new RegExp(`\\b${escapedName}\\b`, 'gi');
+      modifiedText = modifiedText.replace(regex, `<span class="lca-viz-param-bold"><b>${name}</b></span>`);
+    });
+    processesNames.forEach((process) => {
+      const escapedName = escapeRegExp(process.name);
+      const regexName = new RegExp(`\\b${escapedName}\\b`, 'gi');
+      modifiedText = modifiedText.replace(regexName, `<span class="lca-viz-param-bold"><b>${process.name}</b></span>`);
+
+      const escapedPower = escapeRegExp(String(process.power_original));
+      const regexPower = new RegExp(`\\b${escapedPower}\\b`, 'gi');
+
+      // getParam(process.name, process.index, process.power_original_unit, process.power_original, true, process.time_original_unit, process.time_original);
+      modifiedText = modifiedText.replace(regexPower,
+        `
+          <span class="lca-viz-origin-number lca-viz-hidden">${process.power_original}</span>
+          <div class="lca-viz-processes-intext-${process.index} lca-viz-inline" data-value="${process.power_original}">
+          ${createUpDownBtn(process.index, process.power_original_unit, process.power_original, "power")}
+          </div>
+        `
+      );
+      // <span class="lca-viz-original-time-text">${process.power_original}</span>
+      const escapedTime = escapeRegExp(String(process.time_original));
+      const regexTime = new RegExp(`\\b${escapedTime}\\b`, 'gi');
+      modifiedText = modifiedText.replace(regexTime,
+        `
+          <span class="lca-viz-origin-number lca-viz-hidden">${process.time_original}</span>
+          <div class="lca-viz-processes-intext-${process.index} lca-viz-inline" data-value="${process.time_original}">
+          ${createUpDownBtn(process.index, process.time_original_unit, process.time_original, "time")}
+          </div>
+        `
+      );
+      // <span class="lca-viz-original-time-text">${process.time_original}</span>
+    });
+
+    modifiedText = modifiedText + `
+      <div class="lca-viz-inline" id="lca-viz-end">
+        <img src="${off_lca_btn}" alt="Turn off the LCA visualizer" class="icon-10 off-lca-btn lca-viz-hidden">
+      </div>
+    `;
+    // const markElement = `<mark class="lca-viz-mark">${modifiedText}</mark>`;
+    div.innerHTML = modifiedText;
+
+    currentHighlightedNode = div;
+    console.log('setting currentHighlightedNode: ', div);
+    const newClasses = ["lca-viz-highlight-container"];
+    const newParentNode = replaceTagNameAndKeepStyles(parentNode, "div", newClasses);
+    parentNode.parentNode.replaceChild(newParentNode, parentNode);
+    parentNode = newParentNode;
+    parentNode.innerHTML = "";
+    if (beforeText) {
+      parentNode.appendChild(document.createTextNode(beforeText));
+    }
+    parentNode.appendChild(div);
+    if (afterText) {
+      parentNode.appendChild(document.createTextNode(afterText));
+    }
+    // If the user clicks on the red 'off-lca-btn', the highlighted text will be removed entirely.
+    const offLcaBtn = document.querySelector('.off-lca-btn');
+    offLcaBtn.addEventListener("click", () => {
+      currentHighlightedNode.removeEventListener("click", redisplayChart);
+      resetHighlight(currentHighlightedNode);
+      currentHighlightedNode = null;
+    })
+    hideLCAActionBtn();
+    initializeChart(materialData);
+  }
+
+  /**
+   *
+   * @param {JSON} data The data of the freight in JSON.
+   * @param {String} textSource The text of the highlighted sentence.
+   */
+  function handleFreightHighlight(data, textSource) {
+    const freightData = data.transport_phase;
+    const freightHTML = getQuestionLCA(
+      'It looks like you want to ship a package to somewhere.',
+      textSource,
+      'freight'
+    );
+
+    const floatingQuestionMenu = getLCAFloatingMenu();
+    // Initialize and inject the freight question UI.
+    masterQContainer.insertAdjacentHTML("beforeend", freightHTML);
+    masterQContainer.insertAdjacentHTML("beforebegin", floatingQuestionMenu);
+
+    toggleQuestionButtonState();
+
+    currentAssistant = true;
+    setTimeout(() => {
+      handleQuestionForm();
+      handleExpandCollapse();
+    }, 0);
+    hideLCAActionBtn();
+
+    // Fill in the form using freightData's data.
+    const transportData = freightData.transports[0];
+    console.log('transportData: ');
+    console.log(transportData);
+    const inputMapping = {
+      'from_location': 'lca-input-from',
+      'to_location': 'lca-input-to'
+    };
+    for (const [key, inputId] of Object.entries(inputMapping)) {
+      console.log('key = ', key, "input id = ", inputId);
+      const input = shadowRoot.getElementById(inputId);
+      console.log('setting input value: ' + transportData[key]);
+      if (transportData[key]) {
+        input.value = transportData[key];
+        checkAllValid();
+      }
+    }
+    // Handle package weight and unit
+    if (transportData.weight) {
+      let { value, unit } = transportData.weight;
+      const weightInput = shadowRoot.getElementById('lca-input-package-weight');
+      const unitSelect = shadowRoot.getElementById('lca-input-package-unit');
+      console.log('setting weight value....');
+      if (value) {
+        weightInput.value = value;
+        checkAllValid();
+      }
+      if (unit) {
+        if (unit === 'lb') unit = 'lbs';
+        unitSelect.value = unit;
+        checkAllValid();
+      }
+    }
+    masterQContainer.classList.add("lca-viz-c-visible");
   }
 
   /**
@@ -828,6 +958,9 @@ async function init() {
     }
   }
 
+  /**
+   * Hides the LCA Action Button and restores it to "default" stage.
+   */
   function hideLCAActionBtn() {
     setLCAActionBtnState("default");
     if (LCAActionBtn) {
@@ -1171,7 +1304,7 @@ async function init() {
         plugins: [increaseHeight]
       });
       setChartPosition();
-      handleCloseButton();
+      handleCloseMapButton();
       handleUpDownBtnBehavior();
       handleToggleSwitch();
 
@@ -1190,7 +1323,7 @@ async function init() {
   /**
    * Handles closing the chart behavior
    */
-  function handleCloseButton() {
+  function handleCloseMapButton() {
     document.getElementById("lca-viz-close-map").addEventListener("click", () => {
       hideChart();
       document.querySelector('.lca-viz-mark').classList.add('lca-viz-previously-highlighted');
@@ -1227,10 +1360,18 @@ async function init() {
     const mapElement = document.getElementById("lca-viz-map");
     mapElement.classList.remove("lca-viz-map-visible");
     mapElement.classList.add("lca-viz-map-hidden");
-
     clearTimeout(selectionTimeout);
   }
 
+  function hideMasterContainer() {
+    masterQContainer.classList.add("lca-viz-c-hidden");
+    masterQContainer.classList.remove("lca-viz-c-visible");
+  }
+
+  function showMasterContainer() {
+    masterQContainer.classList.remove("lca-viz-c-hidden");
+    masterQContainer.classList.add("lca-viz-c-visible");
+  }
 
   const increaseHeight = {
     beforeInit(chart) {
@@ -1334,7 +1475,35 @@ async function init() {
     };
     return { data: chartData, options: options };
   }
+
+  // Handles the behavior of opening and closing the lca question UI.
+  function toggleQuestionButtonState() {
+    console.log('toggle button state');
+    const openContainer = shadowRoot.getElementById("lca-viz-question-menu");
+    const closeContainer = shadowRoot.getElementById("lca-viz-close-question");
+    closeContainer.addEventListener("click", () => {
+      console.log('closing master container');
+      hideMasterContainer();
+      openContainer.style.display = "flex";
+      requestAnimationFrame(() => {
+        openContainer.classList.remove("hidden-b");
+        openContainer.classList.add("visible-b");
+      });
+
+    });
+    openContainer.addEventListener("click", () => {
+      console.log('opening master container');
+      showMasterContainer();
+      openContainer.style.display = "flex";
+      requestAnimationFrame(() => {
+        openContainer.classList.add("hidden-b");
+        openContainer.classList.remove("visible-b");
+      });
+    });
+  }
 }
+
+
 
 /**
  * Takes in raw materials data and extracts the name of each raw material and emissions, then returns it
@@ -1355,7 +1524,6 @@ function extractNameAndEmissions(data) {
         const ratioList = material.ratio;
         const textSource = material.text_source;
         relatedMaterialHTML += createRatioSection(ratioList, textSource, index);
-
         material.ratio.forEach(item => {
           results.push({
             name: item.name,
@@ -1410,11 +1578,6 @@ export function isDomainValid(domainList) {
   const currentDomain = getBaseDomain(window.location.hostname);
 
   console.log('currentDomain = ' + currentDomain);
-  // Manually allow the specific URL
-  if (currentDomain === "fly.dev") {
-    return true;
-  }
-
   if (allowedDomains.includes(currentDomain)) {
     return true;
   } else {
@@ -1428,4 +1591,169 @@ export function getBaseDomain(hostname) {
     return parts.slice(-2).join('.');
   }
   return hostname;
+}
+
+
+/**
+ * Enables the question UI form to function properly
+ */
+function handleQuestionForm() {
+  const inputs = [
+    { id: 'lca-input-from', errorId: 'lca-viz-from-error', validate: validateText},
+    { id: 'lca-input-to', errorId: 'lca-viz-to-error', validate: validateText},
+    { id: 'lca-input-package-weight', errorId: 'lca-viz-package-error', validate: validatePackageWeight},
+  ];
+  const calculateContainer = shadowRoot.querySelector('.lca-viz-calculate-container-2');
+  const formContainer = shadowRoot.querySelector('.lca-viz-question-form');
+
+  inputs.forEach(({ id }) => {
+    const input = shadowRoot.getElementById(id);
+    input.addEventListener('input', checkAllValid);
+  });
+
+  calculateContainer.addEventListener('click', async () => {
+    if (!calculateContainer.classList.contains('invalid')) {
+      const formData = new FormData(formContainer);
+
+      console.log('from: ' , formData.get('from'));
+      console.log('to: ' , formData.get('to'));
+      console.log('package weight / usage duration: ' , formData.get('package-weight'));
+      console.log('unit: ' , formData.get('package-unit'));
+      const fromAddress = formData.get('from');
+      const toAddress = formData.get('to');
+      const unit = formData.get('package-unit');
+      let totalWeight = formData.get('package-weight');
+      // Converting the weight to kg if unit is originally in lbs.
+      if (unit !== 'kg') totalWeight = totalWeight * 0.453;
+      const currShippingOptions = null;
+      const freightData = await getFreightData(fromAddress, toAddress, totalWeight, currShippingOptions, true);
+      if (shadowRoot.querySelector(".freight-container") !== null) {
+        console.log("updating freight content.....");
+        // await updateFreightContent(freightData);
+      } else {
+        console.log("injecting freight content.....");
+        // await injectPopupContent("freight", freightData);
+      }
+    }
+  })
+
+  inputs.forEach(({ id, errorId, validate = validateText}) => {
+    const input = shadowRoot.getElementById(id);
+    input.addEventListener('input', () => {
+      const isValid = validate(input);
+      toggleValidation(input, errorId, isValid);
+    });
+  });
+}
+
+function injectFreightContent() {
+  const lcaBanner = getLCABanner();
+  const masterContainer = shadowRoot.querySelector('.master-lca');
+  masterContainer.insertAdjacentHTML("beforeend", lcaBanner);
+  const lcaFloatingMenu = getLCAFloatingMenu();
+  masterContainer.insertAdjacentHTML("beforebegin", lcaFloatingMenu);
+}
+
+// function validateLocation() {
+//   const calculateError = shadowRoot.getElementById('lca-viz-calculate-error');
+//   const fromTo = shadowRoot.querySelectorAll('.lca-viz-question-from-to');
+//   fromTo.forEach(async (input) => {
+//     const locationObj = {
+//       "location_name": input.value
+//     }
+//     try {
+//       const response = await fetch(LCA_PY_SERVER_URL + '/get-coordinates', {
+//         method: 'POST',
+//         'Content-Type': '',
+//       })
+//       if (!response) {
+//         calculateError.value = 'Error: is not a valid location'
+//       }
+//     } catch (error) {
+
+//     }
+//   })
+// }
+
+function checkAllValid() {
+  const inputs = [
+    { id: 'lca-input-from', errorId: 'lca-viz-from-error', validate: validateText},
+    { id: 'lca-input-to', errorId: 'lca-viz-to-error', validate: validateText},
+    { id: 'lca-input-package-weight', errorId: 'lca-viz-package-error', validate: validatePackageWeight},
+  ];
+  const calculateContainer = shadowRoot.querySelector('.lca-viz-calculate-container-2');
+  console.log('checkAllValid called');
+  let allValid = true;
+  inputs.forEach(({ id, errorId, validate }) => {
+    const input = shadowRoot.getElementById(id);
+    const isValid = validate(input);
+    toggleValidation(input, errorId, isValid);
+    if (!isValid) allValid = false; // Ensure all fields are checked
+  });
+  if (allValid) {
+    console.log('ALL INPUTS ARE VALID');
+    calculateContainer.classList.add('valid');
+    calculateContainer.classList.remove('invalid');
+  } else {
+    console.log('not all inputs are valid............');
+    calculateContainer.classList.add('invalid');
+    calculateContainer.classList.remove('valid');
+  }
+}
+
+function validateText(input) {
+  return input.value.trim() !== '';
+}
+
+function validatePackageWeight(input) {
+  const value = parseFloat(input.value.trim());
+  return !isNaN(value) && value > 0;
+}
+
+/**
+ * Adds an error UI to the inputs if any inputs are empty or invalid.
+ * @param {HTMLElement} selector The selector HTML node. This should be the shadowRoot node.
+ */
+function toggleValidation(input, errorId, isValid) {
+  const error = shadowRoot.getElementById(errorId);
+  if (isValid) {
+    input.classList.remove('invalid');
+    input.classList.add('valid');
+    error.style.display = 'none';
+  } else {
+    input.classList.remove('valid');
+    input.classList.add('invalid');
+    error.style.display = 'block';
+  }
+}
+
+/**
+ * Handles the expanding and collapsing of the form
+ */
+function handleExpandCollapse() {
+  console.log('handleExpandCollapse');
+  shadowRoot.querySelector('.lca-viz-expand-collapse-container').addEventListener('click', () => {
+    const qExpand = shadowRoot.querySelector('.lca-viz-question-expand');
+    const collapseIcon = shadowRoot.querySelector('.lca-viz-expand-collapse-icon');
+    if (qExpand.classList.contains('expanded')) {
+      qExpand.style.height = `40px`;
+      qExpand.classList.add('collapsed');
+      qExpand.classList.remove('expanded');
+      collapseIcon.src = `${expand_icon_wide}`;
+    } else if (qExpand.classList.contains('collapsed')) {
+      qExpand.style.height = `420px`;
+      qExpand.classList.add('expanded');
+      qExpand.classList.remove('collapsed');
+      collapseIcon.src = `${collapse_icon_wide}`;
+    }
+  });
+}
+
+function getLCAFloatingMenu() {
+  const floatingMenu = `
+    <div class="flex-center floating-lca-menu pd-12 br-8 hidden-b" id="lca-viz-question-menu">
+      <img src="${lca_48}" alt="LCA Image" class="floating-lca-img icon-24">
+    </div>
+  `;
+  return floatingMenu;
 }

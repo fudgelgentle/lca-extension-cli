@@ -1,4 +1,8 @@
 
+// Contains utilities method that is used in content.js
+
+import { expand_icon_wide } from "./content";
+import { lca_32 } from "./content";
 
 /**
  * Returns the HTML code for ratio section given a list of ratios
@@ -332,3 +336,123 @@ export function convertToSeconds(value, unit) {
   }
   return value * factor;
 }
+
+
+// * New Question UI *****************************
+
+/**
+ * Generates and returns the HTML code for the LCA assistant / question UI for text highlight in freight/energy scenario.
+ * @param {String} title The title of the question form
+ * @param {String} textSource The text source of the question form
+ * @param {String} scenario The scenario, which is either "freight" or "energy"
+ */
+export function getQuestionLCA(title, textSource, scenario) {
+  const resultHTML = `
+      <div class="flex-center lca-viz-header-2 cg-12 pd-12">
+        <div class="flex-center cg-12 lca-viz-header-title">
+          <img alt="logo" src="${lca_32}" class="icon-20">
+          <span><b>LCA-Viz</b></span>
+        </div>
+        <button id="lca-viz-close-question" class="lca-viz-close-button flex-center">
+          <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path>
+          </svg>
+        </button>
+      </div>
+      <p class="lca-viz-line-break"><b>${title}</b></p>
+      <div class="flex-stretch cg-8">
+        <div class="lca-viz-vl lca-viz-t-source-height"></div>
+        <p class=""><b>Text source:</b> <i>"${textSource}"</i></p>
+      </div>
+      <p>Is the information below correct?</p>
+      <div class="lca-viz-question-expand collapsed">
+        <div class="lca-viz-lcz-1 cg-8">
+          <div class="lca-viz-vl lca-viz-shipping-height"></div>
+          ${getQuestionForm(scenario)}
+        </div>
+        <div class="lca-viz-calculate-container-2 lca-viz-calculate-fixed invalid br-8 pd-4">
+          <div class="lca-viz-calculate-btn">
+            <p class="fz-16 margin-8 lca-viz-calculate-btn-txt">Calculate emissions</p>
+          </div>
+          <small id="lca-viz-calculate-error" class="lca-viz-input-error"></small>
+        </div>
+      </div>
+      <div class="lca-viz-bottom-gradient"></div>
+      <div class="lca-viz-expand-collapse-container">
+        <div class="lca-viz-expand-collapse-content flex-center lca-viz-justify-center cg-8">
+          <img src="${expand_icon_wide}" alt="Click to expand content" class="icon-24 lca-viz-expand-collapse-icon">
+        </div>
+      </div>
+  `;
+  console.log('returing resultHTML');
+  return resultHTML;
+}
+
+/**
+ *
+ * @param {String} scenario The scenario, which is either "freight" or "energy"
+ * @returns the HTML content of the question form
+ */
+export function getQuestionForm(scenario) {
+  if (scenario === 'freight') {
+    const freightForm = `
+      <form class="lca-viz-question-form">
+        <div>
+          <label for="lca-input-from"><b>From *</b> </label>
+          <input type="text" id="lca-input-from" name="from" class="lca-viz-question-from-to br-8 mt-8 mb-2 invalid" required>
+          <small id="lca-viz-from-error" class="lca-viz-input-error">Enter a location.</small>
+        </div>
+        <div class="mt-24">
+          <label for="lca-input-to"><b>To *</b></label>
+          <input type="text" id="lca-input-to" name="to" class="lca-viz-question-from-to br-8 mt-8 mb-2 invalid" required>
+          <small id="lca-viz-to-error" class="lca-viz-input-error">Enter a location.</small>
+        </div>
+        <div class="lca-viz-package-weight-container mt-24">
+          <label for="lca-input-package-weight" class="package-weight-label"><b>Package weight *</b></label><br>
+          <div class="lca-viz-package-parent flex-stretch cg-8 mb-2">
+            <input type="number" name="package-weight" min="1" step="1" id="lca-input-package-weight" class="lca-viz-question-weight br-8 mt-8 lca-lexend invalid" required>
+            <div class="lca-viz-package-unit-container br-8 mt-8">
+              <select id="lca-input-package-unit" name="package-unit" class="lca-viz-question-unit lca-lexend" required>
+                <option value="lbs">lbs</option>
+                <option value="kg">kg</option>
+              </select>
+            </div>
+          </div>
+          <small id="lca-viz-package-error" class="lca-viz-input-error">Enter package weight.</small>
+        </div>
+      </form>
+    `;
+    return freightForm;
+  } else if (scenario === 'energy') {
+    const energyForm = `
+      <form class="lca-viz-question-form">
+        <div>
+          <label for="lca-input-from"><b>Device *</b> </label>
+          <input type="text" id="lca-input-from" name="from" class="lca-viz-question-from-to br-8 mt-8 mb-2 invalid" required>
+          <small id="lca-viz-from-error" class="lca-viz-input-error">Enter a device name.</small>
+        </div>
+        <div class="lca-viz-package-weight-container mt-24">
+          <label for="lca-input-package-weight" class="package-weight-label"><b>Usage Duration *</b></label><br>
+          <div class="lca-viz-duration-parent flex-stretch cg-8 mb-2">
+            <input type="number" name="package-weight" min="1" step="1" id="lca-input-package-weight" class="lca-viz-question-weight br-8 mt-8 lca-lexend invalid" required>
+            <div class="lca-viz-package-unit-container br-8 mt-8">
+              <select id="lca-input-package-unit" name="package-unit" class="lca-viz-question-unit lca-lexend" required>
+                <option value="h">hours</option>
+                <option value="min">minutes</option>
+                <option value="s">seconds</option>
+              </select>
+            </div>
+          </div>
+          <small id="lca-viz-package-error" class="lca-viz-input-error">Enter usage duration.</small>
+        </div>
+        <div class="mt-24">
+          <label for="lca-input-to"><b>Location *</b></label>
+          <input type="text" id="lca-input-to" name="to" class="lca-viz-question-from-to br-8 mt-8 mb-2 invalid" required>
+          <small id="lca-viz-to-error" class="lca-viz-input-error">Enter a location.</small>
+        </div>
+      </form>
+    `;
+    return energyForm;
+  }
+}
+// * New Question UI *****************************

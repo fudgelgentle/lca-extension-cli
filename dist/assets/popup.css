@@ -184,10 +184,10 @@ body {
 .title-container, .lca-banner {
   gap: 8px;
 }
-.title-container, .close-container, .select-phone-container {
+.title-container, .lca-viz-close-container, .select-phone-container {
   background-color: var(--eco-turquoise-100);
 }
-.close-container {
+.lca-viz-close-container {
   cursor: pointer;
 }
 

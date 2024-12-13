@@ -58,11 +58,12 @@
   overflow-y: scroll;
 }
 
-#lca-viz-map.lca-viz-map-hidden {
+#lca-viz-map.lca-viz-map-hidden, #lca-viz-question-container.lca-viz-c-hidden {
   opacity: 0;
+  pointer-events: none;
 }
 
-#lca-viz-map.lca-viz-map-visible {
+#lca-viz-map.lca-viz-map-visible, #lca-viz-question-container.lca-viz-c-visible {
   opacity: 1;
   pointer-events: auto;
   user-select: auto;
@@ -309,8 +310,6 @@
 .lca-viz-empty-space {
   width: 100px;
 }
-.lca-viz-ratio-control-container {
-}
 .lca-viz-ratio-control {
   text-align: center;
   /* height: 100px; */
@@ -388,3 +387,170 @@
   /* *CSS Rule for toggle switch */
 
 /* & CSS Rule for Ratio part */
+
+
+
+/* * New Question UI *****************************/
+.lca-viz-header {
+  background-color: #D3EDE5;
+}
+
+.lca-viz-header, .lca-viz-header-2, .lca-viz-header-3 {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  justify-content: space-between;
+  cursor: grab;
+}
+
+.lca-viz-header, .lca-viz-header-2 {
+  border-radius: 8px 8px 0 0;
+}
+
+.lca-viz-header-2, .lca-viz-header-3 {
+  background-color: #C0D9C8;
+}
+
+#lca-viz-question-container {
+  position: fixed;
+  top: 12px;
+  right: 12px;
+  z-index: 2147483647;
+  opacity: 0;
+
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
+  background-color: #E6F2ED;
+  padding: 20px;
+  /* pointer-events: none; */
+  max-width: 380px;
+  padding-top: 64px;
+  transition: all 0.5s;
+  overflow: hidden;
+  font-family: "Lexend", sans-serif;
+
+  word-wrap: break-word;  /* Handles long words */
+  overflow-wrap: break-word;  /* Modern equivalent */
+  white-space: normal;  /* Allow line breaks */
+}
+
+.lca-viz-lcz-1 {
+  display: flex;
+  /* height: 80%; */
+  align-items: stretch;
+}
+
+.lca-viz-vl {
+  border-left: 3px solid #52B788;
+  margin-right: 16px;
+}
+
+.lca-viz-t-source-height {
+  /* height: 32px; */
+  height: auto;
+}
+
+.lca-viz-package-parent {
+  width: 142px;
+}
+
+.lca-viz-duration-parent {
+  width: 180px;
+}
+
+.lca-viz-question-from-to, .lca-viz-question-weight, .lca-viz-question-unit {
+  border: none;
+}
+
+.lca-viz-question-expand {
+  /* height: 460px; */
+  height: 40px;
+  transition: all 0.5s;
+}
+
+.lca-viz-question-form {
+  flex-grow: 1;
+  align-content: center;
+}
+
+.lca-viz-question-form label {
+  margin-bottom: 8px;
+}
+
+.lca-viz-question-form input {
+  font-family: 'Lexend', sans-serif;
+  width: 90%;
+  /* trbl */
+  padding: 14px 12px 14px 12px;
+}
+
+.lca-viz-package-unit-container {
+  background-color: white;
+  align-content: center;
+  padding: 0 12px 0 12px;
+}
+
+.lca-viz-question-unit:focus {
+  outline: none;
+  box-shadow: none;
+  border: none;
+}
+
+.lca-viz-question-weight {
+  text-align: center;
+}
+
+.lca-viz-input-error {
+  color: #F70000;
+}
+
+.lca-viz-expand-collapse-container {
+  position: absolute;
+  align-content: center;
+  height: 32px;
+  width: 100%;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--eco-green-400);
+  z-index: 50;
+  box-shadow: 0px 1px 4px 0px rgba(0, 0, 0, 0.25);
+}
+.lca-viz-expand-collapse-container:hover {
+  transition: all 0.5s;
+  cursor: pointer;
+  background: #87c094;
+}
+
+.lca-viz-question-from-to.invalid, .lca-viz-question-weight.invalid {
+  border: 1px solid red;
+}
+.lca-viz-question-from-to.valid, .lca-viz-question-weight.valid {
+  border: none;
+}
+
+/* ! Combine this with .lca-viz-calculate-container.disabled */
+  .lca-viz-calculate-container-2 {
+    margin-top: 24px;
+    background-color: var(--eco-green-400);
+  }
+  .lca-viz-calculate-container-2.valid {
+    cursor: pointer;
+    color: black;
+    transition: all 0.5s;
+  }
+  .lca-viz-calculate-container-2.invalid {
+    background-color: var(--btn-disabled-background);
+    color: var(--btn-disabled-text);
+  }
+  .lca-viz-calculate-container-2.valid:hover {
+    background-color: #87bd92;
+  }
+  .lca-viz-calculate-container-2.invalid:hover {
+    cursor: not-allowed;
+    transition: none;
+  }
+  .lca-viz-calculate-btn-txt {
+    text-align: center;
+  }
+/* ******************************************* */

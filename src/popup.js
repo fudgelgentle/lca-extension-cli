@@ -20,6 +20,13 @@
     toggleSwitch('toggle2', 'switch2', autoDetectEnabled, 'autodetect');
   }
 
+  /**
+   * Handles the behavior of toggling on/off the toggle switches.
+   * @param {String} containerId The id that identifies the container of the toggle switch
+   * @param {String} switchId The id that identifies the toggle switch
+   * @param {Boolean} isOn indicates whether the button is toggled on or off.
+   * @param {String} scenario either "brush" or "autodetect".
+   */
   function toggleSwitch(containerId, switchId, isOn, scenario) {
     const toggleSwitch = document.getElementById(switchId);
     const toggleContainer = document.getElementById(containerId);
@@ -42,6 +49,7 @@
     });
   }
 
+  // Sends the information of brushEnabled and autoDetectEnabled to content.js
   function sendToContentScript(feature, state) {
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
       chrome.tabs.sendMessage(tabs[0].id, { feature, state }, () => {
@@ -50,14 +58,12 @@
     });
   }
 
-  // function reloadActiveTab() {
-  //   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-  //       const tabId = tabs[0].id;
-  //       const code = 'window.location.reload();';
-  //       chrome.tabs.executeScript(tabId, { code });
-  //   });
-  // }
-
+  /**
+   * Visually update the UI of the toggle switch to reflect its on/off state.
+   * @param {HTMLElement} toggleSwitch The HTML node of the toggle switch
+   * @param {HTMLElement} toggleContainer The HTML node of the toggle switch container
+   * @param {Boolean} isOn indicates whether the toggle switch is turned on or off.
+   */
   function updateSwitchUI(toggleSwitch, toggleContainer, isOn) {
     if (isOn) {
         toggleSwitch.style.backgroundColor = 'white';
