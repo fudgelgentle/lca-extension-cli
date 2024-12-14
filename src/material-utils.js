@@ -231,7 +231,7 @@ export function getMockData() {
 /**
  *
  * @param {String} emissionsString Takes in the string in the following format: "<value> g CO2-eq per <material_unit>"
- * @returns
+ * @returns {Object} An object containing the co2e_value, co2e_unit, and material_unit
  */
 export function extractEmissionsFactor(emissionsString) {
   const parts = emissionsString.split(' ');
@@ -345,8 +345,9 @@ export function convertToSeconds(value, unit) {
  * @param {String} title The title of the question form
  * @param {String} textSource The text source of the question form
  * @param {String} scenario The scenario, which is either "freight" or "energy"
+ * @param {Boolean} isDeviceExist For "energy" scenario.
  */
-export function getQuestionLCA(title, textSource, scenario) {
+export function getQuestionLCA(title, textSource, scenario, isDeviceExist) {
   const resultHTML = `
       <div class="flex-center lca-viz-header-2 cg-12 pd-12">
         <div class="flex-center cg-12 lca-viz-header-title">
@@ -368,11 +369,11 @@ export function getQuestionLCA(title, textSource, scenario) {
       <div class="lca-viz-question-expand collapsed">
         <div class="lca-viz-lcz-1 cg-8">
           <div class="lca-viz-vl lca-viz-shipping-height"></div>
-          ${getQuestionForm(scenario)}
+          ${getQuestionForm(scenario, isDeviceExist)}
         </div>
         <div class="lca-viz-calculate-container-2 lca-viz-calculate-fixed invalid br-8 pd-4">
           <div class="lca-viz-calculate-btn">
-            <p class="fz-16 margin-8 lca-viz-calculate-btn-txt">Calculate emissions</p>
+            <p class="fz-16 margin-8 lca-viz-calculate-btn-txt-2">Calculate emissions</p>
           </div>
           <small id="lca-viz-calculate-error" class="lca-viz-input-error"></small>
         </div>
@@ -391,9 +392,10 @@ export function getQuestionLCA(title, textSource, scenario) {
 /**
  *
  * @param {String} scenario The scenario, which is either "freight" or "energy"
+ * @param {Boolean} isDeviceExist The scenario, which is either "freight" or "energy"
  * @returns the HTML content of the question form
  */
-export function getQuestionForm(scenario) {
+export function getQuestionForm(scenario, isDeviceExist) {
   if (scenario === 'freight') {
     const freightForm = `
       <form class="lca-viz-question-form">
@@ -427,8 +429,8 @@ export function getQuestionForm(scenario) {
     const energyForm = `
       <form class="lca-viz-question-form">
         <div>
-          <label for="lca-input-from"><b>Device *</b> </label>
-          <input type="text" id="lca-input-from" name="from" class="lca-viz-question-from-to br-8 mt-8 mb-2 invalid" required>
+          <label for="lca-input-from"><b>${isDeviceExist ? "Device" : "Process name"}</b> </label>
+          <input type="text" id="lca-input-from" name="from" class="lca-viz-question-from-to br-8 mt-8 mb-2 read-only" readonly>
           <small id="lca-viz-from-error" class="lca-viz-input-error">Enter a device name.</small>
         </div>
         <div class="lca-viz-package-weight-container mt-24">
@@ -446,8 +448,8 @@ export function getQuestionForm(scenario) {
           <small id="lca-viz-package-error" class="lca-viz-input-error">Enter usage duration.</small>
         </div>
         <div class="mt-24">
-          <label for="lca-input-to"><b>Location *</b></label>
-          <input type="text" id="lca-input-to" name="to" class="lca-viz-question-from-to br-8 mt-8 mb-2 invalid" required>
+          <label for="lca-input-to"><b>Location </b></label>
+          <input type="text" id="lca-input-to" name="to" class="lca-viz-question-from-to br-8 mt-8 mb-2" placeholder="Optional">
           <small id="lca-viz-to-error" class="lca-viz-input-error">Enter a location.</small>
         </div>
       </form>

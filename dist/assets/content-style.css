@@ -528,6 +528,11 @@
 .lca-viz-question-from-to.valid, .lca-viz-question-weight.valid {
   border: none;
 }
+.lca-viz-question-from-to.read-only {
+  border: 1px solid #39805F;
+  color: #39805F;
+  background-color: #DCE7E2;
+}
 
 /* ! Combine this with .lca-viz-calculate-container.disabled */
   .lca-viz-calculate-container-2 {
@@ -550,7 +555,7 @@
     cursor: not-allowed;
     transition: none;
   }
-  .lca-viz-calculate-btn-txt {
+  .lca-viz-calculate-btn-txt, .lca-viz-calculate-btn-txt-2 {
     text-align: center;
   }
 /* ******************************************* */

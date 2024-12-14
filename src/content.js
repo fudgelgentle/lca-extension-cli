@@ -2,15 +2,23 @@
 // content.js handles the following scenario:
 // 1. Displaying carbon chart on raw materials
 
-import Chart from 'chart.js/auto';
-import ChartDataLabels from 'chartjs-plugin-datalabels';
+import Chart from "chart.js/auto";
+import ChartDataLabels from "chartjs-plugin-datalabels";
 const lca_48 = chrome.runtime.getURL("../assets/img/lca-48.png");
 const off_lca_btn = chrome.runtime.getURL("../assets/img/off-lca-btn.png");
-const loading_icon_2 = chrome.runtime.getURL("../assets/img/loading-icon-2.gif");
-const close_icon_red = chrome.runtime.getURL("../assets/img/close-icon-red.png");
+const loading_icon_2 = chrome.runtime.getURL(
+  "../assets/img/loading-icon-2.gif"
+);
+const close_icon_red = chrome.runtime.getURL(
+  "../assets/img/close-icon-red.png"
+);
 const question_icon = chrome.runtime.getURL("../assets/img/question-icon.png");
-export const expand_icon_wide = chrome.runtime.getURL("../assets/img/expand-icon-wide.png");
-const collapse_icon_wide = chrome.runtime.getURL("../assets/img/collapse-icon-wide.png");
+export const expand_icon_wide = chrome.runtime.getURL(
+  "../assets/img/expand-icon-wide.png"
+);
+const collapse_icon_wide = chrome.runtime.getURL(
+  "../assets/img/collapse-icon-wide.png"
+);
 export const lca_32 = chrome.runtime.getURL("../assets/img/lca-32.png");
 
 import { convertToWatts } from "./material-utils";
@@ -20,11 +28,13 @@ import { createRatioSection } from "./material-utils";
 import { getParam } from "./material-utils";
 import { extractEmissionsFactor } from "./material-utils";
 import { getQuestionLCA } from "./material-utils";
-import { getFreightData, hidePopup, masterContainer } from './popup-content';
-import { injectPopupContent } from './popup-content';
-import { updateFreightContent } from './popup-content';
-import { getMasterContainer } from './popup-content';
-// import { getShadowRoot } from './popup-content';
+import { getFreightData, hidePopup, setupLCABannerAndFloatingMenu } from "./popup-content";
+import { injectPopupContent } from "./popup-content";
+import { updateFreightContent } from "./popup-content";
+import { getMasterContainer } from "./popup-content";
+import { getCloudEmissionsResult } from "./popup-content";
+import { displayCloudEmissions } from "./popup-content";
+import { showMasterContainer } from "./popup-content";
 
 let chart;
 let chartContainer;
@@ -49,10 +59,16 @@ let currentHighlightedNode = null;
 let isAssistantActive = false;
 let isPopupActive = false;
 
+// The current scenario, either "freight" or "energy"
+let currScenario = null;
+// The duration in seconds for the energy usage.
+let wattage = 0;
+let energyEFactor = 0;
+
 let globalSelectionData = {
-  parentNode: null,         // Will store a Node
-  range: null,        // Will store a Range
-  selection: null     // Will store a Selection
+  parentNode: null, // Will store a Node
+  range: null, // Will store a Range
+  selection: null, // Will store a Selection
 };
 
 let relatedMaterialHTML = ``;
@@ -60,6 +76,7 @@ let independentMaterialHTML = ``;
 let processesHTML = ``;
 
 const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
+const LCA_PY_SERVER_URL = "https://lca-py-server.fly.dev";
 
 Chart.register(ChartDataLabels);
 
@@ -69,51 +86,75 @@ let floatingQMenu;
 let shadowQRoot;
 
 window.onload = async () => {
-  console.log('loading resouces........');
-    const createLinkElement = (rel, href, crossorigin) => {
-      let link = document.createElement("link");
-      link.rel = rel;
-      link.href = href;
-      if (crossorigin) {
-        link.crossOrigin = crossorigin;
-      }
-      document.head.appendChild(link);
-    };
-
-    // TODO: Only load in the CSS if the url is valid
-    // const allowedDomains = ["nature.com", "acm.org", "arxiv.org", "acs.org", "wiley.com", "fedex.com", "azure.com", "fly.dev"];
-    // const allowedDomains2 = ["amazon.com", "bestbuy.com", "apple.com", "store.google.com", "samsung.com", "oppo.com", "huawei.com", "lenovo.com"];
-    // if (isDomainValid(allowedDomains) || isDomainValid(allowedDomains2)) {
-    const blackListedDomains = ["chatgpt.com", "youtube.com"]
-    if (!isDomainValid(blackListedDomains)) {
-      console.log('current domain is allowed, injecting css');
-      let fontRegular = new FontFace("Lexend", `url(${chrome.runtime.getURL("assets/fonts/lexend-regular.woff")})`, {
-        weight: "400"
-      });
-      let fontBold = new FontFace("Lexend", `url(${chrome.runtime.getURL("assets/fonts/lexend-bold.woff")})`, {
-        weight: "700"
-      });
-      document.fonts.add(fontRegular);
-      document.fonts.add(fontBold);
-      fontRegular.load();
-      fontBold.load();
-
-      createLinkElement("stylesheet", chrome.runtime.getURL("assets/content-style.css"));
-      createLinkElement("stylesheet", chrome.runtime.getURL("assets/popup-content.css"));
-
-      const blackList = ["azure.com", "fedex.com", "amazon.com", "bestbuy.com", "apple.com", "store.google.com", "samsung.com", "oppo.com", "huawei.com", "lenovo.com"];
-      if (!isDomainValid(blackList)) {
-        console.log('domain NOT in blacklist');
-        await init();
-      } else {
-        console.log('domain in blacklist');
-      }
+  console.log("loading resouces........");
+  const createLinkElement = (rel, href, crossorigin) => {
+    let link = document.createElement("link");
+    link.rel = rel;
+    link.href = href;
+    if (crossorigin) {
+      link.crossOrigin = crossorigin;
     }
-}
+    document.head.appendChild(link);
+  };
 
-{/* <div id="lca-viz-question-container" class="lexend br-8 fz-16"></div> */}
+  // TODO: Only load in the CSS if the url is valid
+  // const allowedDomains = ["nature.com", "acm.org", "arxiv.org", "acs.org", "wiley.com", "fedex.com", "azure.com", "fly.dev"];
+  // const allowedDomains2 = ["amazon.com", "bestbuy.com", "apple.com", "store.google.com", "samsung.com", "oppo.com", "huawei.com", "lenovo.com"];
+  // if (isDomainValid(allowedDomains) || isDomainValid(allowedDomains2)) {
+  const blackListedDomains = ["chatgpt.com", "youtube.com"];
+  if (!isDomainValid(blackListedDomains)) {
+    console.log("current domain is allowed, injecting css");
+    let fontRegular = new FontFace(
+      "Lexend",
+      `url(${chrome.runtime.getURL("assets/fonts/lexend-regular.woff")})`,
+      {
+        weight: "400",
+      }
+    );
+    let fontBold = new FontFace(
+      "Lexend",
+      `url(${chrome.runtime.getURL("assets/fonts/lexend-bold.woff")})`,
+      {
+        weight: "700",
+      }
+    );
+    document.fonts.add(fontRegular);
+    document.fonts.add(fontBold);
+    fontRegular.load();
+    fontBold.load();
+
+    createLinkElement(
+      "stylesheet",
+      chrome.runtime.getURL("assets/content-style.css")
+    );
+    createLinkElement(
+      "stylesheet",
+      chrome.runtime.getURL("assets/popup-content.css")
+    );
+
+    const blackList = [
+      "azure.com",
+      "fedex.com",
+      "amazon.com",
+      "bestbuy.com",
+      "apple.com",
+      "store.google.com",
+      "samsung.com",
+      "oppo.com",
+      "huawei.com",
+      "lenovo.com",
+    ];
+    if (!isDomainValid(blackList)) {
+      console.log("domain NOT in blacklist");
+      await init();
+    } else {
+      console.log("domain in blacklist");
+    }
+  }
+};
+
 async function init() {
-  console.log('creating shadow root........');
+  console.log("creating shadow root........");
   // * Shadow root creation process
   masterQContainer = document.createElement("div");
   masterQContainer.setAttribute("role", "main");
@@ -128,8 +169,12 @@ async function init() {
   shadowQRoot = placeholder.attachShadow({ mode: "open" });
   shadowQRoot.appendChild(masterQContainer);
 
-  await injectCSSToShadowDOM(chrome.runtime.getURL("../assets/content-style.css"));
-  await injectCSSToShadowDOM(chrome.runtime.getURL("../assets/popup-content.css"));
+  await injectCSSToShadowDOM(
+    chrome.runtime.getURL("../assets/content-style.css")
+  );
+  await injectCSSToShadowDOM(
+    chrome.runtime.getURL("../assets/popup-content.css")
+  );
   // ********************************
 
   // Function to fetch and inject CSS into the shadow DOM
@@ -141,14 +186,14 @@ async function init() {
     shadowQRoot.appendChild(style);
   }
 
-  const storedStates = await chrome.storage.sync.get('brush');
+  const storedStates = await chrome.storage.sync.get("brush");
   isBrushEnabled = storedStates.brush || false;
   if (isBrushEnabled) {
-    console.log('brush enabled. turning on trackRawMaterial()');
+    console.log("brush enabled. turning on trackRawMaterial()");
     // trackRawMaterial();
     trackAllScenario();
   } else {
-    console.log('brush disabled.');
+    console.log("brush disabled.");
   }
 
   /**
@@ -165,15 +210,15 @@ async function init() {
   }
 
   function handleDraggableMap() {
-    const map = document.getElementById('lca-viz-map');
-    map.addEventListener('mousedown', (e) => {
-      console.log('detected mousedown');
+    const map = document.getElementById("lca-viz-map");
+    map.addEventListener("mousedown", (e) => {
+      console.log("detected mousedown");
       let shiftX = e.clientX - map.getBoundingClientRect().left;
       let shiftY = e.clientY - map.getBoundingClientRect().top;
 
       function moveAt(clientX, clientY) {
-        map.style.left = clientX - shiftX + scrollX + 'px';
-        map.style.top = clientY - shiftY + scrollY + 'px';
+        map.style.left = clientX - shiftX + scrollX + "px";
+        map.style.top = clientY - shiftY + scrollY + "px";
       }
 
       function onMouseMove(e) {
@@ -181,12 +226,12 @@ async function init() {
       }
 
       function onMouseUp() {
-        document.removeEventListener('mousemove', onMouseMove);
-        document.removeEventListener('mouseup', onMouseUp);
+        document.removeEventListener("mousemove", onMouseMove);
+        document.removeEventListener("mouseup", onMouseUp);
       }
 
-      document.addEventListener('mousemove', onMouseMove);
-      document.addEventListener('mouseup', onMouseUp);
+      document.addEventListener("mousemove", onMouseMove);
+      document.addEventListener("mouseup", onMouseUp);
 
       // Prevent the default drag and drop behavior
       map.ondragstart = () => {
@@ -217,13 +262,19 @@ async function init() {
 
   function handleUpDownBtnBehavior() {
     // ! case: ratio
-    const toggleOnContainers = document.querySelectorAll('.lca-viz-param-toggle-on');
+    const toggleOnContainers = document.querySelectorAll(
+      ".lca-viz-param-toggle-on"
+    );
     if (toggleOnContainers) {
       toggleOnContainers.forEach((container) => {
         const ratioUpBtnList = container.querySelectorAll(".lca-viz-up");
         const ratioDownBtnList = container.querySelectorAll(".lca-viz-down");
         for (let j = 0; j < ratioUpBtnList.length; j++) {
-          const index = parseInt(ratioUpBtnList[j].parentElement.querySelector('.lca-viz-parameter-text').id.match(/\d+$/)[0]);
+          const index = parseInt(
+            ratioUpBtnList[j].parentElement
+              .querySelector(".lca-viz-parameter-text")
+              .id.match(/\d+$/)[0]
+          );
           ratioUpBtnList[j].addEventListener("click", () => {
             updateValueRatio(1, index);
           });
@@ -239,19 +290,25 @@ async function init() {
               const index = parseInt(input.id.match(/\d+$/)[0]);
               updateValueRatio(0, index, newWeight);
             }
-          })
+          });
         });
       });
     }
 
     // ! case: independent - togle off
-    const toggleOffContainers = document.querySelectorAll('.lca-viz-param-toggle-off');
+    const toggleOffContainers = document.querySelectorAll(
+      ".lca-viz-param-toggle-off"
+    );
     if (toggleOffContainers) {
       toggleOffContainers.forEach((container) => {
         const ratioUpBtnList = container.querySelectorAll(".lca-viz-up");
         const ratioDownBtnList = container.querySelectorAll(".lca-viz-down");
         for (let j = 0; j < ratioUpBtnList.length; j++) {
-          const index = parseInt(ratioUpBtnList[j].parentElement.querySelector('.lca-viz-parameter-text').id.match(/\d+$/)[0]);
+          const index = parseInt(
+            ratioUpBtnList[j].parentElement
+              .querySelector(".lca-viz-parameter-text")
+              .id.match(/\d+$/)[0]
+          );
           ratioUpBtnList[j].addEventListener("click", () => {
             updateValue(1, index);
           });
@@ -273,12 +330,20 @@ async function init() {
     }
 
     // ! independent - normal
-    const independentContainer = document.querySelector('.lca-viz-independent-container');
+    const independentContainer = document.querySelector(
+      ".lca-viz-independent-container"
+    );
     if (independentContainer) {
-      const ratioUpBtnList = independentContainer.querySelectorAll(".lca-viz-up");
-      const ratioDownBtnList = independentContainer.querySelectorAll(".lca-viz-down");
+      const ratioUpBtnList =
+        independentContainer.querySelectorAll(".lca-viz-up");
+      const ratioDownBtnList =
+        independentContainer.querySelectorAll(".lca-viz-down");
       for (let j = 0; j < ratioUpBtnList.length; j++) {
-        const index = parseInt(ratioUpBtnList[j].parentElement.querySelector('.lca-viz-parameter-text').id.match(/\d+$/)[0]);
+        const index = parseInt(
+          ratioUpBtnList[j].parentElement
+            .querySelector(".lca-viz-parameter-text")
+            .id.match(/\d+$/)[0]
+        );
         ratioUpBtnList[j].addEventListener("click", () => {
           updateValue(1, index);
         });
@@ -286,7 +351,8 @@ async function init() {
           updateValue(-1, index);
         });
       }
-      const inputNodeList = independentContainer.querySelectorAll(".input-normal");
+      const inputNodeList =
+        independentContainer.querySelectorAll(".input-normal");
       inputNodeList.forEach((input) => {
         input.addEventListener("input", () => {
           const newWeight = parseFloat(input.value);
@@ -306,10 +372,13 @@ async function init() {
 
   function handleProcesses() {
     // Select all instances of lca-viz-param-fill parameters
-    const flexCenterContainers = document.querySelectorAll('.lca-viz-processes-container .lca-viz-param-fill');
+    const flexCenterContainers = document.querySelectorAll(
+      ".lca-viz-processes-container .lca-viz-param-fill"
+    );
 
     flexCenterContainers.forEach((flexCenterContainer) => {
-      const processesContainers = flexCenterContainer.querySelectorAll('.lca-viz-processes');
+      const processesContainers =
+        flexCenterContainer.querySelectorAll(".lca-viz-processes");
 
       if (processesContainers) {
         processesContainers.forEach((container) => {
@@ -317,24 +386,32 @@ async function init() {
           const ratioDownBtnList = container.querySelectorAll(".lca-viz-down");
 
           for (let i = 0; i < ratioUpBtnList.length; i++) {
-            const inputNode = ratioUpBtnList[i].parentElement.querySelector('.lca-viz-parameter-text');
+            const inputNode = ratioUpBtnList[i].parentElement.querySelector(
+              ".lca-viz-parameter-text"
+            );
             const index = parseInt(inputNode.id.match(/\d+$/)[0]);
             const type = inputNode.dataset.type;
 
             ratioUpBtnList[i].addEventListener("click", () => {
               updateValueProcesses(1, index, inputNode);
-              const selector = '.lca-viz-up-down-btn-master-' + index + '-' + type;
+              const selector =
+                ".lca-viz-up-down-btn-master-" + index + "-" + type;
               const syncContainer = document.querySelector(selector);
-              const targetInput = syncContainer.querySelector(`.lca-viz-parameter-text[data-type="${type}"]`);
+              const targetInput = syncContainer.querySelector(
+                `.lca-viz-parameter-text[data-type="${type}"]`
+              );
 
               syncInputs(targetInput, inputNode);
             });
 
             ratioDownBtnList[i].addEventListener("click", () => {
               updateValueProcesses(-1, index, inputNode);
-              const selector = '.lca-viz-up-down-btn-master-' + index + '-' + type;
+              const selector =
+                ".lca-viz-up-down-btn-master-" + index + "-" + type;
               const syncContainer = document.querySelector(selector);
-              const targetInput = syncContainer.querySelector(`.lca-viz-parameter-text[data-type="${type}"]`);
+              const targetInput = syncContainer.querySelector(
+                `.lca-viz-parameter-text[data-type="${type}"]`
+              );
 
               syncInputs(targetInput, inputNode);
             });
@@ -347,9 +424,12 @@ async function init() {
               const type = inputNode.dataset.type;
               const index = parseInt(inputNode.id.match(/\d+$/)[0]);
 
-              const selector = '.lca-viz-up-down-btn-master-' + index + '-' + type;
+              const selector =
+                ".lca-viz-up-down-btn-master-" + index + "-" + type;
               const syncContainer = document.querySelector(selector);
-              const targetInput = syncContainer.querySelector(`.lca-viz-parameter-text[data-type="${type}"]`);
+              const targetInput = syncContainer.querySelector(
+                `.lca-viz-parameter-text[data-type="${type}"]`
+              );
 
               if (newWeight >= 1) {
                 updateValueProcesses(0, index, inputNode, newWeight);
@@ -363,35 +443,45 @@ async function init() {
   }
 
   function handleIntextProcesses() {
-    const highlightContainer = document.querySelector('.lca-viz-highlight-container');
+    const highlightContainer = document.querySelector(
+      ".lca-viz-highlight-container"
+    );
 
     // up button
-    const upBtnList = highlightContainer.querySelectorAll('.lca-viz-up');
+    const upBtnList = highlightContainer.querySelectorAll(".lca-viz-up");
     for (let i = 0; i < upBtnList.length; i++) {
-      const inputNode = upBtnList[i].parentElement.parentElement.querySelector('.lca-viz-parameter-text');
+      const inputNode = upBtnList[i].parentElement.parentElement.querySelector(
+        ".lca-viz-parameter-text"
+      );
       const index = parseInt(inputNode.id.match(/\d+$/)[0]);
       const type = inputNode.dataset.type;
 
       upBtnList[i].addEventListener("click", () => {
         updateValueProcesses(1, index, inputNode, undefined, true);
-        const selector = '.lca-viz-control-' + index + '-' + type;
+        const selector = ".lca-viz-control-" + index + "-" + type;
         const syncContainer = document.querySelector(selector);
-        const targetInput = syncContainer.querySelector(`.lca-viz-parameter-text[data-type="${type}"]`);
+        const targetInput = syncContainer.querySelector(
+          `.lca-viz-parameter-text[data-type="${type}"]`
+        );
         syncInputs(targetInput, inputNode);
       });
     }
     // down button
-    const downBtnList = highlightContainer.querySelectorAll('.lca-viz-down');
+    const downBtnList = highlightContainer.querySelectorAll(".lca-viz-down");
     for (let i = 0; i < downBtnList.length; i++) {
-      const inputNode = downBtnList[i].parentElement.parentElement.querySelector('.lca-viz-parameter-text');
+      const inputNode = downBtnList[
+        i
+      ].parentElement.parentElement.querySelector(".lca-viz-parameter-text");
       const index = parseInt(inputNode.id.match(/\d+$/)[0]);
       const type = inputNode.dataset.type;
 
       downBtnList[i].addEventListener("click", () => {
         updateValueProcesses(-1, index, inputNode, undefined, true);
-        const selector = '.lca-viz-control-' + index + '-' + type;
+        const selector = ".lca-viz-control-" + index + "-" + type;
         const syncContainer = document.querySelector(selector);
-        const targetInput = syncContainer.querySelector(`.lca-viz-parameter-text[data-type="${type}"]`);
+        const targetInput = syncContainer.querySelector(
+          `.lca-viz-parameter-text[data-type="${type}"]`
+        );
         syncInputs(targetInput, inputNode);
       });
     }
@@ -404,9 +494,11 @@ async function init() {
         const type = inputNode.dataset.type;
         const index = parseInt(inputNode.id.match(/\d+$/)[0]);
 
-        const selector = '.lca-viz-control-' + index + '-' + type;
+        const selector = ".lca-viz-control-" + index + "-" + type;
         const syncContainer = document.querySelector(selector);
-        const targetInput = syncContainer.querySelector(`.lca-viz-parameter-text[data-type="${type}"]`);
+        const targetInput = syncContainer.querySelector(
+          `.lca-viz-parameter-text[data-type="${type}"]`
+        );
 
         if (newWeight >= 1) {
           updateValueProcesses(0, index, inputNode, newWeight, true);
@@ -430,26 +522,39 @@ async function init() {
     }
   }
 
-  function updateValueProcesses(weightChange, index, thisInput, newWeight = null, isIntext = false) {
+  function updateValueProcesses(
+    weightChange,
+    index,
+    thisInput,
+    newWeight = null,
+    isIntext = false
+  ) {
     // Gets the other input node
     let inputList;
     let otherInput;
     if (isIntext) {
       // Selects all elements that have this format: 'lca-viz-up-down-btn-master-0-<something>'
-      const highlightContainer = document.querySelector('.lca-viz-highlight-container');
-      inputList = highlightContainer.querySelectorAll('.lca-viz-up-down-btn-master-' + index);
-      console.log('finding: lca-viz-up-down-btn-master-' + index);
-      console.log('intext inputList = ');
+      const highlightContainer = document.querySelector(
+        ".lca-viz-highlight-container"
+      );
+      inputList = highlightContainer.querySelectorAll(
+        ".lca-viz-up-down-btn-master-" + index
+      );
+      console.log("finding: lca-viz-up-down-btn-master-" + index);
+      console.log("intext inputList = ");
       console.log(inputList);
-      if (inputList.length > 1 && inputList[0].querySelector('input') === thisInput) {
-        otherInput = inputList[1].querySelector('input');
+      if (
+        inputList.length > 1 &&
+        inputList[0].querySelector("input") === thisInput
+      ) {
+        otherInput = inputList[1].querySelector("input");
       } else {
-        otherInput = inputList[0].querySelector('input');
+        otherInput = inputList[0].querySelector("input");
       }
     } else {
-      const parentContainer = thisInput.closest('.lca-viz-param-fill');
-      inputList = parentContainer.querySelectorAll('.lca-viz-parameter-text');
-      console.log('inputList = ');
+      const parentContainer = thisInput.closest(".lca-viz-param-fill");
+      inputList = parentContainer.querySelectorAll(".lca-viz-parameter-text");
+      console.log("inputList = ");
       console.log(inputList);
       if (inputList.length > 1 && inputList[0] === thisInput) {
         otherInput = inputList[1];
@@ -458,61 +563,65 @@ async function init() {
       }
     }
 
-    console.log('thisInput = ');
+    console.log("thisInput = ");
     console.log(thisInput);
-    console.log('otherInput = ');
+    console.log("otherInput = ");
     console.log(otherInput);
 
     let displayWeight = parseFloat(thisInput.value);
     if (newWeight !== null) {
       displayWeight = newWeight;
     } else {
-        if (weightChange < 0 && displayWeight < 1) {
-            return;
-        }
-        displayWeight += weightChange;
+      if (weightChange < 0 && displayWeight < 1) {
+        return;
+      }
+      displayWeight += weightChange;
     }
     thisInput.value = displayWeight;
 
     let power;
     let time;
-    if (thisInput.dataset.type === 'power') {
-      console.log('thisInput.value = ' + thisInput.value);
-      console.log('thisInput unit = ' + thisInput.dataset.valueUnit);
-      console.log('otherInput.value = ' + otherInput.value);
-      console.log('otherInput unit = ' + otherInput.dataset.valueUnit);
+    if (thisInput.dataset.type === "power") {
+      console.log("thisInput.value = " + thisInput.value);
+      console.log("thisInput unit = " + thisInput.dataset.valueUnit);
+      console.log("otherInput.value = " + otherInput.value);
+      console.log("otherInput unit = " + otherInput.dataset.valueUnit);
       power = convertToWatts(thisInput.value, thisInput.dataset.valueUnit);
       time = convertToSeconds(otherInput.value, otherInput.dataset.valueUnit);
-    } else if (thisInput.dataset.type === 'time') {
-      console.log('thisInput.value = ' + thisInput.value);
-      console.log('thisInput unit = ' + thisInput.dataset.valueUnit);
-      console.log('otherInput.value = ' + otherInput.value);
-      console.log('otherInput unit = ' + otherInput.dataset.valueUnit);
+    } else if (thisInput.dataset.type === "time") {
+      console.log("thisInput.value = " + thisInput.value);
+      console.log("thisInput unit = " + thisInput.dataset.valueUnit);
+      console.log("otherInput.value = " + otherInput.value);
+      console.log("otherInput unit = " + otherInput.dataset.valueUnit);
       power = convertToWatts(otherInput.value, otherInput.dataset.valueUnit);
       time = convertToSeconds(thisInput.value, thisInput.dataset.valueUnit);
     }
     // This is the 'weight' in kWh that will be used to update chart data
     const weightKwh = (power * time) / (1000 * 3600);
-    console.log('power = ' + power);
-    console.log('time = ' + time);
-    console.log('weightKwh = ' + weightKwh);
+    console.log("power = " + power);
+    console.log("time = " + time);
+    console.log("weightKwh = " + weightKwh);
     updateChartData(weightKwh, index);
   }
 
   function updateValueRatio(weightChange, index, newWeight = null) {
-    console.log('index = ' + index);
-    const inputNode = document.getElementById('input-ratio-no-' + index);
-    const closestToggleContainer = inputNode.closest('.lca-viz-param-toggle-on');
-    const inputNodetoggleOff = document.getElementById('lca-viz-input-' + index);
+    console.log("index = " + index);
+    const inputNode = document.getElementById("input-ratio-no-" + index);
+    const closestToggleContainer = inputNode.closest(
+      ".lca-viz-param-toggle-on"
+    );
+    const inputNodetoggleOff = document.getElementById(
+      "lca-viz-input-" + index
+    );
     let currentWeight = parseInt(inputNode.value);
 
     if (newWeight !== null) {
       currentWeight = newWeight;
     } else {
-        if (weightChange < 0 && currentWeight <= 1) {
-            return;
-        }
-        currentWeight += weightChange;
+      if (weightChange < 0 && currentWeight <= 1) {
+        return;
+      }
+      currentWeight += weightChange;
     }
 
     const ratioValue = inputNode.dataset.ratioValue;
@@ -523,15 +632,19 @@ async function init() {
     // inputNodetoggleOff.value = currentWeight;
 
     // calculate the new weight of the related materials
-    const otherInputs = closestToggleContainer.querySelectorAll('.input-ratio');
+    const otherInputs = closestToggleContainer.querySelectorAll(".input-ratio");
     otherInputs.forEach((otherInputNode) => {
-      if ( otherInputNode.id !== ('input-ratio-no-' + index) ) {
-        console.log('currentWeight = ' + otherInputNode.value);
-        const otherNewWeight = parseFloat((otherInputNode.dataset.ratioValue * scalingFactor).toFixed(2));
-        console.log('newWeight = ' + otherNewWeight);
+      if (otherInputNode.id !== "input-ratio-no-" + index) {
+        console.log("currentWeight = " + otherInputNode.value);
+        const otherNewWeight = parseFloat(
+          (otherInputNode.dataset.ratioValue * scalingFactor).toFixed(2)
+        );
+        console.log("newWeight = " + otherNewWeight);
         const otherIndex = parseInt(otherInputNode.id.match(/\d+$/)[0]);
         updateChartData(otherNewWeight, otherIndex);
-        const otherInputNodeToggleOff = document.getElementById('lca-viz-input-' + otherIndex);
+        const otherInputNodeToggleOff = document.getElementById(
+          "lca-viz-input-" + otherIndex
+        );
         otherInputNode.value = otherNewWeight;
         // otherInputNodeToggleOff.value = otherNewWeight;
       }
@@ -542,19 +655,19 @@ async function init() {
    * This update value works for independent materials, and toggle-off materials
    */
   function updateValue(weightChange, index, newWeight = null) {
-    console.log('weightChange = ' + weightChange);
-    console.log('index = ' + index);
-    const inputNode = document.getElementById('lca-viz-input-' + index);
-    console.log('inputNode = ');
+    console.log("weightChange = " + weightChange);
+    console.log("index = " + index);
+    const inputNode = document.getElementById("lca-viz-input-" + index);
+    console.log("inputNode = ");
     console.log(inputNode);
     let currentWeight = parseInt(inputNode.value);
     if (newWeight !== null) {
       currentWeight = newWeight;
     } else {
-        if (weightChange < 0 && currentWeight <= 1) {
-            return;
-        }
-        currentWeight += weightChange;
+      if (weightChange < 0 && currentWeight <= 1) {
+        return;
+      }
+      currentWeight += weightChange;
     }
     updateChartData(currentWeight, index);
     inputNode.value = currentWeight;
@@ -570,13 +683,17 @@ async function init() {
     if (index !== -1) {
       let emissionsFactor = 0;
       const obj = findByIndex(currentChartData, index);
-      emissionsFactor = extractEmissionsFactor(obj.carbon_emission_factor).co2e_value;
+      emissionsFactor = extractEmissionsFactor(
+        obj.carbon_emission_factor
+      ).co2e_value;
       // emissionsFactor calculates the CO2-eq per kg value of a specific material.
-      console.log('emissions factor = ' + emissionsFactor);
-      console.log('old emissions value: ', chart.data.datasets[0].data[index]);
+      console.log("emissions factor = " + emissionsFactor);
+      console.log("old emissions value: ", chart.data.datasets[0].data[index]);
 
-      let newEmissionsValue = parseFloat((emissionsFactor * newWeight).toFixed(2));
-      console.log('new emissions value: ', newEmissionsValue);
+      let newEmissionsValue = parseFloat(
+        (emissionsFactor * newWeight).toFixed(2)
+      );
+      console.log("new emissions value: ", newEmissionsValue);
       chart.data.datasets[0].data[index] = newEmissionsValue;
       chart.update();
     }
@@ -587,35 +704,45 @@ async function init() {
    * ! Note: can ONLY call this method ONCE
    */
   function handleToggleSwitch() {
-    const toggleSwitches = document.querySelectorAll(".lca-viz-toggle-checkbox");
+    const toggleSwitches = document.querySelectorAll(
+      ".lca-viz-toggle-checkbox"
+    );
     const lcaVizMap = document.getElementById("lca-viz-map");
     const originalWidth = lcaVizMap.scrollWidth;
-    console.log('originalWidth = ' + originalWidth);
+    console.log("originalWidth = " + originalWidth);
 
     function show(element) {
-      element.classList.remove('hidden');
+      element.classList.remove("hidden");
     }
     function hide(element) {
-      element.classList.add('hidden');
+      element.classList.add("hidden");
     }
 
     toggleSwitches.forEach((toggleSwitch, index) => {
       toggleSwitch.addEventListener("change", () => {
-        console.log('detected toggle switch clicking');
+        console.log("detected toggle switch clicking");
         const uniqueId = document.getElementById("lca-viz-r-section-" + index);
-        const textDetails = uniqueId.querySelector('.lca-viz-ratio-detail-text');
-        const paramToggleOn = uniqueId.querySelector('.lca-viz-param-toggle-on');
-        const paramToggleOff = uniqueId.querySelector('.lca-viz-param-toggle-off');
+        const textDetails = uniqueId.querySelector(
+          ".lca-viz-ratio-detail-text"
+        );
+        const paramToggleOn = uniqueId.querySelector(
+          ".lca-viz-param-toggle-on"
+        );
+        const paramToggleOff = uniqueId.querySelector(
+          ".lca-viz-param-toggle-off"
+        );
         // const originalWidth = lcaVizMap.scrollWidth;
-        const ratioTextList = uniqueId.querySelectorAll('.control-section');
+        const ratioTextList = uniqueId.querySelectorAll(".control-section");
         ratioTextList.forEach((div) => {
           if (div.innerText.length > 16) {
-            div.classList.add("fz-12")
+            div.classList.add("fz-12");
           }
-        })
+        });
 
         if (toggleSwitch.checked) {
-          const ratioContainer = toggleSwitch.closest(".lca-viz-ratio-container");
+          const ratioContainer = toggleSwitch.closest(
+            ".lca-viz-ratio-container"
+          );
           const inputList = ratioContainer.querySelectorAll(".input-ratio");
           inputList.forEach((input) => {
             const newWeight = input.dataset.ratioValue;
@@ -633,7 +760,9 @@ async function init() {
           paramToggleOn.style.width = "auto";
           textDetails.style.height = "auto";
         } else {
-          const ratioContainer = toggleSwitch.closest(".lca-viz-ratio-container");
+          const ratioContainer = toggleSwitch.closest(
+            ".lca-viz-ratio-container"
+          );
           const inputList = ratioContainer.querySelectorAll(".input-normal");
           inputList.forEach((input) => {
             const newWeight = 1;
@@ -681,7 +810,7 @@ async function init() {
       }
       // * For freight and energy
       if (isAssistantActive) {
-        console.log('current assistant is true, clearing master container');
+        console.log("current assistant is true, clearing master container");
         removeQuestionUI();
       }
       if (isPopupActive) {
@@ -691,27 +820,33 @@ async function init() {
       // * Case: raw materials
       if (materialData.raw_materials) {
         handleRawMaterialHighlight(materialData, parentNode, range, selection);
-      // * Case: freight
+        // * Case: freight
       } else if (materialData.transport_phase) {
         // if (masterQContainer) masterQContainer.innerHTML = "";
         // if (floatingQMenu) floatingQMenu.remove();
         // if (masterContainer) masterContainer.remove();
         handleFreightHighlight(materialData, selection.toString());
-      // * Case: energy
+        // * Case: energy
       } else if (materialData.use_phase) {
         // TODO: implement
+        handleEnergyHighlight(materialData, selection.toString());
       } else {
-        console.log('material data is null');
+        console.log("material data is null");
         setLCAActionBtnState("error");
       }
     }
   }
 
   // Handles the behavior for highlighting raw material data.
-  function handleRawMaterialHighlight(materialData, parentNode, range, selection) {
+  function handleRawMaterialHighlight(
+    materialData,
+    parentNode,
+    range,
+    selection
+  ) {
     console.log("%j", materialData);
     const materialList = materialData;
-    console.log('materialList: ', materialList);
+    console.log("materialList: ", materialList);
 
     const fullText = parentNode.textContent;
     const startOffset = range.startOffset;
@@ -720,9 +855,14 @@ async function init() {
     const endContainerText = range.endContainer.textContent;
 
     // Extract the segments of the text
-    const beforeText = fullText.slice(0, fullText.indexOf(startContainerText) + startOffset);
+    const beforeText = fullText.slice(
+      0,
+      fullText.indexOf(startContainerText) + startOffset
+    );
     const highlightedText = selection.toString();
-    const afterText = fullText.slice(fullText.indexOf(endContainerText) + endOffset);
+    const afterText = fullText.slice(
+      fullText.indexOf(endContainerText) + endOffset
+    );
 
     const div = document.createElement("div");
     div.classList.add("lca-viz-inline");
@@ -732,41 +872,69 @@ async function init() {
     const { rawMaterialNames, processesNames } = getAllNames(materialList);
     rawMaterialNames.forEach((name) => {
       const escapedName = escapeRegExp(name);
-      const regex = new RegExp(`\\b${escapedName}\\b`, 'gi');
-      modifiedText = modifiedText.replace(regex, `<span class="lca-viz-param-bold"><b>${name}</b></span>`);
+      const regex = new RegExp(`\\b${escapedName}\\b`, "gi");
+      modifiedText = modifiedText.replace(
+        regex,
+        `<span class="lca-viz-param-bold"><b>${name}</b></span>`
+      );
     });
     processesNames.forEach((process) => {
       const escapedName = escapeRegExp(process.name);
-      const regexName = new RegExp(`\\b${escapedName}\\b`, 'gi');
-      modifiedText = modifiedText.replace(regexName, `<span class="lca-viz-param-bold"><b>${process.name}</b></span>`);
+      const regexName = new RegExp(`\\b${escapedName}\\b`, "gi");
+      modifiedText = modifiedText.replace(
+        regexName,
+        `<span class="lca-viz-param-bold"><b>${process.name}</b></span>`
+      );
 
       const escapedPower = escapeRegExp(String(process.power_original));
-      const regexPower = new RegExp(`\\b${escapedPower}\\b`, 'gi');
+      const regexPower = new RegExp(`\\b${escapedPower}\\b`, "gi");
 
       // getParam(process.name, process.index, process.power_original_unit, process.power_original, true, process.time_original_unit, process.time_original);
-      modifiedText = modifiedText.replace(regexPower,
+      modifiedText = modifiedText.replace(
+        regexPower,
         `
-          <span class="lca-viz-origin-number lca-viz-hidden">${process.power_original}</span>
-          <div class="lca-viz-processes-intext-${process.index} lca-viz-inline" data-value="${process.power_original}">
-          ${createUpDownBtn(process.index, process.power_original_unit, process.power_original, "power")}
+          <span class="lca-viz-origin-number lca-viz-hidden">${
+            process.power_original
+          }</span>
+          <div class="lca-viz-processes-intext-${
+            process.index
+          } lca-viz-inline" data-value="${process.power_original}">
+          ${createUpDownBtn(
+            process.index,
+            process.power_original_unit,
+            process.power_original,
+            "power"
+          )}
           </div>
         `
       );
       // <span class="lca-viz-original-time-text">${process.power_original}</span>
       const escapedTime = escapeRegExp(String(process.time_original));
-      const regexTime = new RegExp(`\\b${escapedTime}\\b`, 'gi');
-      modifiedText = modifiedText.replace(regexTime,
+      const regexTime = new RegExp(`\\b${escapedTime}\\b`, "gi");
+      modifiedText = modifiedText.replace(
+        regexTime,
         `
-          <span class="lca-viz-origin-number lca-viz-hidden">${process.time_original}</span>
-          <div class="lca-viz-processes-intext-${process.index} lca-viz-inline" data-value="${process.time_original}">
-          ${createUpDownBtn(process.index, process.time_original_unit, process.time_original, "time")}
+          <span class="lca-viz-origin-number lca-viz-hidden">${
+            process.time_original
+          }</span>
+          <div class="lca-viz-processes-intext-${
+            process.index
+          } lca-viz-inline" data-value="${process.time_original}">
+          ${createUpDownBtn(
+            process.index,
+            process.time_original_unit,
+            process.time_original,
+            "time"
+          )}
           </div>
         `
       );
       // <span class="lca-viz-original-time-text">${process.time_original}</span>
     });
 
-    modifiedText = modifiedText + `
+    modifiedText =
+      modifiedText +
+      `
       <div class="lca-viz-inline" id="lca-viz-end">
         <img src="${off_lca_btn}" alt="Turn off the LCA visualizer" class="icon-10 off-lca-btn lca-viz-hidden">
       </div>
@@ -775,9 +943,13 @@ async function init() {
     div.innerHTML = modifiedText;
 
     currentHighlightedNode = div;
-    console.log('setting currentHighlightedNode: ', div);
+    console.log("setting currentHighlightedNode: ", div);
     const newClasses = ["lca-viz-highlight-container"];
-    const newParentNode = replaceTagNameAndKeepStyles(parentNode, "div", newClasses);
+    const newParentNode = replaceTagNameAndKeepStyles(
+      parentNode,
+      "div",
+      newClasses
+    );
     parentNode.parentNode.replaceChild(newParentNode, parentNode);
     parentNode = newParentNode;
     parentNode.innerHTML = "";
@@ -789,16 +961,65 @@ async function init() {
       parentNode.appendChild(document.createTextNode(afterText));
     }
     // If the user clicks on the red 'off-lca-btn', the highlighted text will be removed entirely.
-    const offLcaBtn = document.querySelector('.off-lca-btn');
+    const offLcaBtn = document.querySelector(".off-lca-btn");
     offLcaBtn.addEventListener("click", () => {
       currentHighlightedNode.removeEventListener("click", redisplayChart);
       resetHighlight(currentHighlightedNode);
       currentHighlightedNode = null;
-    })
+    });
     hideLCAActionBtn();
     initializeChart(materialData);
   }
 
+  function handleEnergyHighlight(data, textSource) {
+    const energyData = data.use_phase;
+    const processData = energyData.processes[0];
+    const isDeviceExist = processData.device;
+    let inputMapping;
+    if (isDeviceExist) {
+      inputMapping = {
+        device: "lca-input-from",
+        location: "lca-input-to",
+      };
+    } else {
+      inputMapping = {
+        name: "lca-input-from",
+        location: "lca-input-to",
+      };
+    }
+    const energyHTML = getQuestionLCA(
+      "We've detected an energy-consuming process.",
+      textSource,
+      "energy",
+      isDeviceExist
+    );
+    currScenario = "energy";
+    wattage = processData.power;
+    energyEFactor = processData.carbon_emission_factor;
+    console.log("energyEFactor = " + energyEFactor);
+    console.log("currScenario = " + currScenario);
+    setupQuestionUI(energyHTML);
+    autoFillInput(processData, inputMapping);
+    // Autofills duration
+    if (processData.time_original) {
+      let time = processData.time_original;
+      let unit = processData.time_original_unit;
+      const timeInput = shadowQRoot.getElementById("lca-input-package-weight");
+      const unitSelect = shadowQRoot.getElementById("lca-input-package-unit");
+      if (time) {
+        timeInput.value = time;
+        checkAllValid();
+      }
+      if (unit) {
+        if (unit === "second" || unit === "seconds") unit = "s";
+        if (unit === "minute" || unit === "minutes") unit = "min";
+        if (unit === "hours" || unit === "hour" || unit === "hr") unit = "h";
+        unitSelect.value = unit;
+        checkAllValid();
+      }
+    }
+    showMasterQContainer();
+  }
   /**
    *
    * @param {JSON} data The data of the freight in JSON.
@@ -807,61 +1028,82 @@ async function init() {
   function handleFreightHighlight(data, textSource) {
     const freightData = data.transport_phase;
     const freightHTML = getQuestionLCA(
-      'It looks like you want to ship a package to somewhere.',
+      "Looks like you plan to transport something.",
       textSource,
-      'freight'
+      "freight"
     );
 
+    // ? new
+    currScenario = "freight";
+    console.log("currScenario = " + currScenario);
+    setupQuestionUI(freightHTML);
+
+    // Fill in the form using freightData's data.
+    const transportData = freightData.transports[0];
+    const inputMapping = {
+      from_location: "lca-input-from",
+      to_location: "lca-input-to",
+    };
+    autoFillInput(transportData, inputMapping);
+    // Autofills package weight and unit
+    if (transportData.weight) {
+      let { value, unit } = transportData.weight;
+      const weightInput = shadowQRoot.getElementById("lca-input-package-weight");
+      const unitSelect = shadowQRoot.getElementById("lca-input-package-unit");
+      console.log("setting weight value....");
+      if (value) {
+        weightInput.value = value;
+        checkAllValid();
+      }
+      if (unit) {
+        if (unit === "lb") unit = "lbs";
+        unitSelect.value = unit;
+        checkAllValid();
+      }
+    }
+    showMasterQContainer();
+  }
+
+  /**
+   * Takes in the JSON data and fills in the value of the input form if there is info. from the JSON data.
+   * @param {JSON} data The 'transport' or 'processes' data
+   * @param {Object} inputMapping The object containing the following information:
+   * format = <val1> : <val2>
+   *    val1 = the fields that is from JSON data
+   *    val2 = the id of the corresponding html input
+   */
+  function autoFillInput(data, inputMapping) {
+    console.log("data: ");
+    console.log(data);
+    for (const [key, inputId] of Object.entries(inputMapping)) {
+      console.log("key = ", key, "input id = ", inputId);
+      const input = shadowQRoot.getElementById(inputId);
+      console.log("setting input value: " + data[key]);
+      if (data[key]) {
+        input.value = data[key];
+        checkAllValid();
+      }
+    }
+  }
+
+  /**
+   * Creates and injects the HTML for question UI and sets up all of the interactions and listeners.
+   * @param {HTMLElement} contentHTML The HTML code of the content. This is either the UI for freight or energy.
+   * @param {String} scenario Either "energy" or "freight".
+   */
+  function setupQuestionUI(contentHTML) {
     const questionMenuHTML = getLCAFloatingMenu();
     // Initialize and inject the freight question UI.
-    masterQContainer.insertAdjacentHTML("beforeend", freightHTML);
+    masterQContainer.insertAdjacentHTML("beforeend", contentHTML);
     masterQContainer.insertAdjacentHTML("beforebegin", questionMenuHTML);
-
     floatingQMenu = shadowQRoot.getElementById("lca-viz-question-menu");
-
     toggleQuestionButtonState();
-
     isAssistantActive = true;
     setTimeout(() => {
       handleQuestionForm();
       handleExpandCollapse();
     }, 0);
     hideLCAActionBtn();
-
-    // Fill in the form using freightData's data.
-    const transportData = freightData.transports[0];
-    console.log('transportData: ');
-    console.log(transportData);
-    const inputMapping = {
-      'from_location': 'lca-input-from',
-      'to_location': 'lca-input-to'
-    };
-    for (const [key, inputId] of Object.entries(inputMapping)) {
-      console.log('key = ', key, "input id = ", inputId);
-      const input = shadowQRoot.getElementById(inputId);
-      console.log('setting input value: ' + transportData[key]);
-      if (transportData[key]) {
-        input.value = transportData[key];
-        checkAllValid();
-      }
-    }
-    // Handle package weight and unit
-    if (transportData.weight) {
-      let { value, unit } = transportData.weight;
-      const weightInput = shadowQRoot.getElementById('lca-input-package-weight');
-      const unitSelect = shadowQRoot.getElementById('lca-input-package-unit');
-      console.log('setting weight value....');
-      if (value) {
-        weightInput.value = value;
-        checkAllValid();
-      }
-      if (unit) {
-        if (unit === 'lb') unit = 'lbs';
-        unitSelect.value = unit;
-        checkAllValid();
-      }
-    }
-    showMasterContainer();
   }
 
   /**
@@ -874,46 +1116,50 @@ async function init() {
     let processesNames = [];
     // Check for raw materials and related materials -> ratio
     if (materialList.raw_materials?.related_materials) {
-      materialList.raw_materials.related_materials.forEach((relatedMaterial) => {
-        if (relatedMaterial.ratio) {
-          relatedMaterial.ratio.forEach((item) => {
-            rawMaterialNames.push(item.name);
-          });
+      materialList.raw_materials.related_materials.forEach(
+        (relatedMaterial) => {
+          if (relatedMaterial.ratio) {
+            relatedMaterial.ratio.forEach((item) => {
+              rawMaterialNames.push(item.name);
+            });
+          }
         }
-      });
+      );
     }
     // Check for raw materials and independent materials
     if (materialList.raw_materials?.independent_materials) {
-      materialList.raw_materials.independent_materials.forEach((independentMaterial) => {
-        rawMaterialNames.push(independentMaterial.name);
-      });
+      materialList.raw_materials.independent_materials.forEach(
+        (independentMaterial) => {
+          rawMaterialNames.push(independentMaterial.name);
+        }
+      );
     }
     // Check for processes
     if (materialList.processes) {
       materialList.processes.forEach((process) => {
         processesNames.push({
-          "name": process.name,
-          "power_original": process.power_original,
-          "power_original_unit": process.power_original_unit,
-          "time_original": process.time_original,
-          "time_original_unit": process.time_original_unit,
-          "index": process.index
+          name: process.name,
+          power_original: process.power_original,
+          power_original_unit: process.power_original_unit,
+          time_original: process.time_original,
+          time_original_unit: process.time_original_unit,
+          index: process.index,
         });
       });
     }
-    console.log('rawMaterialNames: ');
+    console.log("rawMaterialNames: ");
     console.log(rawMaterialNames);
-    console.log('processesNames: ');
+    console.log("processesNames: ");
     console.log(processesNames);
     return {
       rawMaterialNames: rawMaterialNames,
-      processesNames: processesNames
+      processesNames: processesNames,
     };
   }
 
   // Escape special characters in material names for regex
   function escapeRegExp(text) {
-    return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
   function initializeChart(rawMaterialData) {
@@ -936,7 +1182,7 @@ async function init() {
   function setLCAActionBtnState(state) {
     const LCAActionBtnText = document.getElementById("lca-viz-action-btn-text");
     // const LCAActionBtn = document.getElementById("lca-viz-action-btn");
-    const floatingLCAImg = document.querySelector('.floating-lca-img');
+    const floatingLCAImg = document.querySelector(".floating-lca-img");
     if (state === "default") {
       floatingLCAImg.src = lca_48;
       LCAActionBtnText.textContent = "";
@@ -949,7 +1195,7 @@ async function init() {
       LCAActionBtn.classList.remove("lca-viz-interactable");
     } else if (state === "error") {
       floatingLCAImg.src = close_icon_red;
-      LCAActionBtnText.textContent = "No raw materials detected."
+      LCAActionBtnText.textContent = "No raw materials detected.";
       LCAActionBtnText.classList.remove("lca-viz-hidden");
       LCAActionBtn.classList.remove("lca-viz-interactable");
     }
@@ -970,7 +1216,7 @@ async function init() {
   function showLCAActionBtn() {
     setLCAActionBtnState("default");
     if (LCAActionBtn) {
-      console.log('SHOWING LCA ACTION BTN: ');
+      console.log("SHOWING LCA ACTION BTN: ");
       console.log(LCAActionBtn);
       // LCAActionBtn.classList.remove('lca-viz-hidden');
       LCAActionBtn.style.opacity = "1";
@@ -986,9 +1232,11 @@ async function init() {
     if (currentNode) {
       hideChart();
       currentNode.classList.remove("lca-viz-inline", "lca-viz-highlight");
-      currentNode.querySelectorAll('.lca-viz-origin-number').forEach((numberNode) => {
-        numberNode.classList.remove("lca-viz-hidden");
-      })
+      currentNode
+        .querySelectorAll(".lca-viz-origin-number")
+        .forEach((numberNode) => {
+          numberNode.classList.remove("lca-viz-hidden");
+        });
       const mark = currentNode.querySelector("mark");
       if (mark) {
         mark.classList.remove("lca-viz-mark");
@@ -996,7 +1244,10 @@ async function init() {
 
       // Restore the text back to its original format
       const originalText = mark ? mark.textContent : currentNode.textContent;
-      currentNode.parentNode.replaceChild(document.createTextNode(originalText), currentNode);
+      currentNode.parentNode.replaceChild(
+        document.createTextNode(originalText),
+        currentNode
+      );
     }
   }
 
@@ -1060,7 +1311,6 @@ async function init() {
     return newNode;
   }
 
-
   /**
    * Takes in a sentence and uses LLM to determine the relevant sentences that can be used to display a carbon chart.
    * Returns a JSON that contains information about each identified raw materials and their parameters.
@@ -1069,17 +1319,17 @@ async function init() {
    * @returns a JSON that contains information about each identified raw materials and their parameters.
    */
   async function getValidSentence(highlightedText) {
-    console.log('***HIGHLIGHTED TEXT****');
+    console.log("***HIGHLIGHTED TEXT****");
     console.log(highlightedText);
-    console.log('***HIGHLIGHTED TEXT****');
+    console.log("***HIGHLIGHTED TEXT****");
     const jsonObject = {
-      "text": highlightedText
-    }
+      text: highlightedText,
+    };
     try {
       const response = await fetch(LCA_SERVER_URL + "/api/evaluate-text", {
         method: "POST",
         headers: {
-          "Content-Type": "application/json"
+          "Content-Type": "application/json",
         },
         body: JSON.stringify(jsonObject),
       });
@@ -1089,24 +1339,31 @@ async function init() {
         if (responseData) {
           return responseData;
         }
-        console.log('responseData doesnt have the expected structure');
+        console.log("responseData doesnt have the expected structure");
         return null; // If responseData doesn't have the expected structure
       } else {
-        console.log('response not okay');
+        console.log("response not okay");
         setLCAActionBtnState("error");
         return null;
       }
     } catch (error) {
-      console.error('Error fetching data:', error);
+      console.error("Error fetching data:", error);
       setLCAActionBtnState("error"); // Handle errors gracefully
       return null;
     }
   }
 
   function trackRawMaterial() {
-    let allowedDomains = ["nature.com", "acm.org", "arxiv.org", "acs.org", "wiley.com", "fly.dev"];
+    let allowedDomains = [
+      "nature.com",
+      "acm.org",
+      "arxiv.org",
+      "acs.org",
+      "wiley.com",
+      "fly.dev",
+    ];
     if (isDomainValid(allowedDomains)) {
-      console.log('trackRawMaterial enabled');
+      console.log("trackRawMaterial enabled");
       handleLCAActionBtn();
       recordCurrentMouseCoord();
       handleHighlightText();
@@ -1126,7 +1383,7 @@ async function init() {
   }
 
   function handleHighlightText() {
-    document.addEventListener('mouseup', async (e) => {
+    document.addEventListener("mouseup", async (e) => {
       if (highlightTimeout) {
         clearTimeout(highlightTimeout);
       }
@@ -1154,13 +1411,17 @@ async function init() {
         }
       }, 0);
     });
-    document.addEventListener('click', (e) => {
+    document.addEventListener("click", (e) => {
       // Checks if the click is outside of tooltip. If so, hide the tooltip.
-      if (LCAActionBtn && !LCAActionBtn.contains(e.target) && window.getSelection().toString() === '') {
+      if (
+        LCAActionBtn &&
+        !LCAActionBtn.contains(e.target) &&
+        window.getSelection().toString() === ""
+      ) {
         hideLCAActionBtn();
       }
     });
-    document.addEventListener('mousedown', (e) => {
+    document.addEventListener("mousedown", (e) => {
       if (!LCAActionBtn.contains(e.target)) {
         hideLCAActionBtn();
       }
@@ -1168,29 +1429,28 @@ async function init() {
   }
 
   function handleLCAActionBtn() {
-    console.log('handleLCAActionBtn called');
-    // if (!LCAActionBtn) {
-      const actionBtnHTML = getLCAActionBtn();
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = actionBtnHTML;
-      document.body.appendChild(tempDiv.firstElementChild);
-      LCAActionBtn = document.getElementById('lca-viz-action-btn');
-      setLCAActionBtnState("default");
+    console.log("handleLCAActionBtn called");
+    const actionBtnHTML = getLCAActionBtn();
+    const tempDiv = document.createElement("div");
+    tempDiv.innerHTML = actionBtnHTML;
+    document.body.appendChild(tempDiv.firstElementChild);
+    LCAActionBtn = document.getElementById("lca-viz-action-btn");
+    setLCAActionBtnState("default");
 
-      LCAActionBtn.addEventListener("click", async () => {
-        if (isNotEmptyString()) {
-          chartPosX = mouseX;
-          chartScrollX = scrollX;
-          chartPosY = mouseY;
-          chartScrollY = scrollY;
-          setLCAActionBtnState("analyzing");
-          await makeHighlightTextInteractive(
-            globalSelectionData.parentNode,
-            globalSelectionData.range,
-            globalSelectionData.selection
-          );
-        }
-      });
+    LCAActionBtn.addEventListener("click", async () => {
+      if (isNotEmptyString()) {
+        chartPosX = mouseX;
+        chartScrollX = scrollX;
+        chartPosY = mouseY;
+        chartScrollY = scrollY;
+        setLCAActionBtnState("analyzing");
+        await makeHighlightTextInteractive(
+          globalSelectionData.parentNode,
+          globalSelectionData.range,
+          globalSelectionData.selection
+        );
+      }
+    });
   }
 
   function getLCAActionBtn() {
@@ -1205,7 +1465,7 @@ async function init() {
 
   // Records the current coordinate of the mouse.
   function recordCurrentMouseCoord() {
-    document.addEventListener('mousemove', function (event) {
+    document.addEventListener("mousemove", function (event) {
       mouseX = event.clientX;
       mouseY = event.clientY;
 
@@ -1234,15 +1494,16 @@ async function init() {
   function createChart(chartConfig) {
     clearTimeout(selectionTimeout);
     if (!chart) {
-      const map = document.createElement('div');
-      map.setAttribute('id', 'lca-viz-map');
-      map.setAttribute('role', 'main');
-      map.classList.add('lca-lexend');
+      const map = document.createElement("div");
+      map.setAttribute("id", "lca-viz-map");
+      map.setAttribute("role", "main");
+      map.classList.add("lca-lexend");
 
-      const paramContainer = document.createElement('div');
-      paramContainer.classList.add('lca-viz-param-container');
+      const paramContainer = document.createElement("div");
+      paramContainer.classList.add("lca-viz-param-container");
 
-      paramContainer.innerHTML = relatedMaterialHTML + independentMaterialHTML + processesHTML;
+      paramContainer.innerHTML =
+        relatedMaterialHTML + independentMaterialHTML + processesHTML;
 
       map.innerHTML = `
         <div class="flex-center lca-viz-header cg-12 pd-12">
@@ -1257,7 +1518,7 @@ async function init() {
         </button>
         </div>
         <div class="flex-stretch lca-viz-title-and-question mt-8">
-          <span class="lca-viz-raw-material-title"><b>Raw Materials Estimated Carbon Emissions</b></span>
+          <span class="lca-viz-raw-material-title"><b>Estimated Carbon Footprint of Raw Materials</b></span>
           <div class="btn btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
             <div class="left">
               <h3 class="fz-12 lca-lexend">How are raw material emissions calculated?</h3>
@@ -1272,16 +1533,17 @@ async function init() {
 
       `;
 
-      const paramSection = document.createElement('div');
-      paramSection.classList.add('param-section');
+      const paramSection = document.createElement("div");
+      paramSection.classList.add("param-section");
 
-      const paramSpan = document.createElement('span');
-      paramSpan.innerHTML = '<b>Parameters:</b>';
-      const paramSpan2 = document.createElement('p');
-      paramSpan2.classList.add('mt-0');
-      paramSpan2.classList.add('fz-16');
-      paramSpan2.classList.add('lca-viz-param-subtext');
-      paramSpan2.innerHTML = 'Adjust the values below to see the carbon emissions of different materials.';
+      const paramSpan = document.createElement("span");
+      paramSpan.innerHTML = "<b>Parameters:</b>";
+      const paramSpan2 = document.createElement("p");
+      paramSpan2.classList.add("mt-0");
+      paramSpan2.classList.add("fz-16");
+      paramSpan2.classList.add("lca-viz-param-subtext");
+      paramSpan2.innerHTML =
+        "Adjust the values below to see the carbon emissions of different materials.";
 
       paramSection.appendChild(paramSpan);
       paramSection.appendChild(paramSpan2);
@@ -1292,13 +1554,13 @@ async function init() {
 
       chartContainer = document.getElementById("lca-viz-map");
 
-      const canvas = document.getElementById('lca-viz-carbon-chart');
+      const canvas = document.getElementById("lca-viz-carbon-chart");
       Chart.defaults.font.family = "Lexend";
       chart = new Chart(canvas, {
-        type: 'pie',
+        type: "pie",
         data: chartConfig.data,
         options: chartConfig.options,
-        plugins: [increaseHeight]
+        plugins: [increaseHeight],
       });
       setChartPosition();
       handleCloseMapButton();
@@ -1306,7 +1568,7 @@ async function init() {
       handleToggleSwitch();
 
       requestAnimationFrame(() => {
-        chartContainer.classList.add('visible');
+        chartContainer.classList.add("visible");
         map.focus();
       });
     }
@@ -1321,28 +1583,33 @@ async function init() {
    * Handles closing the chart behavior
    */
   function handleCloseMapButton() {
-    document.getElementById("lca-viz-close-map").addEventListener("click", () => {
-      hideChart();
-      document.querySelector('.lca-viz-mark').classList.add('lca-viz-previously-highlighted');
-      // currentHighlightedNode.classList.add('lca-viz-previously-highlighted');
-      document.querySelector('.off-lca-btn').classList.remove('lca-viz-hidden');
-    });
+    document
+      .getElementById("lca-viz-close-map")
+      .addEventListener("click", () => {
+        hideChart();
+        document
+          .querySelector(".lca-viz-mark")
+          .classList.add("lca-viz-previously-highlighted");
+        // currentHighlightedNode.classList.add('lca-viz-previously-highlighted');
+        document
+          .querySelector(".off-lca-btn")
+          .classList.remove("lca-viz-hidden");
+      });
 
     currentHighlightedNode.addEventListener("click", redisplayChart);
   }
 
   // Redisplay the chart that was closed by the user
   function redisplayChart(event) {
-    console.log('redisplaying chart');
+    console.log("redisplaying chart");
     // const element = event.currentTarget;
-    const element = document.querySelector('.lca-viz-mark');
+    const element = document.querySelector(".lca-viz-mark");
     element.classList.remove("lca-viz-previously-highlighted");
     makeChartVisible();
   }
 
-
   function makeChartVisible(resetChartPosition = false) {
-    console.log('showing the chart');
+    console.log("showing the chart");
     if (resetChartPosition) {
       setChartPosition();
     }
@@ -1369,7 +1636,7 @@ async function init() {
         // Increase the height of the legend
         this.height += 25; // Adjust this value as needed
       };
-    }
+    },
   };
 
   // TODO: Implement a function that takes in the carbon info as text and outputs data used to create a Chart.js chart
@@ -1381,83 +1648,85 @@ async function init() {
   function getChartConfig() {
     // This is the dummy data
     // const cData = currentChartData;
-    console.log('currentChartData = ');
+    console.log("currentChartData = ");
     console.dir(currentChartData);
     const cData = extractNameAndEmissions(currentChartData);
-    console.log('cData = ');
+    console.log("cData = ");
     console.dir(cData);
 
-    const rawLabels = cData.map(item => item.name);
-    const emissionsData = cData.map(item => item.emissions);
+    const rawLabels = cData.map((item) => item.name);
+    const emissionsData = cData.map((item) => item.emissions);
     const chartData = {
       labels: rawLabels,
-      datasets: [{
-        label: '',
-        data: emissionsData,
-        fill: false,
-        backgroundColor: [
-          'rgba(255, 99, 132, 0.2)',
-          'rgba(255, 159, 64, 0.2)',
-          'rgba(255, 205, 86, 0.2)',
-          'rgba(75, 192, 192, 0.2)',
-          'rgba(54, 162, 235, 0.2)',
-          'rgba(153, 102, 255, 0.2)',
-          'rgba(201, 203, 207, 0.2)',
-          'rgba(255, 127, 80, 0.2)',
-          'rgba(144, 238, 144, 0.2)',
-          'rgba(173, 216, 230, 0.2)',
-          'rgba(221, 160, 221, 0.2)',
-          'rgba(240, 128, 128, 0.2)'
-        ],
-        borderColor: [
-          'rgb(255, 99, 132)',
-          'rgb(255, 159, 64)',
-          'rgb(255, 205, 86)',
-          'rgb(75, 192, 192)',
-          'rgb(54, 162, 235)',
-          'rgb(153, 102, 255)',
-          'rgb(201, 203, 207)',
-          'rgb(255, 127, 80)',
-          'rgb(144, 238, 144)',
-          'rgb(173, 216, 230)',
-          'rgb(221, 160, 221)',
-          'rgb(240, 128, 128)'
-        ],
-        borderWidth: 1
-      }]
+      datasets: [
+        {
+          label: "",
+          data: emissionsData,
+          fill: false,
+          backgroundColor: [
+            "rgba(255, 99, 132, 0.2)",
+            "rgba(255, 159, 64, 0.2)",
+            "rgba(255, 205, 86, 0.2)",
+            "rgba(75, 192, 192, 0.2)",
+            "rgba(54, 162, 235, 0.2)",
+            "rgba(153, 102, 255, 0.2)",
+            "rgba(201, 203, 207, 0.2)",
+            "rgba(255, 127, 80, 0.2)",
+            "rgba(144, 238, 144, 0.2)",
+            "rgba(173, 216, 230, 0.2)",
+            "rgba(221, 160, 221, 0.2)",
+            "rgba(240, 128, 128, 0.2)",
+          ],
+          borderColor: [
+            "rgb(255, 99, 132)",
+            "rgb(255, 159, 64)",
+            "rgb(255, 205, 86)",
+            "rgb(75, 192, 192)",
+            "rgb(54, 162, 235)",
+            "rgb(153, 102, 255)",
+            "rgb(201, 203, 207)",
+            "rgb(255, 127, 80)",
+            "rgb(144, 238, 144)",
+            "rgb(173, 216, 230)",
+            "rgb(221, 160, 221)",
+            "rgb(240, 128, 128)",
+          ],
+          borderWidth: 1,
+        },
+      ],
     };
 
     const options = {
       responsive: true,
       layout: {
         padding: {
-          bottom: 25
-        }
+          bottom: 25,
+        },
       },
       plugins: {
         legend: {
           display: true, // Show legend for pie/donut chart
-          position: 'top',
+          position: "top",
           labels: {
-            padding: 10
-          }
+            padding: 10,
+          },
         },
         tooltip: {
           callbacks: {
-            label: function(tooltipItem) {
-              const label = tooltipItem.label || '';
+            label: function (tooltipItem) {
+              const label = tooltipItem.label || "";
               const value = tooltipItem.raw;
               return `${label}: ${value} kg CO2e`; // Add unit in tooltip
-            }
-          }
+            },
+          },
         },
         datalabels: {
-          anchor: 'end',
-          align: 'end',
-          formatter: function(value) {
+          anchor: "end",
+          align: "end",
+          formatter: function (value) {
             return `${value} kg CO2e`;
-          }
-        }
+          },
+        },
       },
     };
     return { data: chartData, options: options };
@@ -1465,23 +1734,22 @@ async function init() {
 
   // Handles the behavior of opening and closing the lca question UI.
   function toggleQuestionButtonState() {
-    console.log('toggle button state');
+    console.log("toggle button state");
     // const openContainer = shadowRoot.getElementById("lca-viz-question-menu");
     const openContainer = floatingQMenu;
     const closeContainer = shadowQRoot.getElementById("lca-viz-close-question");
     closeContainer.addEventListener("click", () => {
-      console.log('closing master container');
+      console.log("closing master container");
       hideMasterContainer();
       openContainer.style.display = "flex";
       requestAnimationFrame(() => {
         openContainer.classList.remove("hidden-b");
         openContainer.classList.add("visible-b");
       });
-
     });
     openContainer.addEventListener("click", () => {
-      console.log('opening master container');
-      showMasterContainer();
+      console.log("opening master container");
+      showMasterQContainer();
       openContainer.style.display = "flex";
       requestAnimationFrame(() => {
         openContainer.classList.add("hidden-b");
@@ -1490,8 +1758,6 @@ async function init() {
     });
   }
 }
-
-
 
 /**
  * Takes in raw materials data and extracts the name of each raw material and emissions, then returns it
@@ -1512,10 +1778,11 @@ function extractNameAndEmissions(data) {
         const ratioList = material.ratio;
         const textSource = material.text_source;
         relatedMaterialHTML += createRatioSection(ratioList, textSource, index);
-        material.ratio.forEach(item => {
+        material.ratio.forEach((item) => {
           results.push({
             name: item.name,
-            emissions: extractEmissionsFactor(item.carbon_emission_factor).co2e_value
+            emissions: extractEmissionsFactor(item.carbon_emission_factor)
+              .co2e_value,
           });
         });
       }
@@ -1524,28 +1791,43 @@ function extractNameAndEmissions(data) {
   // Process raw materials - independent materials
   if (data.raw_materials?.independent_materials) {
     const independentList = data.raw_materials.independent_materials;
-    independentMaterialHTML = "<div class='lca-viz-independent-container'>" + independentList.map((item, index) => {
-      const emissionsAmount = item.amount * extractEmissionsFactor(item.carbon_emission_factor).co2e_value
-      results.push({
-        name: item.name,
-        emissions: emissionsAmount,
-      });
-      return getParam(item.name, item.index, 'g', item.amount, undefined, undefined, undefined);
-    }).join('') + "</div>";
+    independentMaterialHTML =
+      "<div class='lca-viz-independent-container'>" +
+      independentList
+        .map((item, index) => {
+          const emissionsAmount =
+            item.amount *
+            extractEmissionsFactor(item.carbon_emission_factor).co2e_value;
+          results.push({
+            name: item.name,
+            emissions: emissionsAmount,
+          });
+          return getParam(
+            item.name,
+            item.index,
+            "g",
+            item.amount,
+            undefined,
+            undefined,
+            undefined
+          );
+        })
+        .join("") +
+      "</div>";
   }
   // Process processes
-  if (data.processes) {
-    const processesList = data.processes;
-    processesHTML = "<div class='lca-viz-processes-container'>" + processesList.map((process) => {
-      const emissionsFactor = extractEmissionsFactor(process.carbon_emission_factor).co2e_value;
-      const emissionsAmount = calculateProcessesEmissions(process.power, process.time, emissionsFactor);
-      results.push({
-        name: process.name,
-        emissions: emissionsAmount,
-      });
-      return getParam(process.name, process.index, process.power_original_unit, process.power_original, true, process.time_original_unit, process.time_original);
-    }).join('')  + "</div>";
-  }
+  // if (data.processes) {
+  //   const processesList = data.processes;
+  //   processesHTML = "<div class='lca-viz-processes-container'>" + processesList.map((process) => {
+  //     const emissionsFactor = extractEmissionsFactor(process.carbon_emission_factor).co2e_value;
+  //     const emissionsAmount = calculateProcessesEmissions(process.power, process.time, emissionsFactor);
+  //     results.push({
+  //       name: process.name,
+  //       emissions: emissionsAmount,
+  //     });
+  //     return getParam(process.name, process.index, process.power_original_unit, process.power_original, true, process.time_original_unit, process.time_original);
+  //   }).join('')  + "</div>";
+  // }
   return results;
 }
 
@@ -1565,7 +1847,7 @@ export function isDomainValid(domainList) {
   let allowedDomains = domainList;
   const currentDomain = getBaseDomain(window.location.hostname);
 
-  console.log('currentDomain = ' + currentDomain);
+  console.log("currentDomain = " + currentDomain);
   if (allowedDomains.includes(currentDomain)) {
     return true;
   } else {
@@ -1574,72 +1856,193 @@ export function isDomainValid(domainList) {
 }
 
 export function getBaseDomain(hostname) {
-  const parts = hostname.split('.');
+  const parts = hostname.split(".");
   if (parts.length > 2) {
-    return parts.slice(-2).join('.');
+    return parts.slice(-2).join(".");
   }
   return hostname;
 }
-
 
 /**
  * Enables the question UI form to function properly
  */
 function handleQuestionForm() {
-  const inputs = [
-    { id: 'lca-input-from', errorId: 'lca-viz-from-error', validate: validateText},
-    { id: 'lca-input-to', errorId: 'lca-viz-to-error', validate: validateText},
-    { id: 'lca-input-package-weight', errorId: 'lca-viz-package-error', validate: validatePackageWeight},
-  ];
-  const calculateContainer = shadowQRoot.querySelector('.lca-viz-calculate-container-2');
-  const formContainer = shadowQRoot.querySelector('.lca-viz-question-form');
+  let inputs;
+  if (currScenario === "freight") {
+    console.log("SCENARIO: FREIGHT");
+    inputs = [
+      {
+        id: "lca-input-from",
+        errorId: "lca-viz-from-error",
+        validate: validateText,
+      },
+      {
+        id: "lca-input-to",
+        errorId: "lca-viz-to-error",
+        validate: validateText,
+      },
+      {
+        id: "lca-input-package-weight",
+        errorId: "lca-viz-package-error",
+        validate: validatePackageWeight,
+      },
+    ];
+  } else if (currScenario === "energy") {
+    console.log("SCENARIO: ENERGY");
+    inputs = [
+      {
+        id: "lca-input-package-weight",
+        errorId: "lca-viz-package-error",
+        validate: validatePackageWeight,
+      },
+    ];
+    // ! Manually set device/process and location field in 'energy' scenario to be optional
+    const input1 = shadowQRoot.getElementById("lca-input-from");
+    const input2 = shadowQRoot.getElementById("lca-input-to");
+    toggleValidation(input1, "lca-viz-from-error", true);
+    toggleValidation(input2, "lca-viz-to-error", true);
+  }
+
+  const calculateContainer = shadowQRoot.querySelector(
+    ".lca-viz-calculate-container-2"
+  );
+  const formContainer = shadowQRoot.querySelector(".lca-viz-question-form");
+  const btnTxt = shadowQRoot.querySelector(".lca-viz-calculate-btn-txt-2");
 
   inputs.forEach(({ id }) => {
     const input = shadowQRoot.getElementById(id);
-    input.addEventListener('input', checkAllValid);
+    input.addEventListener("input", checkAllValid);
   });
 
-  calculateContainer.addEventListener('click', async () => {
-    if (!calculateContainer.classList.contains('invalid')) {
-      const formData = new FormData(formContainer);
-      console.log('from: ' , formData.get('from'));
-      console.log('to: ' , formData.get('to'));
-      console.log('package weight / usage duration: ' , formData.get('package-weight'));
-      console.log('unit: ' , formData.get('package-unit'));
-      const fromAddress = formData.get('from');
-      const toAddress = formData.get('to');
-      const unit = formData.get('package-unit');
-      let totalWeight = parseFloat(formData.get('package-weight'));
-      // Converting the weight to kg if unit is originally in lbs.
-      if (unit !== 'kg') totalWeight = totalWeight * 0.453;
-      const currShippingOptions = null;
-      const freightData = await getFreightData(fromAddress, toAddress, totalWeight, currShippingOptions, true);
-      console.log('freightData: ');
-      console.log(freightData);
-      if (shadowQRoot.querySelector(".freight-container") !== null) {
-        console.log("updating freight content.....");
-        await updateFreightContent(freightData);
-        hideQuestionUI();
-      } else {
-        console.log("injecting freight content.....");
-        // ! Don't delete this. We need this to invoke popup-content.js's initialization.
-        // ? Experiment
-        getMasterContainer()
-          .then((container) => {
-            hideQuestionUI();
-            (async() => {
-              await injectPopupContent("freight", freightData);
-            })();
-          })
-          .catch((error) => { console.log(error) });
-        isPopupActive = true;
+  let loadingInterval;
+  calculateContainer.addEventListener("click", async () => {
+    if (!calculateContainer.classList.contains("invalid")) {
+      // Start loading animation
+      let loadingState = 0;
+      loadingInterval = setInterval(() => {
+        loadingState = (loadingState + 1) % 4;
+        btnTxt.textContent = "Calculating" + ".".repeat(loadingState);
+      }, 500);
+      if (currScenario === "freight") {
+        await handleFreightInput();
+      } else if (currScenario === "energy") {
+        await handleEnergyInput();
       }
     }
   });
 
-  inputs.forEach(({ id, errorId, validate = validateText}) => {
+  async function handleEnergyInput() {
+    const formData = new FormData(formContainer);
+    const deviceProcessName = formData.get("from");
+    const durationVal = formData.get("package-weight");
+    const durationUnit = formData.get("package-unit");
+    const location = formData.get("to");
+    const durationInSeconds = convertToSeconds(durationVal, durationUnit);
+    console.log("wattage = " + wattage);
+    console.log("durationInSeconds = " + durationInSeconds);
+    const kwh = (wattage / 1000) * (durationInSeconds / 3600);
+    console.log("kwh = " + kwh);
+
+    let energyEmissions;
+    // If location is not given, use the emissions factor from LLM, which is based on US electricity average.
+    if (!location || location === "") {
+      console.log("location not given, calculate locally");
+      // The emissions is in this unit: ~ g CO2eq per 1 kwH
+      const emissionsPerKwh = extractEmissionsFactor(energyEFactor).co2e_value;
+      console.log("emissionsPerKwh = " + emissionsPerKwh);
+      energyEmissions = parseFloat((kwh * emissionsPerKwh) / 1000);
+      // Else, use electricity maps API with location.
+    } else {
+      const objectBody = {
+        location_name: location,
+        electricity_used: kwh,
+      };
+      let response = await fetch(
+        LCA_PY_SERVER_URL + "/calculate-electricity-footprint",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(objectBody),
+        }
+      );
+      if (response.ok) {
+        const responseData = await response.json();
+        energyEmissions = parseFloat(responseData.carbon_footprint);
+      } else {
+        console.log("yo error: cannot fetch electricity maps API");
+        return;
+      }
+    }
+    console.log("emissions in kg CO2eq: " + energyEmissions);
+    const data = {
+      emissions: energyEmissions,
+      device_process: deviceProcessName,
+      power: kwh,
+      duration: durationVal,
+      duration_unit: durationUnit,
+      location: location,
+    };
+    const emissionsResultHTML = getCloudEmissionsResult(data, "energy");
+    getMasterContainer();
+    setupLCABannerAndFloatingMenu();
+    displayCloudEmissions(emissionsResultHTML, false);
+    hideQuestionUI();
+    showMasterContainer();
+    isPopupActive = true;
+  }
+
+  async function handleFreightInput() {
+    const formData = new FormData(formContainer);
+    console.log("from: ", formData.get("from"));
+    console.log("to: ", formData.get("to"));
+    console.log(
+      "package weight / usage duration: ",
+      formData.get("package-weight")
+    );
+    console.log("unit: ", formData.get("package-unit"));
+    const fromAddress = formData.get("from");
+    const toAddress = formData.get("to");
+    const unit = formData.get("package-unit");
+    let totalWeight = parseFloat(formData.get("package-weight"));
+    // Converting the weight to kg if unit is originally in lbs.
+    if (unit !== "kg") totalWeight = totalWeight * 0.453;
+    const currShippingOptions = null;
+    const freightData = await getFreightData(
+      fromAddress,
+      toAddress,
+      totalWeight,
+      currShippingOptions,
+      true
+    );
+    console.log("freightData: ");
+    console.log(freightData);
+    if (shadowQRoot.querySelector(".freight-container") !== null) {
+      console.log("updating freight content.....");
+      await updateFreightContent(freightData);
+      hideQuestionUI();
+    } else {
+      console.log("injecting freight content.....");
+      // ! Don't delete this. We need this to invoke popup-content.js's initialization.
+      // ? Experiment
+      getMasterContainer()
+        .then(() => {
+          hideQuestionUI();
+          (async () => {
+            await injectPopupContent("freight", freightData);
+          })();
+        })
+        .catch((error) => {
+          console.log(error);
+        });
+      isPopupActive = true;
+    }
+  }
+
+  inputs.forEach(({ id, errorId, validate = validateText }) => {
     const input = shadowQRoot.getElementById(id);
-    input.addEventListener('input', () => {
+    input.addEventListener("input", () => {
       const isValid = validate(input);
       toggleValidation(input, errorId, isValid);
     });
@@ -1665,35 +2068,42 @@ function removeQuestionUI() {
   }, 500);
 }
 
-// function validateLocation() {
-//   const calculateError = shadowRoot.getElementById('lca-viz-calculate-error');
-//   const fromTo = shadowRoot.querySelectorAll('.lca-viz-question-from-to');
-//   fromTo.forEach(async (input) => {
-//     const locationObj = {
-//       "location_name": input.value
-//     }
-//     try {
-//       const response = await fetch(LCA_PY_SERVER_URL + '/get-coordinates', {
-//         method: 'POST',
-//         'Content-Type': '',
-//       })
-//       if (!response) {
-//         calculateError.value = 'Error: is not a valid location'
-//       }
-//     } catch (error) {
-
-//     }
-//   })
-// }
 
 function checkAllValid() {
-  const inputs = [
-    { id: 'lca-input-from', errorId: 'lca-viz-from-error', validate: validateText},
-    { id: 'lca-input-to', errorId: 'lca-viz-to-error', validate: validateText},
-    { id: 'lca-input-package-weight', errorId: 'lca-viz-package-error', validate: validatePackageWeight},
-  ];
-  const calculateContainer = shadowQRoot.querySelector('.lca-viz-calculate-container-2');
-  console.log('checkAllValid called');
+  let inputs;
+  if (currScenario === "freight") {
+    console.log("SCENARIO: FREIGHT");
+    inputs = [
+      {
+        id: "lca-input-from",
+        errorId: "lca-viz-from-error",
+        validate: validateText,
+      },
+      {
+        id: "lca-input-to",
+        errorId: "lca-viz-to-error",
+        validate: validateText,
+      },
+      {
+        id: "lca-input-package-weight",
+        errorId: "lca-viz-package-error",
+        validate: validatePackageWeight,
+      },
+    ];
+  } else if (currScenario === "energy") {
+    console.log("SCENARIO: ENERGY");
+    inputs = [
+      {
+        id: "lca-input-package-weight",
+        errorId: "lca-viz-package-error",
+        validate: validatePackageWeight,
+      },
+    ];
+  }
+  const calculateContainer = shadowQRoot.querySelector(
+    ".lca-viz-calculate-container-2"
+  );
+  console.log("checkAllValid called");
   let allValid = true;
   inputs.forEach(({ id, errorId, validate }) => {
     const input = shadowQRoot.getElementById(id);
@@ -1702,18 +2112,18 @@ function checkAllValid() {
     if (!isValid) allValid = false; // Ensure all fields are checked
   });
   if (allValid) {
-    console.log('ALL INPUTS ARE VALID');
-    calculateContainer.classList.add('valid');
-    calculateContainer.classList.remove('invalid');
+    console.log("ALL INPUTS ARE VALID");
+    calculateContainer.classList.add("valid");
+    calculateContainer.classList.remove("invalid");
   } else {
-    console.log('not all inputs are valid............');
-    calculateContainer.classList.add('invalid');
-    calculateContainer.classList.remove('valid');
+    console.log("not all inputs are valid............");
+    calculateContainer.classList.add("invalid");
+    calculateContainer.classList.remove("valid");
   }
 }
 
 function validateText(input) {
-  return input.value.trim() !== '';
+  return input.value.trim() !== "";
 }
 
 function validatePackageWeight(input) {
@@ -1728,13 +2138,13 @@ function validatePackageWeight(input) {
 function toggleValidation(input, errorId, isValid) {
   const error = shadowQRoot.getElementById(errorId);
   if (isValid) {
-    input.classList.remove('invalid');
-    input.classList.add('valid');
-    error.style.display = 'none';
+    input.classList.remove("invalid");
+    input.classList.add("valid");
+    error.style.display = "none";
   } else {
-    input.classList.remove('valid');
-    input.classList.add('invalid');
-    error.style.display = 'block';
+    input.classList.remove("valid");
+    input.classList.add("invalid");
+    error.style.display = "block";
   }
 }
 
@@ -1742,22 +2152,26 @@ function toggleValidation(input, errorId, isValid) {
  * Handles the expanding and collapsing of the form
  */
 function handleExpandCollapse() {
-  console.log('handleExpandCollapse');
-  shadowQRoot.querySelector('.lca-viz-expand-collapse-container').addEventListener('click', () => {
-    const qExpand = shadowQRoot.querySelector('.lca-viz-question-expand');
-    const collapseIcon = shadowQRoot.querySelector('.lca-viz-expand-collapse-icon');
-    if (qExpand.classList.contains('expanded')) {
-      qExpand.style.height = `40px`;
-      qExpand.classList.add('collapsed');
-      qExpand.classList.remove('expanded');
-      collapseIcon.src = `${expand_icon_wide}`;
-    } else if (qExpand.classList.contains('collapsed')) {
-      qExpand.style.height = `420px`;
-      qExpand.classList.add('expanded');
-      qExpand.classList.remove('collapsed');
-      collapseIcon.src = `${collapse_icon_wide}`;
-    }
-  });
+  console.log("handleExpandCollapse");
+  shadowQRoot
+    .querySelector(".lca-viz-expand-collapse-container")
+    .addEventListener("click", () => {
+      const qExpand = shadowQRoot.querySelector(".lca-viz-question-expand");
+      const collapseIcon = shadowQRoot.querySelector(
+        ".lca-viz-expand-collapse-icon"
+      );
+      if (qExpand.classList.contains("expanded")) {
+        qExpand.style.height = `40px`;
+        qExpand.classList.add("collapsed");
+        qExpand.classList.remove("expanded");
+        collapseIcon.src = `${expand_icon_wide}`;
+      } else if (qExpand.classList.contains("collapsed")) {
+        qExpand.style.height = `420px`;
+        qExpand.classList.add("expanded");
+        qExpand.classList.remove("collapsed");
+        collapseIcon.src = `${collapse_icon_wide}`;
+      }
+    });
 }
 
 function getLCAFloatingMenu() {
@@ -1774,7 +2188,7 @@ function hideMasterContainer() {
   masterQContainer.classList.remove("lca-viz-c-visible");
 }
 
-function showMasterContainer() {
+function showMasterQContainer() {
   masterQContainer.classList.remove("lca-viz-c-hidden");
   masterQContainer.classList.add("lca-viz-c-visible");
 }
@@ -1786,4 +2200,3 @@ function hideFloatingQMenu() {
     floatingQMenu.classList.remove("visible-b");
   });
 }
-

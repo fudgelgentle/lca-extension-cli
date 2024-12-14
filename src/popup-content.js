@@ -11,10 +11,18 @@ import { getRecommendedModels } from "./phone-utils";
 const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
 
 const lca_48 = chrome.runtime.getURL("../assets/img/lca-48.png");
-const plus_square_icon = chrome.runtime.getURL("../assets/img/plus-square-icon.png");
-const red_trash_icon = chrome.runtime.getURL("../assets/img/red-trash-icon.png");
-const most_green_icon = chrome.runtime.getURL("../assets/img/most-green-icon.png");
-const equivalent_icon = chrome.runtime.getURL("../assets/img/equivalent-icon.png");
+const plus_square_icon = chrome.runtime.getURL(
+  "../assets/img/plus-square-icon.png"
+);
+const red_trash_icon = chrome.runtime.getURL(
+  "../assets/img/red-trash-icon.png"
+);
+const most_green_icon = chrome.runtime.getURL(
+  "../assets/img/most-green-icon.png"
+);
+const equivalent_icon = chrome.runtime.getURL(
+  "../assets/img/equivalent-icon.png"
+);
 const airplane_icon = chrome.runtime.getURL("../assets/img/airplane-icon.png");
 const truck_icon = chrome.runtime.getURL("../assets/img/truck-icon.png");
 const sync_icon = chrome.runtime.getURL("../assets/img/sync-icon.png");
@@ -37,7 +45,18 @@ let durationText = 0;
 //   // setupPopupShadowDOM();
 //   initialize();
 // }
-const popupDomains = ["fedex.com", "azure.com", "amazon.com", "bestbuy.com", "apple.com", "store.google.com", "samsung.com", "oppo.com", "huawei.com", "lenovo.com"];
+const popupDomains = [
+  "fedex.com",
+  "azure.com",
+  "amazon.com",
+  "bestbuy.com",
+  "apple.com",
+  "store.google.com",
+  "samsung.com",
+  "oppo.com",
+  "huawei.com",
+  "lenovo.com",
+];
 if (isDomainValid(popupDomains)) {
   if (!window.popupInjected) {
     window.popupInjected = true; // Set global flag
@@ -49,24 +68,24 @@ function initialize() {
   return new Promise((resolve) => {
     setupPopupShadowDOM();
     (async () => {
-      const storedStates = await chrome.storage.sync.get('autodetect');
+      const storedStates = await chrome.storage.sync.get("autodetect");
       const isAutoDetectEnabled = storedStates.autodetect || false;
       await loadCSS(chrome.runtime.getURL("../assets/popup-content.css"));
       if (isAutoDetectEnabled) {
-        console.log('auto detect is enabled!')
+        console.log("auto detect is enabled!");
         trackFreight();
         await trackPhone();
         trackCloud();
       }
       resolve();
     })();
-  })
+  });
 }
 
 // Export getter functions
 export function getMasterContainer() {
   if (!window.popupInjected) {
-    console.log('popup not injected yet. initializing....');
+    console.log("popup not injected yet. initializing....");
     // initialize();
     return initialize().then(() => {
       return masterContainer;
@@ -88,7 +107,7 @@ export function getMasterContainer() {
 
 export function setupPopupShadowDOM() {
   // Setting up the master container and attaching the css
-  console.log('setting up shadow DOM.................');
+  console.log("setting up shadow DOM.................");
   masterContainer = document.createElement("div");
   masterContainer.setAttribute("role", "main");
   masterContainer.setAttribute("tabindex", "0");
@@ -101,7 +120,7 @@ export function setupPopupShadowDOM() {
   document.body.append(placeholder);
   shadowRoot = placeholder.attachShadow({ mode: "open" });
   shadowRoot.appendChild(masterContainer);
-  console.log('masterContainer in popup: ');
+  console.log("masterContainer in popup: ");
   console.log(masterContainer);
 }
 
@@ -109,11 +128,22 @@ async function trackPhone() {
   // Example usage
   const pageTitle = document.title;
   const phoneModel = detectPhoneModel(pageTitle);
-  const allowedDomains = ["amazon.com", "bestbuy.com", "apple.com", "store.google.com", "samsung.com", "oppo.com", "huawei.com", "lenovo.com"];
+  const allowedDomains = [
+    "amazon.com",
+    "bestbuy.com",
+    "apple.com",
+    "store.google.com",
+    "samsung.com",
+    "oppo.com",
+    "huawei.com",
+    "lenovo.com",
+  ];
   if (phoneModel && isDomainValid(allowedDomains)) {
     try {
       currentPhoneData = await getPhoneCarbonData(phoneModel);
-      currentRecommendedPhones = await getRecommendedModels(currentPhoneData.device);
+      currentRecommendedPhones = await getRecommendedModels(
+        currentPhoneData.device
+      );
       await injectPopupContent("phone");
     } catch (error) {
       console.error(error);
@@ -123,25 +153,40 @@ async function trackPhone() {
 
 // Checks if the calculate button is ready to be used
 function checkCalculateButtonReady() {
-  console.log('checkCalculateButtonReady called');
-  if (checkInputTextValid() && isYesNoButtonClicked && checkIsNumberInputFilled()) {
-    shadowRoot.querySelector('.lca-viz-calculate-container').classList.remove('disabled');
+  console.log("checkCalculateButtonReady called");
+  if (
+    checkInputTextValid() &&
+    isYesNoButtonClicked &&
+    checkIsNumberInputFilled()
+  ) {
+    shadowRoot
+      .querySelector(".lca-viz-calculate-container")
+      .classList.remove("disabled");
   } else {
-    shadowRoot.querySelector('.lca-viz-calculate-container').classList.add('disabled');
+    shadowRoot
+      .querySelector(".lca-viz-calculate-container")
+      .classList.add("disabled");
   }
 }
 
 function checkInputTextValid() {
-  return regionText !== "" && cloudSizeText !== "" && regionText !== "Waiting for input...." && cloudSizeText !== "Waiting for input....";
+  return (
+    regionText !== "" &&
+    cloudSizeText !== "" &&
+    regionText !== "Waiting for input...." &&
+    cloudSizeText !== "Waiting for input...."
+  );
 }
 
 function checkIsNumberInputFilled() {
-  const numberInputContainer = shadowRoot.querySelector('.lca-viz-number-input-container');
-  const numberInput = shadowRoot.getElementById('lca-viz-number-input');
+  const numberInputContainer = shadowRoot.querySelector(
+    ".lca-viz-number-input-container"
+  );
+  const numberInput = shadowRoot.getElementById("lca-viz-number-input");
   if (numberInput.value && numberInput.value > 0) {
-    console.log('numberInput has a value: ', numberInput.value);
+    console.log("numberInput has a value: ", numberInput.value);
     return true;
-  } else if (numberInputContainer.classList.contains('hidden')) {
+  } else if (numberInputContainer.classList.contains("hidden")) {
     return true;
   }
   return false;
@@ -150,30 +195,32 @@ function checkIsNumberInputFilled() {
 async function startCloudPopup() {
   if (regionText !== "" && cloudSizeText !== "") {
     await handleCloudPopup();
-    let regionSpan = shadowRoot.getElementById('lca-viz-cloud-region-value');
-    let instanceSpan = shadowRoot.getElementById('lca-viz-cloud-instance-value');
+    let regionSpan = shadowRoot.getElementById("lca-viz-cloud-region-value");
+    let instanceSpan = shadowRoot.getElementById(
+      "lca-viz-cloud-instance-value"
+    );
     if (regionSpan && instanceSpan) {
       regionSpan.textContent = regionText;
       instanceSpan.textContent = cloudSizeText;
       checkCalculateButtonReady();
     } else {
-      console.log('region and instance span not found..');
+      console.log("region and instance span not found..");
     }
   }
 }
 
-
 function checkCloudUrl(callback) {
   const currentHash = window.location.hash;
-  if (currentHash === '#create/Microsoft.VirtualMachine-ARM' ||
-    currentHash === '#create/Microsoft.VirtualMachine'
+  if (
+    currentHash === "#create/Microsoft.VirtualMachine-ARM" ||
+    currentHash === "#create/Microsoft.VirtualMachine"
   ) {
-    console.log('on create virtual machine page');
-    console.log('currentHash: ', currentHash);
+    console.log("on create virtual machine page");
+    console.log("currentHash: ", currentHash);
     callback();
   } else {
-    console.log('not on create virtual machine page');
-    console.log('currentHash: ', currentHash);
+    console.log("not on create virtual machine page");
+    console.log("currentHash: ", currentHash);
   }
 }
 
@@ -184,24 +231,31 @@ function trackCloud() {
     checkCloudUrl(startObservingElements);
 
     window.navigation.addEventListener("navigate", () => {
-      if (window.location.href === 'https://portal.azure.com/#browse/Microsoft.Compute%2FVirtualMachines') {
-        console.log('navigation change to virtual machine page detected');
+      if (
+        window.location.href ===
+        "https://portal.azure.com/#browse/Microsoft.Compute%2FVirtualMachines"
+      ) {
+        console.log("navigation change to virtual machine page detected");
         startObservingElements();
       } else {
-        console.log('no navigation change to virtual machine detected');
+        console.log("no navigation change to virtual machine detected");
       }
     });
   }
 }
 
 async function startObservingElements() {
-  observeElementTextAndClassContent('Region', ["azc-form-label"], (element) => {
+  observeElementTextAndClassContent("Region", ["azc-form-label"], (element) => {
     setTimeout(() => {
-      const regionInput = element?.parentElement?.parentElement?.childNodes?.[1]?.childNodes?.[0]?.childNodes?.[1].childNodes?.[1];
+      const regionInput =
+        element?.parentElement?.parentElement?.childNodes?.[1]?.childNodes?.[0]
+          ?.childNodes?.[1].childNodes?.[1];
       if (regionInput) {
         regionText = regionInput.textContent.trim();
         observeTextChange(regionInput, async (text) => {
-          const size = getElementByTextContent(".azc-form-label", "Size")?.parentElement?.parentElement?.childNodes?.[1]?.childNodes?.[0]?.childNodes?.[1].childNodes?.[1];
+          const size = getElementByTextContent(".azc-form-label", "Size")
+            ?.parentElement?.parentElement?.childNodes?.[1]?.childNodes?.[0]
+            ?.childNodes?.[1].childNodes?.[1];
           if (size) {
             cloudSizeText = size.textContent.trim();
           }
@@ -212,13 +266,17 @@ async function startObservingElements() {
     }, 1000);
   });
 
-  observeElementTextAndClassContent('Size', ["azc-form-label"], (element) => {
+  observeElementTextAndClassContent("Size", ["azc-form-label"], (element) => {
     setTimeout(() => {
-      const cloudSizeInput = element?.parentElement?.parentElement?.childNodes?.[1]?.childNodes?.[0]?.childNodes?.[1].childNodes?.[1];
+      const cloudSizeInput =
+        element?.parentElement?.parentElement?.childNodes?.[1]?.childNodes?.[0]
+          ?.childNodes?.[1].childNodes?.[1];
       if (cloudSizeInput) {
         cloudSizeText = cloudSizeInput.textContent.trim();
         observeTextChange(cloudSizeInput, async (text) => {
-          const region = getElementByTextContent(".azc-form-label", "Region")?.parentElement?.parentElement?.childNodes?.[1]?.childNodes?.[0]?.childNodes?.[1].childNodes?.[1];
+          const region = getElementByTextContent(".azc-form-label", "Region")
+            ?.parentElement?.parentElement?.childNodes?.[1]?.childNodes?.[0]
+            ?.childNodes?.[1].childNodes?.[1];
           if (region) {
             cloudSizeText = region.textContent.trim();
           }
@@ -240,7 +298,7 @@ function getElementByTextContent(nodeList, matchingText) {
 }
 
 async function handleCloudPopup() {
-  if (!shadowRoot.querySelector('.lca-viz-cloud-master-container')) {
+  if (!shadowRoot.querySelector(".lca-viz-cloud-master-container")) {
     await injectPopupContent("cloud");
     handleCalculateButton();
     handleYesNoButton();
@@ -248,16 +306,16 @@ async function handleCloudPopup() {
 }
 
 function handleCalculateButton() {
-  const calculateBtn = shadowRoot.querySelector('.lca-viz-calculate-btn');
-  const btnText = shadowRoot.querySelector('.lca-viz-calculate-btn-txt');
+  const calculateBtn = shadowRoot.querySelector(".lca-viz-calculate-btn");
+  const btnText = shadowRoot.querySelector(".lca-viz-calculate-btn-txt");
   let loadingInterval;
 
-  calculateBtn.addEventListener('click', async() => {
+  calculateBtn.addEventListener("click", async () => {
     // Start loading animation
     let loadingState = 0;
     loadingInterval = setInterval(() => {
       loadingState = (loadingState + 1) % 4;
-      btnText.textContent = 'Calculating' + '.'.repeat(loadingState);
+      btnText.textContent = "Calculating" + ".".repeat(loadingState);
     }, 500);
 
     try {
@@ -266,40 +324,96 @@ function handleCalculateButton() {
         emissions: cloudData.total_co2e,
         region: regionText,
         instance: cloudSizeText,
-        duration: durationText
-      }
-      const emissionsResultHTML = getCloudEmissionsResult(data);
-      shadowRoot.querySelector('.lca-viz-cloud-master-container').classList.add('hidden-a');
-      masterContainer.insertAdjacentHTML("beforeend", emissionsResultHTML);
-      handleCO2eEquivalencyChange();
-      requestAnimationFrame(async() => {
-        shadowRoot.querySelector('.lca-viz-cloud-emissions-container').classList.remove('hidden-a');
-        const cloudContent = shadowRoot.querySelector(".lca-viz-cloud-results-info-container");
-        showElement(cloudContent, "a");
-      });
+        duration: durationText,
+      };
+      const emissionsResultHTML = getCloudEmissionsResult(data, "cloud");
+      displayCloudEmissions(emissionsResultHTML, true);
     } finally {
       // Stop loading animation and reset button text
       clearInterval(loadingInterval);
-      btnText.textContent = 'Calculate';
+      btnText.textContent = "Calculate";
     }
   });
 }
 
-function getCloudEmissionsResult(data) {
-  let cloudEmissions = data.emissions;
-  const region = data.region;
-  const instance = data.instance;
-  const duration = data.duration;
+export function displayCloudEmissions(emissionsResultHTML, isCloud) {
+  if (isCloud) shadowRoot.querySelector(".lca-viz-cloud-master-container").classList.add("hidden-a");
+  masterContainer.insertAdjacentHTML("beforeend", emissionsResultHTML);
+  handleCO2eEquivalencyChange();
+  requestAnimationFrame(async () => {
+    shadowRoot
+      .querySelector(".lca-viz-cloud-emissions-container")
+      .classList.remove("hidden-a");
+    const cloudContent = shadowRoot.querySelector(".lca-viz-cloud-results-info-container");
+    showElement(cloudContent, "a");
+  });
+}
+
+/**
+ * Fills in the carbon information for the cloud and energy popup UI.
+ * @param {String} scenario Either "cloud" or "energy"
+ * @returns
+ */
+export function getCloudEmissionsResult(data, scenario) {
+  let emissions;
+  let deviceProcess, power, energyDuration, durationUnit, location;
+  let region, instance, duration;
+  let milesDriven;
+  let treesOffset;
+  if (scenario === "cloud") {
+    emissions = data.emissions;
+    region = data.region;
+    instance = data.instance;
+    duration = data.duration;
+  } else if (scenario === "energy") {
+    emissions = data.emissions;
+    deviceProcess = data.device_process;
+    power = data.power;
+    energyDuration = data.duration;
+    durationUnit = data.duration_unit;
+    if (durationUnit === "s") durationUnit = "second(s)";
+    if (durationUnit === "min") durationUnit = "minute(s)";
+    if (durationUnit === "h") durationUnit = "hour(s)";
+    location = data.location;
+    console.log("emissions = ", emissions);
+    console.log("emissions type of =" + typeof emissions);
+    console.log("device = ", deviceProcess);
+    console.log("power = ", power);
+    console.log("energyDuration = ", energyDuration);
+    console.log("location = ", location);
+    power = formatToSignificantFigures(power);
+    milesDriven = formatToSignificantFigures(emissions * 2.5);
+    treesOffset = formatToSignificantFigures(emissions * 0.048);
+  }
+  const isLocationNull = !location || location === "";
 
   let beefValue;
-  let weightObject;
-  let beefUnit;
-  if (cloudEmissions) {
-    beefValue = cloudEmissions * 0.033;
-    weightObject = getReadableUnit(beefValue);
-    beefValue = weightObject.weight;
-    beefUnit = weightObject.unit;
+  // let weightObject;
+  let beefUnit = "kg";
+  // if (emissions) {
+  //   beefValue = formatToSignificantFigures(emissions * 0.033);
+  //   weightObject = getReadableUnit(beefValue);
+  //   beefValue = weightObject.weight;
+  //   beefUnit = weightObject.unit;
+  // }
+
+  let kgBeef;
+  kgBeef = emissions * 0.033;
+  beefValue = kgBeef;
+  if (kgBeef < 0.001) {
+    // Convert to milligrams if less than 0.001 kg (1 gram)
+    beefValue = kgBeef * 1000000; // 1 kg = 1,000,000 mg
+    beefUnit = "mg";
+  } else {
+    // Convert to grams
+    beefValue = kgBeef * 1000; // 1 kg = 1000 g
+    beefUnit = "g";
   }
+  beefValue = formatToSignificantFigures(kgBeef);
+
+  const readableEmissions = getReadableCO2e(emissions);
+  const readableCO2e = readableEmissions.co2e_value;
+  const readableUnit = readableEmissions.unit;
 
   const emissionsResultHTML = `
     <div class="lca-viz-cloud-emissions-container hidden-a">
@@ -307,7 +421,7 @@ function getCloudEmissionsResult(data) {
         <div class="lca-viz-cloud-results-info-container pd-16 mt-12 hidden-a">
 
           <div class="flex-stretch lca-viz-title-and-question mt-8">
-            <p class="fz-16 mt-0 mb-0"><b>Your cloud instance's estimated carbon emissions:</b></p>
+            <p class="fz-16 mt-0 mb-0"><b>${scenario === "cloud" ? "Your cloud instance's estimated carbon emissions:" : "Estimated Carbon Footprint of Use "}</b></p>
             <div class="btn btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
               <div class="left">
                 <h3 class="fz-12 lca-lexend">How are cloud instance emissions calculated?</h3>
@@ -327,32 +441,34 @@ function getCloudEmissionsResult(data) {
             </select>
           </div>
 
-          ${cloudEmissions ?
-            `<div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
-              <span class="fz-20 freight-co2e-value"><b>${cloudEmissions.toFixed(3)} kg CO2e <span class="fz-12">(per month)</span></b></span>
+          ${
+            emissions
+              ? `<div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
+              <span class="fz-20 freight-co2e-value"><b>${readableCO2e} ${readableUnit} <span class="fz-12">${
+                  scenario === "cloud" ? "(per month)" : ""
+                }</span></b></span>
 
               <div class="lca-viz-unit-container cloud flex-center cg-4">
                 <div class="lca-viz-unit-div">
                   <div class="flex-center lca-viz-justify-center cg-8">
-                    <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(cloudEmissions * 2.5).toFixed(2)} miles driven by a car &nbsp;🚗</p>
+                    <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${milesDriven} miles driven by a car &nbsp;🚗</p>
                   </div>
                 </div>
 
                 <div class="lca-viz-unit-div">
                   <div class="flex-center lca-viz-justify-center cg-8">
-                    <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(cloudEmissions * 0.048).toFixed(3)} trees annually &nbsp;🌳</p>
+                    <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${treesOffset} trees annually &nbsp;🌳</p>
                   </div>
                 </div>
 
                 <div class="lca-viz-unit-div">
                   <div class="flex-center lca-viz-justify-center cg-8">
-                    <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(beefValue)} ${beefUnit} of beef consumed &nbsp;🥩</p>
+                    <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${beefValue} ${beefUnit} of beef consumed &nbsp;🥩</p>
                   </div>
                 </div>
               </div>
             </div>`
-            :
-            `<div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
+              : `<div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
               <span class="fz-20 freight-co2e-value"><b>Data unavailable</b></span>
               <div class="flex-center cg-4">
                 <span class="trash-value fz-16">Region or instance is not supported.</span>
@@ -360,19 +476,46 @@ function getCloudEmissionsResult(data) {
             </div>`
           }
 
-          <p class="fz-16 mb-2"><b>Region:</b> <br>
-            <div class="flex-center cg-8">
-              <span id="lca-viz-cloud-region-value" class="fz-12">${region}</span>
-            </div>
-          </p>
-          <p class="fz-16 mb-2"><b>Server Instance Type:</b> <br>
-            <div class="flex-center cg-8">
-              <span id="lca-viz-cloud-instance-value" class="fz-12">${instance}</span>
-            </div>
-          </p>
-          <p class="fz-16 mb-2"><b>Usage Duration:</b> <br>
-            <span class="fz-12">${duration} hours per day</span>
-          </p>
+          ${
+            scenario === "cloud"
+              ? `
+              <p class="fz-16 mb-2"><b>Region:</b> <br>
+                <div class="flex-center cg-8">
+                  <span id="lca-viz-cloud-region-value" class="fz-12">${region}</span>
+                </div>
+              </p>
+              <p class="fz-16 mb-2"><b>Server Instance Type:</b> <br>
+                <div class="flex-center cg-8">
+                  <span id="lca-viz-cloud-instance-value" class="fz-12">${instance}</span>
+                </div>
+              </p>
+              <p class="fz-16 mb-2"><b>Usage Duration:</b> <br>
+                <span class="fz-12">${duration} hours per day</span>
+              </p>
+            `
+              : `
+              <p class="fz-16 mb-2"><b>Device / Process:</b> <br>
+                <div class="flex-center cg-8">
+                  <span id="" class="fz-12">${deviceProcess}</span>
+                </div>
+              </p>
+              <p class="fz-16 mb-2"><b>Usage Duration:</b> <br>
+                <div class="flex-center cg-8">
+                  <span id="" class="fz-12">${energyDuration} ${durationUnit}</span>
+                </div>
+              </p>
+              ${
+                !isLocationNull
+                  ? `<p class="fz-16 mb-2"><b>Location:</b> <br>
+                  <span class="fz-12">${location}</span>
+                </p>`
+                  : ``
+              }
+              <p class="fz-16 mb-2"><b>Power:</b> <br>
+                <span class="fz-12">${power} kWh</span>
+              </p>
+            `
+          }
         </div>
       </section>
     </div>
@@ -385,23 +528,23 @@ async function getCloudData() {
   const instance = cloudSizeText.toLowerCase();
   const duration = parseInt(durationText);
   const data = {
-    "region": region,
-    "instance": instance,
-    "duration": parseInt(durationText),
-    "duration_unit": "h"
-  }
+    region: region,
+    instance: instance,
+    duration: parseInt(durationText),
+    duration_unit: "h",
+  };
   if (region && instance && duration) {
-    const response = await fetch(LCA_SERVER_URL + '/api/cloud', {
+    const response = await fetch(LCA_SERVER_URL + "/api/cloud", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(data),
     });
 
     let responseData;
     if (!response.ok) {
-      responseData = '';
+      responseData = "";
     } else {
       responseData = await response.json();
     }
@@ -410,34 +553,38 @@ async function getCloudData() {
 }
 
 function handleYesNoButton() {
-  let yesButton = shadowRoot.querySelector('.lca-viz-yes-button');
-  let noButton = shadowRoot.querySelector('.lca-viz-no-button');
-  yesButton.addEventListener('click', () => {
-    noButton.classList.remove('selected');
-    yesButton.classList.add('selected');
+  let yesButton = shadowRoot.querySelector(".lca-viz-yes-button");
+  let noButton = shadowRoot.querySelector(".lca-viz-no-button");
+  yesButton.addEventListener("click", () => {
+    noButton.classList.remove("selected");
+    yesButton.classList.add("selected");
     isYesNoButtonClicked = true;
-    shadowRoot.querySelector('.lca-viz-number-input-container').classList.add('hidden');
+    shadowRoot
+      .querySelector(".lca-viz-number-input-container")
+      .classList.add("hidden");
     durationText = 24;
     checkCalculateButtonReady();
   });
-  noButton.addEventListener('click', () => {
-    yesButton.classList.remove('selected');
-    noButton.classList.add('selected');
+  noButton.addEventListener("click", () => {
+    yesButton.classList.remove("selected");
+    noButton.classList.add("selected");
     isYesNoButtonClicked = true;
-    shadowRoot.querySelector('.lca-viz-number-input-container').classList.remove('hidden');
+    shadowRoot
+      .querySelector(".lca-viz-number-input-container")
+      .classList.remove("hidden");
     checkCalculateButtonReady();
 
-    const numberInput = shadowRoot.getElementById('lca-viz-number-input');
-    numberInput.addEventListener('input', () => {
+    const numberInput = shadowRoot.getElementById("lca-viz-number-input");
+    numberInput.addEventListener("input", () => {
       durationText = numberInput.value;
       checkCalculateButtonReady();
-    })
+    });
   });
 }
 
 // Function to fetch and inject CSS into the shadow DOM
 async function loadCSS(url) {
-  console.log('loading css');
+  console.log("loading css");
   const response = await fetch(url);
   const cssText = await response.text();
   const style = document.createElement("style");
@@ -445,8 +592,22 @@ async function loadCSS(url) {
   shadowRoot.appendChild(style);
 }
 
+export function setupLCABannerAndFloatingMenu() {
+  const lcaBanner = getLCABanner();
+  masterContainer.insertAdjacentHTML("beforeend", lcaBanner);
+  const lcaFloatingMenu = getLCAFloatingMenu();
+  masterContainer.insertAdjacentHTML("beforebegin", lcaFloatingMenu);
+  floatingMenu = shadowRoot.getElementById("lca-viz-floating-menu");
+  toggleButtonState();
+}
+
 // 3 popup cases: phone, freight, cloud
-export async function injectPopupContent(popupCase, freightData = null, mContainer = null, sRoot = null) {
+export async function injectPopupContent(
+  popupCase,
+  freightData = null,
+  mContainer = null,
+  sRoot = null
+) {
   const lcaBanner = getLCABanner();
 
   // if (!window.popupInjected) {
@@ -456,13 +617,12 @@ export async function injectPopupContent(popupCase, freightData = null, mContain
   if (!masterContainer) masterContainer = mContainer;
   if (!shadowRoot) shadowRoot = sRoot;
 
-  console.log('masterContainer in popup-content.js: ');
+  console.log("masterContainer in popup-content.js: ");
   console.log(masterContainer);
   masterContainer.insertAdjacentHTML("beforeend", lcaBanner);
   const lcaFloatingMenu = getLCAFloatingMenu();
   masterContainer.insertAdjacentHTML("beforebegin", lcaFloatingMenu);
   floatingMenu = shadowRoot.getElementById("lca-viz-floating-menu");
-
   toggleButtonState();
 
   if (popupCase === "phone") {
@@ -517,7 +677,7 @@ function getLCAFloatingMenu() {
 
 // Handles the behavior of opening and closing the lca-extension window.
 function toggleButtonState() {
-  console.log('toggle button state');
+  console.log("toggle button state");
   const closeContainer = shadowRoot.querySelector(".lca-viz-close-container");
   const openContainer = shadowRoot.getElementById("lca-viz-floating-menu");
   closeContainer.addEventListener("click", () => {
@@ -533,6 +693,10 @@ function toggleButtonState() {
 export function hidePopup() {
   hideElement(masterContainer, "b");
   floatingMenu.remove();
+}
+
+export function showMasterContainer() {
+  masterContainer.classList.remove("hidden");
 }
 
 /**
@@ -665,7 +829,7 @@ function getPhoneEmissionsSkeleton() {
 async function showPhoneEmissions() {
   shadowRoot.querySelector(".phone-container").classList.remove("hidden-a");
   await hidePhoneLoadingIcon();
-  const phoneSpecContainer = shadowRoot.querySelector(".phone-spec-container" );
+  const phoneSpecContainer = shadowRoot.querySelector(".phone-spec-container");
   const comparePhone = shadowRoot.querySelector(".compare-phone");
   showElement(phoneSpecContainer, "a");
   comparePhone.classList.remove("hidden-a");
@@ -684,10 +848,14 @@ async function showFreightHTMLContent() {
 }
 
 async function showCloudEmissions() {
-  shadowRoot.querySelector(".lca-viz-cloud-master-container").classList.remove("hidden-a");
+  shadowRoot
+    .querySelector(".lca-viz-cloud-master-container")
+    .classList.remove("hidden-a");
   masterContainer.focus();
   await hideCloudLoadingIcon();
-  const cloudContent = shadowRoot.querySelector(".lca-viz-cloud-info-container");
+  const cloudContent = shadowRoot.querySelector(
+    ".lca-viz-cloud-info-container"
+  );
   showElement(cloudContent, "a");
 }
 
@@ -706,6 +874,50 @@ function getReadableUnit(kg) {
   } else {
     const kilograms = parseFloat(kg.toFixed(2));
     return { weight: kilograms, unit: "kg" };
+  }
+}
+
+/**
+ * Converts a CO2e value in kilograms to a more readable format using grams,
+ * kilograms, or tons, as appropriate.
+ * @param {number} kgCO2e - The CO2e value in kilograms.
+ * @returns {{co2e_value: number, unit: string}} An object containing the
+ * converted CO2e value and its corresponding unit (g CO2e, kg CO2e, or t CO2e).
+ * e.g. getReadableCO2e(0.0011972) returns { co2e_value: 1.2, unit: 'g CO2e' }
+ */
+function getReadableCO2e(kgCO2e) {
+  if (kgCO2e < 1.0) {
+    const grams = parseFloat((kgCO2e * 1000).toFixed(2));
+    return { co2e_value: grams, unit: "g CO2e" };
+  } else if (kgCO2e >= 1000) {
+    const tons = parseFloat((kgCO2e / 1000).toFixed(2));
+    return { co2e_value: tons, unit: "t CO2e" };
+  } else {
+    const kilograms = parseFloat(kgCO2e.toFixed(2));
+    return { co2e_value: kilograms, unit: "kg CO2e" };
+  }
+}
+
+/**
+ * Formats a number to a specified number of significant figures, rounding
+ * appropriately. It handles both very small and regular-sized numbers.
+ *
+ * @param {number} num - The number to format.
+ * @param {number} [significantFigures=2] - The desired number of significant figures.
+ * @returns {string} The formatted number as a string.
+ */
+function formatToSignificantFigures(num, significantFigures = 2) {
+  if (num === 0) {
+    return "0"; // Handle zero separately
+  }
+  const magnitude = Math.floor(Math.log10(Math.abs(num)));
+  const roundingFactor = Math.pow(10, magnitude - significantFigures + 1);
+  const roundedNum = Math.round(num / roundingFactor) * roundingFactor;
+  if (magnitude >= significantFigures || magnitude < -3) {
+      return roundedNum.toPrecision(significantFigures);
+  } else {
+    const decimalPlaces = Math.max(0, significantFigures - magnitude - 1)
+    return roundedNum.toFixed(decimalPlaces);
   }
 }
 
@@ -737,7 +949,7 @@ function injectFreightHTMLContent(freightData) {
     const airEmission = airData.co2eValue;
     const groundEmission = groundData.co2eValue;
     const difference = airEmission - groundEmission;
-    const airDiff = (parseInt((difference / groundEmission) * 100));
+    const airDiff = parseInt((difference / groundEmission) * 100);
     // const groundDiff = (parseInt((difference / airEmission) * 100));
     if (airEmission > groundEmission) {
       airDiffHTML = `<p class="emissions-diff-plus fz-12 br-4 margin-0"><b>+${airDiff}% emissions</b></p>`;
@@ -766,15 +978,17 @@ function injectFreightHTMLContent(freightData) {
       .join(" ");
   }
 
-  let titleText = "Your package&apos;s estimated carbon emissions"
+  let titleText = "Estimated Carbon Footprint of Transport";
 
   if (airData) {
     const airCo2eValue = airData.co2eValue;
-    let airTrashValue = (airCo2eValue / 1.15);
+    let airTrashValue = airCo2eValue / 1.15;
     const weightObject = getReadableUnit(airTrashValue);
     airTrashValue = weightObject.weight;
     // const trashUnit = weightObject.unit;
-    const shippingOptionsText = airData.airMode.map(formatShippingText).join(", ");
+    const shippingOptionsText = airData.airMode
+      .map(formatShippingText)
+      .join(", ");
     airHTML = `
       <div class="options-container">
         <p class="shipping-options fz-12 mb-4">
@@ -788,19 +1002,25 @@ function injectFreightHTMLContent(freightData) {
           <div class="lca-viz-unit-container freight flex-center cg-4">
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${Math.ceil(airCo2eValue * 2.5)} miles driven by a car &nbsp;🚗</p>
+                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${Math.ceil(
+                  airCo2eValue * 2.5
+                )} miles driven by a car &nbsp;🚗</p>
               </div>
             </div>
 
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(airCo2eValue * 0.048).toFixed(1)} trees annually &nbsp;🌳</p>
+                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(
+                  airCo2eValue * 0.048
+                ).toFixed(1)} trees annually &nbsp;🌳</p>
               </div>
             </div>
 
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(airCo2eValue *  0.033).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
+                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(
+                  airCo2eValue * 0.033
+                ).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
               </div>
             </div>
           </div>
@@ -811,12 +1031,14 @@ function injectFreightHTMLContent(freightData) {
   }
   if (groundData) {
     const groundCo2eValue = groundData.co2eValue;
-    let groundTrashValue = (groundCo2eValue / 1.15);
+    let groundTrashValue = groundCo2eValue / 1.15;
     const weightObject = getReadableUnit(groundTrashValue);
     groundTrashValue = weightObject.weight;
     // const trashUnit = weightObject.unit;
-    console.log('ground shipping options = ' + groundData.groundMode);
-    const shippingOptionsText = groundData.groundMode.map(formatShippingText).join(", ");
+    console.log("ground shipping options = " + groundData.groundMode);
+    const shippingOptionsText = groundData.groundMode
+      .map(formatShippingText)
+      .join(", ");
     groundHTML = `
       <div class="options-container">
         <p class="shipping-options fz-12 mb-4">
@@ -830,19 +1052,25 @@ function injectFreightHTMLContent(freightData) {
           <div class="lca-viz-unit-container freight flex-center cg-4">
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${Math.ceil(groundCo2eValue * 2.5)} miles driven by a car &nbsp;🚗</p>
+                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${Math.ceil(
+                  groundCo2eValue * 2.5
+                )} miles driven by a car &nbsp;🚗</p>
               </div>
             </div>
 
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(groundCo2eValue * 0.048).toFixed(1)} trees annually &nbsp;🌳</p>
+                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(
+                  groundCo2eValue * 0.048
+                ).toFixed(1)} trees annually &nbsp;🌳</p>
               </div>
             </div>
 
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(groundCo2eValue *  0.033).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
+                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(
+                  groundCo2eValue * 0.033
+                ).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
               </div>
             </div>
           </div>
@@ -852,7 +1080,8 @@ function injectFreightHTMLContent(freightData) {
     `;
   }
   if (!airData && !groundData) {
-    titleText = "We're unable to determine the carbon emissions for the specified locations.";
+    titleText =
+      "We're unable to determine the carbon emissions for the specified locations.";
   }
 
   const freightEmissions = `
@@ -908,7 +1137,7 @@ function injectFreightHTMLContent(freightData) {
 function trackFreight() {
   let allowedDomains = ["fedex.com"];
   if (isDomainValid(allowedDomains)) {
-    console.log('current domain is allowed by fedex');
+    console.log("current domain is allowed by fedex");
     // observeFedexBtn();
     observeFedexShippingOptions(() => {
       handleFedexDataToFreight();
@@ -926,13 +1155,23 @@ function trackFreight() {
  * @param {Array} matchingClassesArr The array containing the matching classes. For example, ["azc-form-label"];
  * @param {callback} callback
  */
-function observeElementTextAndClassContent(matchingText, matchingClassesArr, callback) {
+function observeElementTextAndClassContent(
+  matchingText,
+  matchingClassesArr,
+  callback
+) {
   const observer = new MutationObserver((mutationsList, observer) => {
-    mutationsList.forEach(mutation => {
-      if (mutation.type === 'childList') {
-        mutation.addedNodes.forEach(node => {
-          if (node.nodeType === Node.ELEMENT_NODE) {  // Check if it's an element
-            if (node.textContent.includes(matchingText) && matchingClassesArr.some((className) => node.classList.contains(className))) {
+    mutationsList.forEach((mutation) => {
+      if (mutation.type === "childList") {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            // Check if it's an element
+            if (
+              node.textContent.includes(matchingText) &&
+              matchingClassesArr.some((className) =>
+                node.classList.contains(className)
+              )
+            ) {
               callback(node);
               observer.disconnect(); // Stop observing once a match is found
             }
@@ -958,7 +1197,9 @@ function observeFedexShippingOptions(callback) {
   const observer = new MutationObserver((mutationsList, observer) => {
     for (const mutation of mutationsList) {
       if (mutation.type === "childList") {
-        const shippingOption = document.querySelector(".fdx-c-definitionlist__description--small");
+        const shippingOption = document.querySelector(
+          ".fdx-c-definitionlist__description--small"
+        );
         if (shippingOption) {
           observer.disconnect(); // Stop observing once the shipping option is found
           callback();
@@ -1006,12 +1247,9 @@ function recordFromToAddressChange() {
 }
 
 function recordPackageTypeChange() {
-  const packageType = document.getElementById(
-    "package-details__package-type"
-  );
+  const packageType = document.getElementById("package-details__package-type");
   if (packageType) {
     packageType.addEventListener("change", () => {
-
       const packageWeightElement = document.getElementById(
         "package-details__weight-0"
       );
@@ -1072,9 +1310,7 @@ async function handleFedexDataToFreight() {
     ".fdx-c-definitionlist__description--small"
   );
   availableOptions.forEach((option) => {
-    currShippingOptions.push(
-      option.outerText.toLowerCase().replace(/®/g, "")
-    );
+    currShippingOptions.push(option.outerText.toLowerCase().replace(/®/g, ""));
   });
 
   const fromAddressElement = document.getElementById("fromGoogleAddress");
@@ -1091,8 +1327,12 @@ async function handleFedexDataToFreight() {
     : null;
 
   // const packageWeightElement = document.getElementById("package-details__weight-0");
-  const packageWeightElement = document.querySelector('#package-details__weight-0 .fdx-c-form__input');
-  let packageWeight = packageWeightElement ? parseInt(packageWeightElement.value) : null;
+  const packageWeightElement = document.querySelector(
+    "#package-details__weight-0 .fdx-c-form__input"
+  );
+  let packageWeight = packageWeightElement
+    ? parseInt(packageWeightElement.value)
+    : null;
 
   const unitElement = document.querySelector(
     'select[data-e2e-id="selectMeasurement"]'
@@ -1106,7 +1346,12 @@ async function handleFedexDataToFreight() {
 
   if (fromAddress && toAddress && packageCount && packageWeight) {
     const totalWeight = packageWeight * packageCount;
-    const freightData = await getFreightData(fromAddress, toAddress, totalWeight, currShippingOptions)
+    const freightData = await getFreightData(
+      fromAddress,
+      toAddress,
+      totalWeight,
+      currShippingOptions
+    );
     if (shadowRoot.querySelector(".freight-container") !== null) {
       console.log("updating freight content popup.....");
       await updateFreightContent(freightData);
@@ -1116,10 +1361,10 @@ async function handleFedexDataToFreight() {
     }
     currShippingOptions = [];
   } else {
-    console.log('fromAddress: ', fromAddress);
-    console.log('toAddress: ', toAddress);
-    console.log('packageCount: ', packageCount);
-    console.log('packageWeight: ', packageWeight);
+    console.log("fromAddress: ", fromAddress);
+    console.log("toAddress: ", toAddress);
+    console.log("packageCount: ", packageCount);
+    console.log("packageWeight: ", packageWeight);
     console.error("Invalid input.. Information is not complete");
   }
 }
@@ -1236,22 +1481,28 @@ async function handlePhoneCompare() {
   });
 
   // For the new 2 recommended phone models
-  const competitorNodeList = shadowRoot.querySelectorAll(".lca-viz-competitor-phone");
-  const competitorSection = shadowRoot.querySelector('.lca-viz-competitor-section');
+  const competitorNodeList = shadowRoot.querySelectorAll(
+    ".lca-viz-competitor-phone"
+  );
+  const competitorSection = shadowRoot.querySelector(
+    ".lca-viz-competitor-section"
+  );
   competitorNodeList.forEach((phone) => {
     phone.addEventListener("click", () => {
       const phoneId = parseInt(phone.id);
 
-      console.log('phone Id = ' + phoneId);
-      competitorSection.classList.add('hidden-a');
+      console.log("phone Id = " + phoneId);
+      competitorSection.classList.add("hidden-a");
       displaySideBySideComparison(phoneId);
-    })
+    });
   });
 }
 
 // Handles the selection of a phone model in the list
 function handleSideBySideSelection() {
-  const phoneNodeList = shadowRoot.querySelector(".phone-model-container").children;
+  const phoneNodeList = shadowRoot.querySelector(
+    ".phone-model-container"
+  ).children;
   Array.from(phoneNodeList).forEach((phone) => {
     phone.addEventListener("click", (event) => {
       const phoneId = parseInt(event.target.id);
@@ -1271,42 +1522,44 @@ function handleSideBySideSelection() {
 // Handles the changing of different reference units for phone emissions flow.
 // (i.e. changing between "~ kg of trash burned", "~ of miles driven", and "~ of trees cut down" every 3 seconds)
 function handleCO2eEquivalencyChange() {
-  const unitSelect = shadowRoot.getElementById('lca-viz-unit-select');
-  const unitDivsContainer = shadowRoot.querySelectorAll('.lca-viz-unit-container');
+  const unitSelect = shadowRoot.getElementById("lca-viz-unit-select");
+  const unitDivsContainer = shadowRoot.querySelectorAll(
+    ".lca-viz-unit-container"
+  );
   // Initialize: show the first unit-div by default
   let currentIndex = 0;
   if (unitSelect && unitDivsContainer) {
-    console.log('CALLING handleCO2EquivalencyChange');
+    console.log("CALLING handleCO2EquivalencyChange");
     unitDivsContainer.forEach((container) => {
-      container.children[currentIndex].classList.add('lca-viz-show');
+      container.children[currentIndex].classList.add("lca-viz-show");
     });
 
     unitSelect.addEventListener("change", (e) => {
       const selectedIndex = parseInt(e.target.value);
-      console.log('selectedIndex = ' + selectedIndex);
+      console.log("selectedIndex = " + selectedIndex);
       showSelectedUnit(selectedIndex);
     });
   } else {
-    console.log('handleCO2EquivalencyChange CANNOT be called');
+    console.log("handleCO2EquivalencyChange CANNOT be called");
   }
 
   // Function to change the displayed unit-div based on dropdown selection
   function showSelectedUnit(index) {
     unitDivsContainer.forEach((container) => {
-      console.log('currentIndex = ' + currentIndex);
-      console.log('newIndex = ' + index);
+      console.log("currentIndex = " + currentIndex);
+      console.log("newIndex = " + index);
       const oldUnitDiv = container.children[currentIndex];
       const newUnitDiv = container.children[index];
-      console.log('unitDivs = ');
+      console.log("unitDivs = ");
       console.dir(oldUnitDiv);
       // Hide the current unit-div
-      oldUnitDiv.classList.remove('lca-viz-show');
-      oldUnitDiv.classList.add('lca-viz-hide');
+      oldUnitDiv.classList.remove("lca-viz-show");
+      oldUnitDiv.classList.add("lca-viz-hide");
 
       // After fade-out, remove the hide class and show the selected unit
       setTimeout(() => {
-        oldUnitDiv.classList.remove('lca-viz-hide');
-        newUnitDiv.classList.add('lca-viz-show');
+        oldUnitDiv.classList.remove("lca-viz-hide");
+        newUnitDiv.classList.add("lca-viz-show");
         currentIndex = index;
       }, 300);
     });
@@ -1324,7 +1577,7 @@ function getDataSource(phoneObject) {
       <div class="lca-viz-txt-source pdt-12">
         <a href="${phoneObject.source}" class="lca-link fz-16" target="_blank">Data source</a>
       </div>`;
-      return txtSourceHTML;
+    return txtSourceHTML;
   } else {
     return `<div></div>`;
   }
@@ -1333,7 +1586,9 @@ function getDataSource(phoneObject) {
 // Display a side-by-side carbon emissions comparison of two phones
 function displaySideBySideComparison(phoneId) {
   const currentPhone = currentPhoneData;
-  const comparedPhone = currentRecommendedPhones.find(phone => phone.index === phoneId);
+  const comparedPhone = currentRecommendedPhones.find(
+    (phone) => phone.index === phoneId
+  );
 
   const wrapper = shadowRoot.querySelector(".side-by-side-section");
   const phoneContainer = shadowRoot.querySelector(".phone-container");
@@ -1357,25 +1612,39 @@ function displaySideBySideComparison(phoneId) {
       <div class="details-container fz-16">
         <div class="flex-center most-green cg-4">
           <p><b>${currentArray[i].storage}</b>&nbsp;</p>
-          ${currentArray[i].mostEco
+          ${
+            currentArray[i].mostEco
               ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
               : ""
-            }
+          }
         </div>
-        <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg ${result === "one" ? "greener" : result === "two" ? "" : ""}">
-          <p class="margin-0">${currentArray[i].co2e !== '--' ? currentArray[i].co2e + ' kg CO2e': '--'} </p>
+        <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg ${
+          result === "one" ? "greener" : result === "two" ? "" : ""
+        }">
+          <p class="margin-0">${
+            currentArray[i].co2e !== "--"
+              ? currentArray[i].co2e + " kg CO2e"
+              : "--"
+          } </p>
         </div>
       </div>
       <div class="details-container fz-16">
         <div class="flex-center most-green cg-4">
           <p><b>${comparedArray[i].storage}</b>&nbsp;</p>
-          ${comparedArray[i].mostEco
+          ${
+            comparedArray[i].mostEco
               ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
               : ""
-            }
+          }
         </div>
-        <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg ${result === "one" ? "" : result === "two" ? "greener" : ""}">
-          <p class="margin-0">${comparedArray[i].co2e !== '--' ? comparedArray[i].co2e + ' kg CO2e': '--'}</p>
+        <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg ${
+          result === "one" ? "" : result === "two" ? "greener" : ""
+        }">
+          <p class="margin-0">${
+            comparedArray[i].co2e !== "--"
+              ? comparedArray[i].co2e + " kg CO2e"
+              : "--"
+          }</p>
         </div>
       </div>
     `;
@@ -1386,14 +1655,16 @@ function displaySideBySideComparison(phoneId) {
   specContainer.innerHTML += currentPhoneDataSource;
   specContainer.innerHTML += comparedPhoneDataSource;
 
-  const competitorSection = shadowRoot.querySelector(".lca-viz-competitor-section");
+  const competitorSection = shadowRoot.querySelector(
+    ".lca-viz-competitor-section"
+  );
 
   const trashBtn = specContainer.querySelector(".trash-btn");
   trashBtn.addEventListener("click", () => {
     hideElement(wrapper, "a");
     showElement(phoneContainer, "a");
 
-    competitorSection.classList.remove('hidden-a');
+    competitorSection.classList.remove("hidden-a");
   });
 
   const lcaBanner = shadowRoot.querySelector(".lca-banner");
@@ -1488,7 +1759,7 @@ function alignStorageArrays(arr1, arr2) {
 
 // Takes in the storage array and flags the index that has the most eco-friendly option
 function markMostEcoFriendlyIndex(arr) {
-  const mostEcoIndex = arr.findIndex(item => item.co2e !== '--');
+  const mostEcoIndex = arr.findIndex((item) => item.co2e !== "--");
   if (mostEcoIndex !== -1) {
     arr[mostEcoIndex].mostEco = true;
   }
@@ -1516,20 +1787,25 @@ function toGB(storage) {
 async function populatePhoneModel() {
   // const phoneModel = await getRecommendedModels(currentPhoneData.device);
   const phoneModel = currentRecommendedPhones;
-  console.log('recommeded phone model = ');
+  console.log("recommeded phone model = ");
   console.log(currentRecommendedPhones);
 
-  const phoneModelContainer = shadowRoot.querySelector(".phone-model-container");
+  const phoneModelContainer = shadowRoot.querySelector(
+    ".phone-model-container"
+  );
   phoneModelContainer.innerHTML = "";
   phoneModel.forEach((phone, index) => {
     const phoneElement = document.createElement("p");
-    phoneElement.className = `phone-model-text br-4${index === phoneModel.length - 1 ? " last" : ""
-      }`;
+    phoneElement.className = `phone-model-text br-4${
+      index === phoneModel.length - 1 ? " last" : ""
+    }`;
     phoneElement.textContent = phone.device;
     phoneModelContainer.appendChild(phoneElement);
   });
 
-  const phoneCompetitorContainer = shadowRoot.querySelector(".lca-viz-competitor-container");
+  const phoneCompetitorContainer = shadowRoot.querySelector(
+    ".lca-viz-competitor-container"
+  );
   phoneCompetitorContainer.innerHTML = "";
   phoneModel.forEach((phone) => {
     const phoneElement = `
@@ -1544,7 +1820,7 @@ async function populatePhoneModel() {
 // Displays the carbon emission of the phone being analyzed in the web page.
 function displayPhoneSpecEmissions() {
   const data = currentPhoneData;
-  console.log('phone data = ');
+  console.log("phone data = ");
   console.log(data);
 
   const container = shadowRoot.querySelector(".phone-spec-container");
@@ -1572,7 +1848,7 @@ function displayPhoneSpecEmissions() {
     </div>
   `;
 
-  const compareWith = shadowRoot.getElementById('lca-viz-compare-with');
+  const compareWith = shadowRoot.getElementById("lca-viz-compare-with");
   compareWith.innerHTML = deviceName;
 
   // let mostGreenOption = footprints[0];
@@ -1598,12 +1874,13 @@ function displayPhoneSpecEmissions() {
       <div class="details-container fz-16" id=${index + "-c"}>
         <div class="flex-center ${isMostGreen ? "most-green" : ""} cg-4">
           <p><b>${spec.storage} </b>&nbsp;</p>
-          ${isMostGreen
-        ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
-        : `<span class="emissions-diff-plus fz-12 br-4 margin-0"><b>(+${percentageIncrease.toFixed(
-          0
-        )}% emissions)</b></span>`
-      }
+          ${
+            isMostGreen
+              ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
+              : `<span class="emissions-diff-plus fz-12 br-4 margin-0"><b>(+${percentageIncrease.toFixed(
+                  0
+                )}% emissions)</b></span>`
+          }
         </div>
         <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
           <p class="margin-0">${co2eValue} kg CO2e</p>
@@ -1612,19 +1889,25 @@ function displayPhoneSpecEmissions() {
 
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">${Math.ceil(co2eValue * 2.5)} miles driven by a car &nbsp;🚗</p>
+                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">${Math.ceil(
+                  co2eValue * 2.5
+                )} miles driven by a car &nbsp;🚗</p>
               </div>
             </div>
 
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">${(co2eValue * 0.048).toFixed(1)} trees annually &nbsp;🌳</p>
+                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">${(
+                  co2eValue * 0.048
+                ).toFixed(1)} trees annually &nbsp;🌳</p>
               </div>
             </div>
 
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">${(co2eValue *  0.033).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
+                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">${(
+                  co2eValue * 0.033
+                ).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
               </div>
             </div>
 
@@ -1720,31 +2003,30 @@ function showElement(element, version) {
 
 function formatInstanceNames(input) {
   // Remove the "Standard" prefix
-  let instanceName = input.replace(/^Standard_/, '');
+  let instanceName = input.replace(/^Standard_/, "");
   // Keep only the part before the first space (which is the instance name)
-  instanceName = instanceName.split(' ')[0];
+  instanceName = instanceName.split(" ")[0];
   // Replace any "-" with "_"
-  instanceName = instanceName.replace(/-/g, '_');
+  instanceName = instanceName.replace(/-/g, "_");
   return instanceName;
 }
 
 function formatRegionNames(input) {
   // Remove the part within parentheses (e.g., "(US)")
-  let regionName = input.replace(/\(.*?\)\s*/, '');
+  let regionName = input.replace(/\(.*?\)\s*/, "");
   // Convert to lowercase
   regionName = regionName.toLowerCase();
   // Replace spaces with underscores
-  regionName = regionName.replace(/\s+/g, '_');
+  regionName = regionName.replace(/\s+/g, "_");
   return regionName;
 }
 
-
 /**
-   * @param {String} shippingType The Fedex shipping type (e.g. "fedex ground", "fedex 1day freight")
-   * @param {String} fromValue The starting location
-   * @param {String} toValue The destination location
-   * @returns {String} The appropriate transportation mode, either "air" or "ground"
-   */
+ * @param {String} shippingType The Fedex shipping type (e.g. "fedex ground", "fedex 1day freight")
+ * @param {String} fromValue The starting location
+ * @param {String} toValue The destination location
+ * @returns {String} The appropriate transportation mode, either "air" or "ground"
+ */
 async function getFedexTransportMode(shippingType, fromValue, toValue) {
   const shipping_modes = {
     "fedex express saver": "ground",
@@ -1822,13 +2104,15 @@ async function getFedexTransportMode(shippingType, fromValue, toValue) {
  * @param {Array} optionsArray Array containing a list of shipping options
  */
 function showGreenestOption(optionsArray) {
-  const availableOptions = document.querySelectorAll(".fdx-c-definitionlist__description--small");
+  const availableOptions = document.querySelectorAll(
+    ".fdx-c-definitionlist__description--small"
+  );
   availableOptions.forEach((option) => {
-    const formattedOption = option.outerText.toLowerCase().replace(/®/g, '');
-    console.log('formattedOptn = ' + formattedOption);
+    const formattedOption = option.outerText.toLowerCase().replace(/®/g, "");
+    console.log("formattedOptn = " + formattedOption);
     if (optionsArray.includes(formattedOption)) {
-      const parentNode =  option.parentNode.parentNode.parentNode.parentNode;
-      const priceButton = parentNode.querySelector('.magr-c-rates__button');
+      const parentNode = option.parentNode.parentNode.parentNode.parentNode;
+      const priceButton = parentNode.querySelector(".magr-c-rates__button");
 
       const newContainerHTML = ` <div class="lca-viz-greenest-shipping mb-16"> ${priceButton.outerHTML} <div class="flex-center br-4 pd-8 cg-8 green-shipping lca-viz-justify-center"> <img src="${lca_48}" alt="Most eco friendly" class="icon-16"> <span>Most eco-friendly</span> </div> </div> `;
       // Replace the original button with the new container
@@ -1838,11 +2122,11 @@ function showGreenestOption(optionsArray) {
 }
 
 /**
-   *
-   * @param {String} fromLocation
-   * @param {String} toLocation
-   * @param {Number} cargoWeight the weight of the cargo in kg
-   */
+ *
+ * @param {String} fromLocation
+ * @param {String} toLocation
+ * @param {Number} cargoWeight the weight of the cargo in kg
+ */
 async function getFreightEmissions(data) {
   console.log("calling testClimatiqAPI...");
   try {
@@ -1868,10 +2152,10 @@ async function getFreightEmissions(data) {
 }
 
 /**
-   * Hides an element. Only works with block elements
-   * @param {element} element The element to be shown
-   * @param {*} version The animation style. If no version is given, use the default style
-   */
+ * Hides an element. Only works with block elements
+ * @param {element} element The element to be shown
+ * @param {*} version The animation style. If no version is given, use the default style
+ */
 export function hideElement(element, version) {
   if (version === "a") {
     element.classList.remove("visible-a");
@@ -1895,11 +2179,17 @@ export function hideElement(element, version) {
 }
 
 /**
-   * Returns the freight data used to display the freight emissions and geo-map.
-   * @param {boolean} isHighlight default is false. isHighlight is true when this function is called from the LCA brush scenario.
-   * @returns The freight data used to display the freight emissions and geo-map.
-   */
-export async function getFreightData(fromAddress, toAddress, totalWeight, currShippingOptions, isHighlight = false) {
+ * Returns the freight data used to display the freight emissions and geo-map.
+ * @param {boolean} isHighlight default is false. isHighlight is true when this function is called from the LCA brush scenario.
+ * @returns The freight data used to display the freight emissions and geo-map.
+ */
+export async function getFreightData(
+  fromAddress,
+  toAddress,
+  totalWeight,
+  currShippingOptions,
+  isHighlight = false
+) {
   let groundMode, airMode;
   if (!isHighlight) {
     ({ groundMode, airMode } = await categorizeShippingOption(
@@ -1918,7 +2208,12 @@ export async function getFreightData(fromAddress, toAddress, totalWeight, currSh
   let gData;
 
   if (groundMode.length > 0) {
-    const groundData = formatFreightData(fromAddress, toAddress, "ground", totalWeight);
+    const groundData = formatFreightData(
+      fromAddress,
+      toAddress,
+      "ground",
+      totalWeight
+    );
     freightGroundData = await getFreightEmissions(groundData);
     if (freightGroundData) {
       gData = {
@@ -1930,7 +2225,12 @@ export async function getFreightData(fromAddress, toAddress, totalWeight, currSh
     }
   }
   if (airMode.length > 0) {
-    const airData = formatFreightData(fromAddress, toAddress, "air", totalWeight);
+    const airData = formatFreightData(
+      fromAddress,
+      toAddress,
+      "air",
+      totalWeight
+    );
     freightAirData = await getFreightEmissions(airData);
     if (freightAirData) {
       aData = {
@@ -1958,23 +2258,23 @@ export async function getFreightData(fromAddress, toAddress, totalWeight, currSh
 }
 
 /**
-   * @param {String} fromAddress The origin address
-   * @param {String} toAddress The destination address
-   * @param {Array} shippingOptions The list of all given Fedex shipping options
-   * @returns Two arrays, one containing the shipping options that have ground transport mode,
-   *          another containing the shipping options that have air transport mode.
-   */
-async function categorizeShippingOption(fromAddress, toAddress, shippingOptions) {
+ * @param {String} fromAddress The origin address
+ * @param {String} toAddress The destination address
+ * @param {Array} shippingOptions The list of all given Fedex shipping options
+ * @returns Two arrays, one containing the shipping options that have ground transport mode,
+ *          another containing the shipping options that have air transport mode.
+ */
+async function categorizeShippingOption(
+  fromAddress,
+  toAddress,
+  shippingOptions
+) {
   let airMode = [];
   let groundMode = [];
   // Use Promise.all to wait for all async operations to complete
   const modes = await Promise.all(
     shippingOptions.map(async (option) => {
-      const mode = await getFedexTransportMode(
-        option,
-        fromAddress,
-        toAddress
-      );
+      const mode = await getFedexTransportMode(option, fromAddress, toAddress);
       // console.log('option: ', option, '\nmode: ', mode);
       return { option, mode };
     })
