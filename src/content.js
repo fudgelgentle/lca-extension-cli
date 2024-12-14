@@ -20,10 +20,56 @@ import { createRatioSection } from "./material-utils";
 import { getParam } from "./material-utils";
 import { extractEmissionsFactor } from "./material-utils";
 import { getQuestionLCA } from "./material-utils";
-import { getFreightData } from './popup-content';
-import { getLCABanner } from './popup-content';
+import { getFreightData, hidePopup, masterContainer } from './popup-content';
+import { injectPopupContent } from './popup-content';
+import { updateFreightContent } from './popup-content';
+import { getMasterContainer } from './popup-content';
+// import { getShadowRoot } from './popup-content';
+
+let chart;
+let chartContainer;
+let currentChartData;
+let selectionTimeout;
+let LCAActionBtn;
+
+let mouseX;
+let mouseY;
+// Get the scroll offsets
+let scrollX;
+let scrollY;
+
+let chartPosX, chartScrollX, chartPosY, chartScrollY;
+
+let highlightTimeout;
+
+// Global variable to keep track of the previously highlighted node
+let previousHighlightedNode = null;
+let currentHighlightedNode = null;
+
+let isAssistantActive = false;
+let isPopupActive = false;
+
+let globalSelectionData = {
+  parentNode: null,         // Will store a Node
+  range: null,        // Will store a Range
+  selection: null     // Will store a Selection
+};
+
+let relatedMaterialHTML = ``;
+let independentMaterialHTML = ``;
+let processesHTML = ``;
+
+const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
+
+Chart.register(ChartDataLabels);
+
+let isBrushEnabled = false;
+let masterQContainer;
+let floatingQMenu;
+let shadowQRoot;
 
 window.onload = async () => {
+  console.log('loading resouces........');
     const createLinkElement = (rel, href, crossorigin) => {
       let link = document.createElement("link");
       link.rel = rel;
@@ -65,48 +111,6 @@ window.onload = async () => {
     }
 }
 
-let chart;
-let chartContainer;
-let currentChartData;
-let selectionTimeout;
-let LCAActionBtn;
-
-let mouseX;
-let mouseY;
-// Get the scroll offsets
-let scrollX;
-let scrollY;
-
-let chartPosX, chartScrollX, chartPosY, chartScrollY;
-
-let highlightTimeout;
-
-// Global variable to keep track of the previously highlighted node
-let previousHighlightedNode = null;
-let currentHighlightedNode = null;
-
-let currentAssistant = false;
-
-let globalSelectionData = {
-  parentNode: null,         // Will store a Node
-  range: null,        // Will store a Range
-  selection: null     // Will store a Selection
-};
-
-let relatedMaterialHTML = ``;
-let independentMaterialHTML = ``;
-let processesHTML = ``;
-
-const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
-
-Chart.register(ChartDataLabels);
-
-let isBrushEnabled = false;
-let masterQContainer;
-let shadowRoot;
-
-
-
 {/* <div id="lca-viz-question-container" class="lexend br-8 fz-16"></div> */}
 async function init() {
   console.log('creating shadow root........');
@@ -121,8 +125,8 @@ async function init() {
   const placeholder = document.createElement("div");
   placeholder.setAttribute("id", "placeholder-2");
   document.body.append(placeholder);
-  shadowRoot = placeholder.attachShadow({ mode: "open" });
-  shadowRoot.appendChild(masterQContainer);
+  shadowQRoot = placeholder.attachShadow({ mode: "open" });
+  shadowQRoot.appendChild(masterQContainer);
 
   await injectCSSToShadowDOM(chrome.runtime.getURL("../assets/content-style.css"));
   await injectCSSToShadowDOM(chrome.runtime.getURL("../assets/popup-content.css"));
@@ -134,20 +138,8 @@ async function init() {
     const cssText = await response.text();
     const style = document.createElement("style");
     style.textContent = cssText;
-    shadowRoot.appendChild(style);
+    shadowQRoot.appendChild(style);
   }
-
-  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-    console.log('receiving a message from popup.js')
-    if (message.feature === 'brush') {
-      console.log('message is a brush');
-      isBrushEnabled = message.state;
-      console.log(`Brush tracking ${isBrushEnabled ? 'enabled' : 'disabled'}`);
-    } else if (message.feature === 'autodetect') {
-      console.log('message is an autodetect');
-    }
-    sendResponse({ success: true });
-  });
 
   const storedStates = await chrome.storage.sync.get('brush');
   isBrushEnabled = storedStates.brush || false;
@@ -688,11 +680,12 @@ async function init() {
         resetHighlight(currentHighlightedNode);
       }
       // * For freight and energy
-      if (currentAssistant) {
+      if (isAssistantActive) {
         console.log('current assistant is true, clearing master container');
-        setTimeout(() => {
-          hideMasterContainer();
-        }, 0);
+        removeQuestionUI();
+      }
+      if (isPopupActive) {
+        hidePopup();
       }
       const materialData = await getValidSentence(selection.toString());
       // * Case: raw materials
@@ -700,7 +693,9 @@ async function init() {
         handleRawMaterialHighlight(materialData, parentNode, range, selection);
       // * Case: freight
       } else if (materialData.transport_phase) {
-        masterQContainer.innerHTML = "";
+        // if (masterQContainer) masterQContainer.innerHTML = "";
+        // if (floatingQMenu) floatingQMenu.remove();
+        // if (masterContainer) masterContainer.remove();
         handleFreightHighlight(materialData, selection.toString());
       // * Case: energy
       } else if (materialData.use_phase) {
@@ -817,14 +812,16 @@ async function init() {
       'freight'
     );
 
-    const floatingQuestionMenu = getLCAFloatingMenu();
+    const questionMenuHTML = getLCAFloatingMenu();
     // Initialize and inject the freight question UI.
     masterQContainer.insertAdjacentHTML("beforeend", freightHTML);
-    masterQContainer.insertAdjacentHTML("beforebegin", floatingQuestionMenu);
+    masterQContainer.insertAdjacentHTML("beforebegin", questionMenuHTML);
+
+    floatingQMenu = shadowQRoot.getElementById("lca-viz-question-menu");
 
     toggleQuestionButtonState();
 
-    currentAssistant = true;
+    isAssistantActive = true;
     setTimeout(() => {
       handleQuestionForm();
       handleExpandCollapse();
@@ -841,7 +838,7 @@ async function init() {
     };
     for (const [key, inputId] of Object.entries(inputMapping)) {
       console.log('key = ', key, "input id = ", inputId);
-      const input = shadowRoot.getElementById(inputId);
+      const input = shadowQRoot.getElementById(inputId);
       console.log('setting input value: ' + transportData[key]);
       if (transportData[key]) {
         input.value = transportData[key];
@@ -851,8 +848,8 @@ async function init() {
     // Handle package weight and unit
     if (transportData.weight) {
       let { value, unit } = transportData.weight;
-      const weightInput = shadowRoot.getElementById('lca-input-package-weight');
-      const unitSelect = shadowRoot.getElementById('lca-input-package-unit');
+      const weightInput = shadowQRoot.getElementById('lca-input-package-weight');
+      const unitSelect = shadowQRoot.getElementById('lca-input-package-unit');
       console.log('setting weight value....');
       if (value) {
         weightInput.value = value;
@@ -864,7 +861,7 @@ async function init() {
         checkAllValid();
       }
     }
-    masterQContainer.classList.add("lca-viz-c-visible");
+    showMasterContainer();
   }
 
   /**
@@ -1363,16 +1360,6 @@ async function init() {
     clearTimeout(selectionTimeout);
   }
 
-  function hideMasterContainer() {
-    masterQContainer.classList.add("lca-viz-c-hidden");
-    masterQContainer.classList.remove("lca-viz-c-visible");
-  }
-
-  function showMasterContainer() {
-    masterQContainer.classList.remove("lca-viz-c-hidden");
-    masterQContainer.classList.add("lca-viz-c-visible");
-  }
-
   const increaseHeight = {
     beforeInit(chart) {
       // Get a reference to the original fit function
@@ -1479,8 +1466,9 @@ async function init() {
   // Handles the behavior of opening and closing the lca question UI.
   function toggleQuestionButtonState() {
     console.log('toggle button state');
-    const openContainer = shadowRoot.getElementById("lca-viz-question-menu");
-    const closeContainer = shadowRoot.getElementById("lca-viz-close-question");
+    // const openContainer = shadowRoot.getElementById("lca-viz-question-menu");
+    const openContainer = floatingQMenu;
+    const closeContainer = shadowQRoot.getElementById("lca-viz-close-question");
     closeContainer.addEventListener("click", () => {
       console.log('closing master container');
       hideMasterContainer();
@@ -1603,18 +1591,17 @@ function handleQuestionForm() {
     { id: 'lca-input-to', errorId: 'lca-viz-to-error', validate: validateText},
     { id: 'lca-input-package-weight', errorId: 'lca-viz-package-error', validate: validatePackageWeight},
   ];
-  const calculateContainer = shadowRoot.querySelector('.lca-viz-calculate-container-2');
-  const formContainer = shadowRoot.querySelector('.lca-viz-question-form');
+  const calculateContainer = shadowQRoot.querySelector('.lca-viz-calculate-container-2');
+  const formContainer = shadowQRoot.querySelector('.lca-viz-question-form');
 
   inputs.forEach(({ id }) => {
-    const input = shadowRoot.getElementById(id);
+    const input = shadowQRoot.getElementById(id);
     input.addEventListener('input', checkAllValid);
   });
 
   calculateContainer.addEventListener('click', async () => {
     if (!calculateContainer.classList.contains('invalid')) {
       const formData = new FormData(formContainer);
-
       console.log('from: ' , formData.get('from'));
       console.log('to: ' , formData.get('to'));
       console.log('package weight / usage duration: ' , formData.get('package-weight'));
@@ -1622,23 +1609,36 @@ function handleQuestionForm() {
       const fromAddress = formData.get('from');
       const toAddress = formData.get('to');
       const unit = formData.get('package-unit');
-      let totalWeight = formData.get('package-weight');
+      let totalWeight = parseFloat(formData.get('package-weight'));
       // Converting the weight to kg if unit is originally in lbs.
       if (unit !== 'kg') totalWeight = totalWeight * 0.453;
       const currShippingOptions = null;
       const freightData = await getFreightData(fromAddress, toAddress, totalWeight, currShippingOptions, true);
-      if (shadowRoot.querySelector(".freight-container") !== null) {
+      console.log('freightData: ');
+      console.log(freightData);
+      if (shadowQRoot.querySelector(".freight-container") !== null) {
         console.log("updating freight content.....");
-        // await updateFreightContent(freightData);
+        await updateFreightContent(freightData);
+        hideQuestionUI();
       } else {
         console.log("injecting freight content.....");
-        // await injectPopupContent("freight", freightData);
+        // ! Don't delete this. We need this to invoke popup-content.js's initialization.
+        // ? Experiment
+        getMasterContainer()
+          .then((container) => {
+            hideQuestionUI();
+            (async() => {
+              await injectPopupContent("freight", freightData);
+            })();
+          })
+          .catch((error) => { console.log(error) });
+        isPopupActive = true;
       }
     }
-  })
+  });
 
   inputs.forEach(({ id, errorId, validate = validateText}) => {
-    const input = shadowRoot.getElementById(id);
+    const input = shadowQRoot.getElementById(id);
     input.addEventListener('input', () => {
       const isValid = validate(input);
       toggleValidation(input, errorId, isValid);
@@ -1646,12 +1646,23 @@ function handleQuestionForm() {
   });
 }
 
-function injectFreightContent() {
-  const lcaBanner = getLCABanner();
-  const masterContainer = shadowRoot.querySelector('.master-lca');
-  masterContainer.insertAdjacentHTML("beforeend", lcaBanner);
-  const lcaFloatingMenu = getLCAFloatingMenu();
-  masterContainer.insertAdjacentHTML("beforebegin", lcaFloatingMenu);
+// Hides both the question / assistant and the floating menu.
+function hideQuestionUI() {
+  if (masterQContainer) hideMasterContainer();
+  if (floatingQMenu) {
+    hideFloatingQMenu();
+  }
+}
+
+// Clears the old content of the question UI.
+function removeQuestionUI() {
+  hideQuestionUI();
+  setTimeout(() => {
+    if (masterQContainer) {
+      masterQContainer.innerHTML = "";
+    }
+    if (floatingQMenu) floatingQMenu.remove();
+  }, 500);
 }
 
 // function validateLocation() {
@@ -1681,11 +1692,11 @@ function checkAllValid() {
     { id: 'lca-input-to', errorId: 'lca-viz-to-error', validate: validateText},
     { id: 'lca-input-package-weight', errorId: 'lca-viz-package-error', validate: validatePackageWeight},
   ];
-  const calculateContainer = shadowRoot.querySelector('.lca-viz-calculate-container-2');
+  const calculateContainer = shadowQRoot.querySelector('.lca-viz-calculate-container-2');
   console.log('checkAllValid called');
   let allValid = true;
   inputs.forEach(({ id, errorId, validate }) => {
-    const input = shadowRoot.getElementById(id);
+    const input = shadowQRoot.getElementById(id);
     const isValid = validate(input);
     toggleValidation(input, errorId, isValid);
     if (!isValid) allValid = false; // Ensure all fields are checked
@@ -1715,7 +1726,7 @@ function validatePackageWeight(input) {
  * @param {HTMLElement} selector The selector HTML node. This should be the shadowRoot node.
  */
 function toggleValidation(input, errorId, isValid) {
-  const error = shadowRoot.getElementById(errorId);
+  const error = shadowQRoot.getElementById(errorId);
   if (isValid) {
     input.classList.remove('invalid');
     input.classList.add('valid');
@@ -1732,9 +1743,9 @@ function toggleValidation(input, errorId, isValid) {
  */
 function handleExpandCollapse() {
   console.log('handleExpandCollapse');
-  shadowRoot.querySelector('.lca-viz-expand-collapse-container').addEventListener('click', () => {
-    const qExpand = shadowRoot.querySelector('.lca-viz-question-expand');
-    const collapseIcon = shadowRoot.querySelector('.lca-viz-expand-collapse-icon');
+  shadowQRoot.querySelector('.lca-viz-expand-collapse-container').addEventListener('click', () => {
+    const qExpand = shadowQRoot.querySelector('.lca-viz-question-expand');
+    const collapseIcon = shadowQRoot.querySelector('.lca-viz-expand-collapse-icon');
     if (qExpand.classList.contains('expanded')) {
       qExpand.style.height = `40px`;
       qExpand.classList.add('collapsed');
@@ -1757,3 +1768,22 @@ function getLCAFloatingMenu() {
   `;
   return floatingMenu;
 }
+
+function hideMasterContainer() {
+  masterQContainer.classList.add("lca-viz-c-hidden");
+  masterQContainer.classList.remove("lca-viz-c-visible");
+}
+
+function showMasterContainer() {
+  masterQContainer.classList.remove("lca-viz-c-hidden");
+  masterQContainer.classList.add("lca-viz-c-visible");
+}
+
+function hideFloatingQMenu() {
+  floatingQMenu.style.display = "flex";
+  requestAnimationFrame(() => {
+    floatingQMenu.classList.add("hidden-b");
+    floatingQMenu.classList.remove("visible-b");
+  });
+}
+
