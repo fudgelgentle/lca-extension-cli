@@ -303,7 +303,7 @@
 .shipping-container {
   margin-top: 28px;
 }
-.search-container, .freight-emissions {
+.lca-viz-search-container, .freight-emissions {
   background-color: white;
 }
 .phone-spec-title {
@@ -527,15 +527,17 @@
   pointer-events: auto;
 }
 .hidden-b {
-  display: none;
+  /* display: none; */
   opacity: 0;
   transform: translateX(20px);
   transition: all 0.5s;
+  pointer-events: none;
 }
 .visible-b {
   opacity: 1;
   transform: translateX(0px);
   transition: all 0.5s;
+  pointer-events: auto;
 }
 .hidden {
   display: none !important;

@@ -28,13 +28,19 @@ import { createRatioSection } from "./material-utils";
 import { getParam } from "./material-utils";
 import { extractEmissionsFactor } from "./material-utils";
 import { getQuestionLCA } from "./material-utils";
-import { getFreightData, hidePopup, setupLCABannerAndFloatingMenu } from "./popup-content";
+import {
+  getFreightData,
+  hideAndClearMasterContainer,
+  hidePopup,
+  setupLCABannerAndFloatingMenu,
+} from "./popup-content";
 import { injectPopupContent } from "./popup-content";
 import { updateFreightContent } from "./popup-content";
 import { getMasterContainer } from "./popup-content";
 import { getCloudEmissionsResult } from "./popup-content";
 import { displayCloudEmissions } from "./popup-content";
 import { showMasterContainer } from "./popup-content";
+import { clearMasterContainer } from "./popup-content";
 
 let chart;
 let chartContainer;
@@ -54,6 +60,7 @@ let highlightTimeout;
 
 // Global variable to keep track of the previously highlighted node
 let previousHighlightedNode = null;
+// currentHighlightedNode is only used with raw material scenario to keep track of the edited sentences.
 let currentHighlightedNode = null;
 
 let isAssistantActive = false;
@@ -103,7 +110,6 @@ window.onload = async () => {
   // if (isDomainValid(allowedDomains) || isDomainValid(allowedDomains2)) {
   const blackListedDomains = ["chatgpt.com", "youtube.com"];
   if (!isDomainValid(blackListedDomains)) {
-    console.log("current domain is allowed, injecting css");
     let fontRegular = new FontFace(
       "Lexend",
       `url(${chrome.runtime.getURL("assets/fonts/lexend-regular.woff")})`,
@@ -808,13 +814,19 @@ async function init() {
         previousHighlightedNode.removeEventListener("click", redisplayChart);
         resetHighlight(currentHighlightedNode);
       }
-      // * For freight and energy
+      // * Removing the assistant / question UI
       if (isAssistantActive) {
-        console.log("current assistant is true, clearing master container");
+        console.log("Removing the question UI and master container");
         removeQuestionUI();
+        hideAndClearMasterContainer();
+        // clearMasterContainer();
       }
+      // * Removing the popup UI
       if (isPopupActive) {
+        console.log("Removing the popup UI and master container");
         hidePopup();
+        hideAndClearMasterContainer();
+        // clearMasterContainer();
       }
       const materialData = await getValidSentence(selection.toString());
       // * Case: raw materials
@@ -822,16 +834,14 @@ async function init() {
         handleRawMaterialHighlight(materialData, parentNode, range, selection);
         // * Case: freight
       } else if (materialData.transport_phase) {
-        // if (masterQContainer) masterQContainer.innerHTML = "";
-        // if (floatingQMenu) floatingQMenu.remove();
-        // if (masterContainer) masterContainer.remove();
+        currentHighlightedNode = null;
         handleFreightHighlight(materialData, selection.toString());
         // * Case: energy
       } else if (materialData.use_phase) {
-        // TODO: implement
+        currentHighlightedNode = null;
         handleEnergyHighlight(materialData, selection.toString());
       } else {
-        console.log("material data is null");
+        currentHighlightedNode = null;
         setLCAActionBtnState("error");
       }
     }
@@ -1048,7 +1058,9 @@ async function init() {
     // Autofills package weight and unit
     if (transportData.weight) {
       let { value, unit } = transportData.weight;
-      const weightInput = shadowQRoot.getElementById("lca-input-package-weight");
+      const weightInput = shadowQRoot.getElementById(
+        "lca-input-package-weight"
+      );
       const unitSelect = shadowQRoot.getElementById("lca-input-package-unit");
       console.log("setting weight value....");
       if (value) {
@@ -1188,17 +1200,34 @@ async function init() {
       LCAActionBtnText.textContent = "";
       LCAActionBtnText.classList.add("lca-viz-hidden");
       LCAActionBtn.classList.add("lca-viz-interactable");
-    } else if (state === "analyzing") {
+      LCAActionBtn.classList.remove("lca-viz-non-interactable");
+    }
+    //? new code
+    else if (state === "analyzing") {
       floatingLCAImg.src = loading_icon_2;
       LCAActionBtnText.textContent = "Analyzing...";
       LCAActionBtnText.classList.remove("lca-viz-hidden");
       LCAActionBtn.classList.remove("lca-viz-interactable");
+      LCAActionBtn.classList.add("lca-viz-non-interactable"); // Make non-clickable
     } else if (state === "error") {
       floatingLCAImg.src = close_icon_red;
       LCAActionBtnText.textContent = "No raw materials detected.";
       LCAActionBtnText.classList.remove("lca-viz-hidden");
       LCAActionBtn.classList.remove("lca-viz-interactable");
+      LCAActionBtn.classList.add("lca-viz-non-interactable"); // Make non-clickable
     }
+    // ! old code
+    // else if (state === "analyzing") {
+    //   floatingLCAImg.src = loading_icon_2;
+    //   LCAActionBtnText.textContent = "Analyzing...";
+    //   LCAActionBtnText.classList.remove("lca-viz-hidden");
+    //   LCAActionBtn.classList.remove("lca-viz-interactable");
+    // } else if (state === "error") {
+    //   floatingLCAImg.src = close_icon_red;
+    //   LCAActionBtnText.textContent = "No raw materials detected.";
+    //   LCAActionBtnText.classList.remove("lca-viz-hidden");
+    //   LCAActionBtn.classList.remove("lca-viz-interactable");
+    // }
   }
 
   /**
@@ -1253,7 +1282,7 @@ async function init() {
 
   /**
    * Returns the HTML for up and down button given the parameter.
-   * @param {String || Number} parameter The parameter of the raw material
+   * @param {String | Number} parameter The parameter of the raw material
    */
   function createUpDownBtn(index, unit, defaultValue, type) {
     const upDownBtn = `
@@ -1428,8 +1457,12 @@ async function init() {
     });
   }
 
+  /**
+   * Handles the behavior for clicking on the LCA Action Button.
+   */
   function handleLCAActionBtn() {
     console.log("handleLCAActionBtn called");
+
     const actionBtnHTML = getLCAActionBtn();
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = actionBtnHTML;
@@ -1474,11 +1507,6 @@ async function init() {
     });
   }
 
-  // TODO: Implement a function that only extract relevant keywords and parameters
-  function extractCarbonInfo(text) {
-    return text;
-  }
-
   /**
    * Creates an interactive chart from Chart.js given the chart configuration and info about the raw materials + parameters.
    * @param {Object} chartConfig An object specifying the properties for Chart.js
@@ -1509,7 +1537,7 @@ async function init() {
         <div class="flex-center lca-viz-header cg-12 pd-12">
         <div class="flex-center cg-12 lca-viz-header-title">
           <img alt="logo" src="${lca_48}" class="icon-20">
-          <span><b>LCA-Viz</b></span>
+          <span><b>Living Sustainability</b></span>
         </div>
         <button id="lca-viz-close-map" class="lca-viz-close-button flex-center">
           <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -1530,7 +1558,6 @@ async function init() {
         <div class="lca-viz-canvas flex-center lca-viz-justify-center">
           <canvas id="lca-viz-carbon-chart"></canvas>
         </div>
-
       `;
 
       const paramSection = document.createElement("div");
@@ -1600,7 +1627,7 @@ async function init() {
   }
 
   // Redisplay the chart that was closed by the user
-  function redisplayChart(event) {
+  function redisplayChart() {
     console.log("redisplaying chart");
     // const element = event.currentTarget;
     const element = document.querySelector(".lca-viz-mark");
@@ -1716,7 +1743,7 @@ async function init() {
             label: function (tooltipItem) {
               const label = tooltipItem.label || "";
               const value = tooltipItem.raw;
-              return `${label}: ${value} kg CO2e`; // Add unit in tooltip
+              return `${label}: ${value} g CO2e`; // Add unit in tooltip
             },
           },
         },
@@ -1724,7 +1751,7 @@ async function init() {
           anchor: "end",
           align: "end",
           formatter: function (value) {
-            return `${value} kg CO2e`;
+            return `${value} g CO2e`;
           },
         },
       },
@@ -1740,7 +1767,7 @@ async function init() {
     const closeContainer = shadowQRoot.getElementById("lca-viz-close-question");
     closeContainer.addEventListener("click", () => {
       console.log("closing master container");
-      hideMasterContainer();
+      hideMasterQContainer();
       openContainer.style.display = "flex";
       requestAnimationFrame(() => {
         openContainer.classList.remove("hidden-b");
@@ -1869,7 +1896,6 @@ export function getBaseDomain(hostname) {
 function handleQuestionForm() {
   let inputs;
   if (currScenario === "freight") {
-    console.log("SCENARIO: FREIGHT");
     inputs = [
       {
         id: "lca-input-from",
@@ -1888,7 +1914,6 @@ function handleQuestionForm() {
       },
     ];
   } else if (currScenario === "energy") {
-    console.log("SCENARIO: ENERGY");
     inputs = [
       {
         id: "lca-input-package-weight",
@@ -1938,18 +1963,13 @@ function handleQuestionForm() {
     const durationUnit = formData.get("package-unit");
     const location = formData.get("to");
     const durationInSeconds = convertToSeconds(durationVal, durationUnit);
-    console.log("wattage = " + wattage);
-    console.log("durationInSeconds = " + durationInSeconds);
     const kwh = (wattage / 1000) * (durationInSeconds / 3600);
-    console.log("kwh = " + kwh);
 
     let energyEmissions;
     // If location is not given, use the emissions factor from LLM, which is based on US electricity average.
     if (!location || location === "") {
-      console.log("location not given, calculate locally");
       // The emissions is in this unit: ~ g CO2eq per 1 kwH
       const emissionsPerKwh = extractEmissionsFactor(energyEFactor).co2e_value;
-      console.log("emissionsPerKwh = " + emissionsPerKwh);
       energyEmissions = parseFloat((kwh * emissionsPerKwh) / 1000);
       // Else, use electricity maps API with location.
     } else {
@@ -1971,7 +1991,7 @@ function handleQuestionForm() {
         const responseData = await response.json();
         energyEmissions = parseFloat(responseData.carbon_footprint);
       } else {
-        console.log("yo error: cannot fetch electricity maps API");
+        console.log("error: cannot fetch electricity maps API");
         return;
       }
     }
@@ -1995,13 +2015,6 @@ function handleQuestionForm() {
 
   async function handleFreightInput() {
     const formData = new FormData(formContainer);
-    console.log("from: ", formData.get("from"));
-    console.log("to: ", formData.get("to"));
-    console.log(
-      "package weight / usage duration: ",
-      formData.get("package-weight")
-    );
-    console.log("unit: ", formData.get("package-unit"));
     const fromAddress = formData.get("from");
     const toAddress = formData.get("to");
     const unit = formData.get("package-unit");
@@ -2009,23 +2022,13 @@ function handleQuestionForm() {
     // Converting the weight to kg if unit is originally in lbs.
     if (unit !== "kg") totalWeight = totalWeight * 0.453;
     const currShippingOptions = null;
-    const freightData = await getFreightData(
-      fromAddress,
-      toAddress,
-      totalWeight,
-      currShippingOptions,
-      true
-    );
-    console.log("freightData: ");
+    const freightData = await getFreightData(fromAddress, toAddress, totalWeight, currShippingOptions, true);
     console.log(freightData);
     if (shadowQRoot.querySelector(".freight-container") !== null) {
-      console.log("updating freight content.....");
       await updateFreightContent(freightData);
       hideQuestionUI();
     } else {
-      console.log("injecting freight content.....");
       // ! Don't delete this. We need this to invoke popup-content.js's initialization.
-      // ? Experiment
       getMasterContainer()
         .then(() => {
           hideQuestionUI();
@@ -2036,6 +2039,7 @@ function handleQuestionForm() {
         .catch((error) => {
           console.log(error);
         });
+      showMasterContainer();
       isPopupActive = true;
     }
   }
@@ -2051,7 +2055,7 @@ function handleQuestionForm() {
 
 // Hides both the question / assistant and the floating menu.
 function hideQuestionUI() {
-  if (masterQContainer) hideMasterContainer();
+  if (masterQContainer) hideMasterQContainer();
   if (floatingQMenu) {
     hideFloatingQMenu();
   }
@@ -2068,11 +2072,9 @@ function removeQuestionUI() {
   }, 500);
 }
 
-
 function checkAllValid() {
   let inputs;
   if (currScenario === "freight") {
-    console.log("SCENARIO: FREIGHT");
     inputs = [
       {
         id: "lca-input-from",
@@ -2091,7 +2093,6 @@ function checkAllValid() {
       },
     ];
   } else if (currScenario === "energy") {
-    console.log("SCENARIO: ENERGY");
     inputs = [
       {
         id: "lca-input-package-weight",
@@ -2103,7 +2104,6 @@ function checkAllValid() {
   const calculateContainer = shadowQRoot.querySelector(
     ".lca-viz-calculate-container-2"
   );
-  console.log("checkAllValid called");
   let allValid = true;
   inputs.forEach(({ id, errorId, validate }) => {
     const input = shadowQRoot.getElementById(id);
@@ -2112,11 +2112,9 @@ function checkAllValid() {
     if (!isValid) allValid = false; // Ensure all fields are checked
   });
   if (allValid) {
-    console.log("ALL INPUTS ARE VALID");
     calculateContainer.classList.add("valid");
     calculateContainer.classList.remove("invalid");
   } else {
-    console.log("not all inputs are valid............");
     calculateContainer.classList.add("invalid");
     calculateContainer.classList.remove("valid");
   }
@@ -2183,7 +2181,7 @@ function getLCAFloatingMenu() {
   return floatingMenu;
 }
 
-function hideMasterContainer() {
+function hideMasterQContainer() {
   masterQContainer.classList.add("lca-viz-c-hidden");
   masterQContainer.classList.remove("lca-viz-c-visible");
 }

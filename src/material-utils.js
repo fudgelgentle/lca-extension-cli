@@ -352,7 +352,7 @@ export function getQuestionLCA(title, textSource, scenario, isDeviceExist) {
       <div class="flex-center lca-viz-header-2 cg-12 pd-12">
         <div class="flex-center cg-12 lca-viz-header-title">
           <img alt="logo" src="${lca_32}" class="icon-20">
-          <span><b>LCA-Viz</b></span>
+          <span><b>Living Sustainability</b></span>
         </div>
         <button id="lca-viz-close-question" class="lca-viz-close-button flex-center">
           <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -410,7 +410,7 @@ export function getQuestionForm(scenario, isDeviceExist) {
           <small id="lca-viz-to-error" class="lca-viz-input-error">Enter a location.</small>
         </div>
         <div class="lca-viz-package-weight-container mt-24">
-          <label for="lca-input-package-weight" class="package-weight-label"><b>Package weight *</b></label><br>
+          <label for="lca-input-package-weight" class="package-weight-label"><b>Weight *</b></label><br>
           <div class="lca-viz-package-parent flex-stretch cg-8 mb-2">
             <input type="number" name="package-weight" min="1" step="1" id="lca-input-package-weight" class="lca-viz-question-weight br-8 mt-8 lca-lexend invalid" required>
             <div class="lca-viz-package-unit-container br-8 mt-8">
@@ -449,7 +449,7 @@ export function getQuestionForm(scenario, isDeviceExist) {
         </div>
         <div class="mt-24">
           <label for="lca-input-to"><b>Location </b></label>
-          <input type="text" id="lca-input-to" name="to" class="lca-viz-question-from-to br-8 mt-8 mb-2" placeholder="Optional">
+          <input type="text" id="lca-input-to" name="to" class="lca-viz-question-from-to br-8 mt-8 mb-2" placeholder="This is optional">
           <small id="lca-viz-to-error" class="lca-viz-input-error">Enter a location.</small>
         </div>
       </form>

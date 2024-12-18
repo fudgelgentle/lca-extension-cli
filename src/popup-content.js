@@ -40,11 +40,6 @@ let cloudSizeText = "Waiting for input....";
 let isYesNoButtonClicked = false;
 let durationText = 0;
 
-// if (!window.popupInjected) {
-//   window.popupInjected = true; // Set global flag
-//   // setupPopupShadowDOM();
-//   initialize();
-// }
 const popupDomains = [
   "fedex.com",
   "azure.com",
@@ -85,6 +80,7 @@ function initialize() {
 // Export getter functions
 export function getMasterContainer() {
   if (!window.popupInjected) {
+    window.popupInjected = true;
     console.log("popup not injected yet. initializing....");
     // initialize();
     return initialize().then(() => {
@@ -94,16 +90,6 @@ export function getMasterContainer() {
     return Promise.resolve(masterContainer);
   }
 }
-
-// export function getShadowRoot() {
-//   if (!window.popupInjected) {
-//     console.log('popup not injected yet. initializing....');
-//     initialize();
-//   } else {
-//     console.log('popup already injected');
-//   }
-//   return shadowRoot;
-// }
 
 export function setupPopupShadowDOM() {
   // Setting up the master container and attaching the css
@@ -336,15 +322,27 @@ function handleCalculateButton() {
   });
 }
 
+/**
+ *
+ * @param {HTMLElement} emissionsResultHTML The HTML content of the carbon emissions
+ * @param {Boolean} isCloud Boolean indicating if this scenario is "cloud". If not, it will be for "energy"
+ */
 export function displayCloudEmissions(emissionsResultHTML, isCloud) {
-  if (isCloud) shadowRoot.querySelector(".lca-viz-cloud-master-container").classList.add("hidden-a");
+  if (isCloud)
+    shadowRoot
+      .querySelector(".lca-viz-cloud-master-container")
+      .classList.add("hidden-a");
   masterContainer.insertAdjacentHTML("beforeend", emissionsResultHTML);
   handleCO2eEquivalencyChange();
   requestAnimationFrame(async () => {
     shadowRoot
       .querySelector(".lca-viz-cloud-emissions-container")
       .classList.remove("hidden-a");
-    const cloudContent = shadowRoot.querySelector(".lca-viz-cloud-results-info-container");
+    // masterContainer.focus();
+    if (!isCloud) await hideCloudLoadingIcon();
+    const cloudContent = shadowRoot.querySelector(
+      ".lca-viz-cloud-results-info-container"
+    );
     showElement(cloudContent, "a");
   });
 }
@@ -390,12 +388,6 @@ export function getCloudEmissionsResult(data, scenario) {
   let beefValue;
   // let weightObject;
   let beefUnit = "kg";
-  // if (emissions) {
-  //   beefValue = formatToSignificantFigures(emissions * 0.033);
-  //   weightObject = getReadableUnit(beefValue);
-  //   beefValue = weightObject.weight;
-  //   beefUnit = weightObject.unit;
-  // }
 
   let kgBeef;
   kgBeef = emissions * 0.033;
@@ -409,7 +401,7 @@ export function getCloudEmissionsResult(data, scenario) {
     beefValue = kgBeef * 1000; // 1 kg = 1000 g
     beefUnit = "g";
   }
-  beefValue = formatToSignificantFigures(kgBeef);
+  beefValue = formatToSignificantFigures(beefValue);
 
   const readableEmissions = getReadableCO2e(emissions);
   const readableCO2e = readableEmissions.co2e_value;
@@ -419,9 +411,12 @@ export function getCloudEmissionsResult(data, scenario) {
     <div class="lca-viz-cloud-emissions-container hidden-a">
       <section class="lca-viz-cloud-container br-8">
         <div class="lca-viz-cloud-results-info-container pd-16 mt-12 hidden-a">
-
           <div class="flex-stretch lca-viz-title-and-question mt-8">
-            <p class="fz-16 mt-0 mb-0"><b>${scenario === "cloud" ? "Your cloud instance's estimated carbon emissions:" : "Estimated Carbon Footprint of Use "}</b></p>
+            <p class="fz-16 mt-0 mb-0"><b>${
+              scenario === "cloud"
+                ? "Your cloud instance's estimated carbon emissions:"
+                : "Estimated Carbon Footprint of Use "
+            }</b></p>
             <div class="btn btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
               <div class="left">
                 <h3 class="fz-12 lca-lexend">How are cloud instance emissions calculated?</h3>
@@ -517,6 +512,17 @@ export function getCloudEmissionsResult(data, scenario) {
             `
           }
         </div>
+        ${
+          scenario === "energy"
+            ? `<div class="loading-box-3 flex-center br-8 pd-16 mt-12">
+            <div class="loader">
+              <div class="lca-viz-circle"></div>
+              <div class="lca-viz-circle"></div>
+              <div class="lca-viz-circle"></div>
+            </div>
+          </div>`
+            : ``
+        }
       </section>
     </div>
   `;
@@ -602,18 +608,9 @@ export function setupLCABannerAndFloatingMenu() {
 }
 
 // 3 popup cases: phone, freight, cloud
-export async function injectPopupContent(
-  popupCase,
-  freightData = null,
-  mContainer = null,
-  sRoot = null
-) {
+export async function injectPopupContent(popupCase, freightData = null, mContainer = null,sRoot = null) {
   const lcaBanner = getLCABanner();
 
-  // if (!window.popupInjected) {
-  //   console.log('popup not injected yet. initializing....');
-  //   initialize();
-  // }
   if (!masterContainer) masterContainer = mContainer;
   if (!shadowRoot) shadowRoot = sRoot;
 
@@ -691,12 +688,28 @@ function toggleButtonState() {
 }
 
 export function hidePopup() {
-  hideElement(masterContainer, "b");
   floatingMenu.remove();
 }
 
 export function showMasterContainer() {
+  // masterContainer should only be using hidden-b, but I'm safeguarding this in case.
   masterContainer.classList.remove("hidden");
+  masterContainer.classList.remove("hidden-a");
+
+  masterContainer.classList.remove("hidden-b");
+  // showElement(masterContainer, "b");
+  masterContainer.addEventListener("transitionend", { once: true });
+}
+
+export function hideAndClearMasterContainer() {
+  masterContainer.classList.add("hidden-b");
+  masterContainer.addEventListener("transitionend", clearMasterContainer, {
+    once: true,
+  });
+}
+
+export function clearMasterContainer() {
+  if (masterContainer) masterContainer.innerHTML = ``;
 }
 
 /**
@@ -707,7 +720,7 @@ function getLCABanner() {
     <section class="lca-banner flex-stretch">
       <div class="flex-center title-container br-8 pd-12">
         <img src="${lca_48}" alt="LCA Image" class="icon-20">
-        <p class="title-text fz-20 eco-bold"><b>LCA-Viz</b></p>
+        <p class="title-text fz-20 eco-bold"><b>Living Sustainability</b></p>
       </div>
       <div class="flex-center lca-viz-close-container br-8 pd-16">
         <svg class="icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -802,7 +815,7 @@ function getPhoneEmissionsSkeleton() {
           </div>
           <p class="margin-0 fz-20">Select phone model</p>
           <p class="phone-spec-title fz-12">Comparing with: <span id="lca-viz-compare-with"><b>iPhone 15 Pro</b></span></p>
-          <div class="search-container br-8 pd-16 fz-16">
+          <div class="lca-viz-search-container br-8 pd-16 fz-16">
             <input type="text" id="search-phone" class="grey-text fz-16" placeholder="Search..." title="Type to search for phone models">
             <div class="phone-model-container">
             </div>
@@ -914,9 +927,9 @@ function formatToSignificantFigures(num, significantFigures = 2) {
   const roundingFactor = Math.pow(10, magnitude - significantFigures + 1);
   const roundedNum = Math.round(num / roundingFactor) * roundingFactor;
   if (magnitude >= significantFigures || magnitude < -3) {
-      return roundedNum.toPrecision(significantFigures);
+    return roundedNum.toPrecision(significantFigures);
   } else {
-    const decimalPlaces = Math.max(0, significantFigures - magnitude - 1)
+    const decimalPlaces = Math.max(0, significantFigures - magnitude - 1);
     return roundedNum.toFixed(decimalPlaces);
   }
 }
@@ -931,7 +944,35 @@ export async function updateFreightContent(freightData) {
   }
 }
 
+// Returns the HTML for invalid freight data
+function getInvalidFreightData() {
+  return `<div class="freight-container br-8 pd-16 mt-12">
+      <div class="loading-box-2 flex-center br-8 pd-16 mt-12 hidden-a">
+        <div class="loader">
+          <div class="lca-viz-circle"></div>
+          <div class="lca-viz-circle"></div>
+          <div class="lca-viz-circle"></div>
+        </div>
+      </div>
+      <div class="freight-content visible-a" style="display: block;">
+        <div class="flex-stretch lca-viz-title-and-question mt-8">
+          <p class="fz-16 mt-0 mb-16"><b>The shipping data cannot be found</b></p>
+          <div class="btn btn-primary lca-viz-tooltip"><img src="chrome-extension://moaglnlpoploemkipmdjfmhcjfbandkm/../assets/img/question-icon.png" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
+            <div class="left">
+              <h3 class="fz-12 lca-lexend">How are package emissions calculated?</h3>
+              <p class="fz-12 lca-lexend">We are using Climatiq's Intermodal Services, which collects data from various sources to calculate the shipping emissions, including GLEC v3 Framework, ISO 14083 standard, Emission Factor Database (EFDB), OpenStreetMap, and more.</p>
+              <i></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`
+}
+
 function injectFreightHTMLContent(freightData) {
+  if (!freightData) {
+    return getInvalidFreightData();
+  }
   const from = freightData.from;
   const to = freightData.to;
   // co2eValue unit is kg
@@ -993,7 +1034,7 @@ function injectFreightHTMLContent(freightData) {
       <div class="options-container">
         <p class="shipping-options fz-12 mb-4">
           <img src="${airplane_icon}" class="icon-14 align-middle" alt="airplane icon">
-          <b>Ship by Air: </b>
+          <b>By Air: </b>
         </p>
         ${airDiffHTML}
         <p class="fz-12 mt-4 mb-4">${shippingOptionsText}</p>
@@ -1043,7 +1084,7 @@ function injectFreightHTMLContent(freightData) {
       <div class="options-container">
         <p class="shipping-options fz-12 mb-4">
           <img src="${truck_icon}" class="icon-14 align-middle" alt="truck icon">
-          <b>Ship by Ground: </b>
+          <b>By Ground: </b>
         </p>
         ${groundDiffHTML}
         <p class="fz-12 mt-4 mb-4">${shippingOptionsText}</p>
@@ -1119,7 +1160,7 @@ function injectFreightHTMLContent(freightData) {
           ${airHTML}
         </div>
         <div class="shipping-container">
-          <p class="fz-12"><b>Shipping Details</b></p>
+          <p class="fz-12"><b>Transport Details</b></p>
           <div class="shipping-info fz-12">
             <p class="from-to-text"><b>From:</b> <span id="f-from">${from}</span></p>
             <p class="from-to-text"><b>To:</b> <span id="t-to">${to}</span></p>
@@ -1137,7 +1178,6 @@ function injectFreightHTMLContent(freightData) {
 function trackFreight() {
   let allowedDomains = ["fedex.com"];
   if (isDomainValid(allowedDomains)) {
-    console.log("current domain is allowed by fedex");
     // observeFedexBtn();
     observeFedexShippingOptions(() => {
       handleFedexDataToFreight();
@@ -1710,12 +1750,11 @@ function findGreener(emissionsOne, emissionsTwo) {
    *  arr2 = [{ storage: '1 TB', co2e: '48kg' }];
    * @param {Array} arr1 An array object containing storage and co2e of a device
    * @param {Array} arr2 An array object containing storage and co2e of a device
-   * @returns // Example Output:
-              // [
-              //   [ { storage: '--', co2e: '--' }, { storage: '256GB', co2e: '12kg' }, { storage: '512GB', co2e: '24kg' }, { storage: '1 TB', co2e: '48kg' }, { storage: '2 TB', co2e: '96kg' } ],
-              //   [ { storage: '128GB', co2e: '6kg' }, { storage: '256GB', co2e: '12kg' }, { storage: '512GB', co2e: '24kg' }, { storage: '1 TB', co2e: '48kg' }, { storage: '--', co2e: '--' } ]
-              // ]
-  */
+   * @returns  Example Output: [
+                 [ { storage: '--', co2e: '--' }, { storage: '256GB', co2e: '12kg' }, { storage: '512GB', co2e: '24kg' }, { storage: '1 TB', co2e: '48kg' }, { storage: '2 TB', co2e: '96kg' } ],
+                 [ { storage: '128GB', co2e: '6kg' }, { storage: '256GB', co2e: '12kg' }, { storage: '512GB', co2e: '24kg' }, { storage: '1 TB', co2e: '48kg' }, { storage: '--', co2e: '--' } ]
+              ]
+*/
 function alignStorageArrays(arr1, arr2) {
   // Extract unique storage values from both arrays
   const uniqueStorageValues = new Set([
@@ -1956,7 +1995,7 @@ function hideFreightLoadingIcon() {
   }
 }
 
-function hideCloudLoadingIcon() {
+export function hideCloudLoadingIcon() {
   let loadingBox = shadowRoot.querySelector(".loading-box-3");
   if (loadingBox) {
     return new Promise((resolve) => {
@@ -2183,20 +2222,10 @@ export function hideElement(element, version) {
  * @param {boolean} isHighlight default is false. isHighlight is true when this function is called from the LCA brush scenario.
  * @returns The freight data used to display the freight emissions and geo-map.
  */
-export async function getFreightData(
-  fromAddress,
-  toAddress,
-  totalWeight,
-  currShippingOptions,
-  isHighlight = false
-) {
+export async function getFreightData(fromAddress, toAddress, totalWeight, currShippingOptions, isHighlight = false) {
   let groundMode, airMode;
   if (!isHighlight) {
-    ({ groundMode, airMode } = await categorizeShippingOption(
-      fromAddress,
-      toAddress,
-      currShippingOptions
-    ));
+    ({ groundMode, airMode } = await categorizeShippingOption(fromAddress, toAddress,currShippingOptions));
   } else {
     groundMode = [""];
     airMode = [""];
@@ -2225,12 +2254,7 @@ export async function getFreightData(
     }
   }
   if (airMode.length > 0) {
-    const airData = formatFreightData(
-      fromAddress,
-      toAddress,
-      "air",
-      totalWeight
-    );
+    const airData = formatFreightData(fromAddress, toAddress, "air", totalWeight);
     freightAirData = await getFreightEmissions(airData);
     if (freightAirData) {
       aData = {
@@ -2264,11 +2288,7 @@ export async function getFreightData(
  * @returns Two arrays, one containing the shipping options that have ground transport mode,
  *          another containing the shipping options that have air transport mode.
  */
-async function categorizeShippingOption(
-  fromAddress,
-  toAddress,
-  shippingOptions
-) {
+async function categorizeShippingOption(fromAddress, toAddress, shippingOptions) {
   let airMode = [];
   let groundMode = [];
   // Use Promise.all to wait for all async operations to complete

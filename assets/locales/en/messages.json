@@ -1,11 +1,11 @@
 {
     "appName": {
-        "message": "Living Sustainably"
+        "message": "Living Sustainability"
     },
     "appShortName": {
         "message": "lca-viz"
     },
     "appDescription": {
-        "message": "Creates a carbon footprint visualization based on relevant text information of mobile devices."
+        "message": "Learn more about the carbon emissions in your day-to-day life."
     }
 }

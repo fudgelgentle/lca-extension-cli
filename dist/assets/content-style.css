@@ -183,6 +183,9 @@
   background-color: var(--light-green);
   transition: all 0.5s;
 }
+.lca-viz-non-interactable {
+  pointer-events: none;
+}
 
 /* * CSS Rule for the up-and-down btn ONLY */
 .lca-viz-param {
@@ -401,6 +404,9 @@
   left: 0;
   right: 0;
   justify-content: space-between;
+}
+
+.lca-viz-header {
   cursor: grab;
 }
 
