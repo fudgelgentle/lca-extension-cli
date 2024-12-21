@@ -385,23 +385,7 @@ export function getCloudEmissionsResult(data, scenario) {
   }
   const isLocationNull = !location || location === "";
 
-  let beefValue;
-  // let weightObject;
-  let beefUnit = "kg";
-
-  let kgBeef;
-  kgBeef = emissions * 0.033;
-  beefValue = kgBeef;
-  if (kgBeef < 0.001) {
-    // Convert to milligrams if less than 0.001 kg (1 gram)
-    beefValue = kgBeef * 1000000; // 1 kg = 1,000,000 mg
-    beefUnit = "mg";
-  } else {
-    // Convert to grams
-    beefValue = kgBeef * 1000; // 1 kg = 1000 g
-    beefUnit = "g";
-  }
-  beefValue = formatToSignificantFigures(beefValue);
+  let {beefValue, beefUnit} = getBeefInfo(emissions);
 
   const readableEmissions = getReadableCO2e(emissions);
   const readableCO2e = readableEmissions.co2e_value;
@@ -439,7 +423,7 @@ export function getCloudEmissionsResult(data, scenario) {
           ${
             emissions
               ? `<div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
-              <span class="fz-20 freight-co2e-value"><b>${readableCO2e} ${readableUnit} <span class="fz-12">${
+              <span class="fz-20 co2e-value"><b>${readableCO2e} ${readableUnit} <span class="fz-12">${
                   scenario === "cloud" ? "(per month)" : ""
                 }</span></b></span>
 
@@ -464,7 +448,7 @@ export function getCloudEmissionsResult(data, scenario) {
               </div>
             </div>`
               : `<div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
-              <span class="fz-20 freight-co2e-value"><b>Data unavailable</b></span>
+              <span class="fz-20 co2e-value"><b>Data unavailable</b></span>
               <div class="flex-center cg-4">
                 <span class="trash-value fz-16">Region or instance is not supported.</span>
               </div>
@@ -527,6 +511,34 @@ export function getCloudEmissionsResult(data, scenario) {
     </div>
   `;
   return emissionsResultHTML;
+}
+
+/**
+ * Takes in an emissions value and return the appropriate amount of beef consumed.
+ * @param {Number} emissions The carbon emissions
+ * @returns The equivalent amount of beef consumed in the appropriate unit.
+ */
+export function getBeefInfo(emissions) {
+  let beefValue;
+  // let weightObject;
+  let beefUnit = "kg";
+
+  let kgBeef;
+  kgBeef = emissions * 0.033;
+  beefValue = kgBeef;
+  if (kgBeef < 0.001) {
+    // Convert to milligrams if less than 0.001 kg (1 gram)
+    beefValue = kgBeef * 1000000; // 1 kg = 1,000,000 mg
+    beefUnit = "mg";
+  } else {
+    // Convert to grams
+    beefValue = kgBeef * 1000; // 1 kg = 1000 g
+    beefUnit = "g";
+  }
+  console.log('beefValue before formatting: ' + beefValue);
+  beefValue = formatToSignificantFigures(beefValue);
+  console.log('beefValue = ' + beefValue + ', beefUnit = ' + beefUnit);
+  return { beefValue, beefUnit };
 }
 
 async function getCloudData() {
@@ -692,24 +704,27 @@ export function hidePopup() {
 }
 
 export function showMasterContainer() {
-  // masterContainer should only be using hidden-b, but I'm safeguarding this in case.
-  masterContainer.classList.remove("hidden");
-  masterContainer.classList.remove("hidden-a");
+  if (masterContainer) {
+    // masterContainer should only be using hidden-b, but I'm safeguarding this in case.
+    masterContainer.classList.remove("hidden");
+    masterContainer.classList.remove("hidden-a");
 
-  masterContainer.classList.remove("hidden-b");
-  // showElement(masterContainer, "b");
-  masterContainer.addEventListener("transitionend", { once: true });
+    masterContainer.classList.remove("hidden-b");
+    // showElement(masterContainer, "b");
+    masterContainer.addEventListener("transitionend", { once: true });
+  }
+
 }
 
 export function hideAndClearMasterContainer() {
-  masterContainer.classList.add("hidden-b");
-  masterContainer.addEventListener("transitionend", clearMasterContainer, {
-    once: true,
-  });
+  if (masterContainer) {
+    masterContainer.classList.add("hidden-b");
+    masterContainer.addEventListener("transitionend", clearMasterContainer, { once: true,});
+  }
 }
 
 export function clearMasterContainer() {
-  if (masterContainer) masterContainer.innerHTML = ``;
+  if (masterContainer) masterContainer.replaceChildren();
 }
 
 /**
@@ -919,19 +934,22 @@ function getReadableCO2e(kgCO2e) {
  * @param {number} [significantFigures=2] - The desired number of significant figures.
  * @returns {string} The formatted number as a string.
  */
-function formatToSignificantFigures(num, significantFigures = 2) {
+export function formatToSignificantFigures(num, significantFigures = 2) {
   if (num === 0) {
     return "0"; // Handle zero separately
   }
   const magnitude = Math.floor(Math.log10(Math.abs(num)));
   const roundingFactor = Math.pow(10, magnitude - significantFigures + 1);
   const roundedNum = Math.round(num / roundingFactor) * roundingFactor;
-  if (magnitude >= significantFigures || magnitude < -3) {
-    return roundedNum.toPrecision(significantFigures);
-  } else {
-    const decimalPlaces = Math.max(0, significantFigures - magnitude - 1);
-    return roundedNum.toFixed(decimalPlaces);
-  }
+  // if (magnitude >= significantFigures || magnitude < -3) {
+  //   return roundedNum.toPrecision(significantFigures);
+  // } else {
+  //   const decimalPlaces = Math.max(0, significantFigures - magnitude - 1);
+  //   return roundedNum.toFixed(decimalPlaces);
+  // }
+  // Force fixed-point notation instead of scientific notation
+  const decimalPlaces = Math.max(0, significantFigures - magnitude - 1);
+  return roundedNum.toFixed(decimalPlaces);
 }
 
 export async function updateFreightContent(freightData) {
@@ -1039,7 +1057,7 @@ function injectFreightHTMLContent(freightData) {
         ${airDiffHTML}
         <p class="fz-12 mt-4 mb-4">${shippingOptionsText}</p>
         <div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
-          <span class="fz-20 freight-co2e-value mt-4"><b>${airCo2eValue} kg CO2e</b></span>
+          <span class="fz-20 co2e-value mt-4"><b>${airCo2eValue} kg CO2e</b></span>
           <div class="lca-viz-unit-container freight flex-center cg-4">
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
@@ -1089,7 +1107,7 @@ function injectFreightHTMLContent(freightData) {
         ${groundDiffHTML}
         <p class="fz-12 mt-4 mb-4">${shippingOptionsText}</p>
         <div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
-          <span class="fz-20 freight-co2e-value mt-4"><b>${groundCo2eValue} kg CO2e</b></span>
+          <span class="fz-20 co2e-value mt-4"><b>${groundCo2eValue} kg CO2e</b></span>
           <div class="lca-viz-unit-container freight flex-center cg-4">
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
@@ -1561,9 +1579,13 @@ function handleSideBySideSelection() {
 
 // Handles the changing of different reference units for phone emissions flow.
 // (i.e. changing between "~ kg of trash burned", "~ of miles driven", and "~ of trees cut down" every 3 seconds)
-function handleCO2eEquivalencyChange() {
-  const unitSelect = shadowRoot.getElementById("lca-viz-unit-select");
-  const unitDivsContainer = shadowRoot.querySelectorAll(
+export function handleCO2eEquivalencyChange(isRawMaterial = false) {
+  let selector = shadowRoot;
+  if (isRawMaterial) {
+    selector = document;
+  }
+  const unitSelect = selector.getElementById("lca-viz-unit-select");
+  const unitDivsContainer = selector.querySelectorAll(
     ".lca-viz-unit-container"
   );
   // Initialize: show the first unit-div by default
@@ -2190,30 +2212,45 @@ async function getFreightEmissions(data) {
   }
 }
 
+// /**
+//  * Hides an element. Only works with block elements
+//  * @param {element} element The element to be shown
+//  * @param {*} version The animation style. If no version is given, use the default style
+//  */
+// export function hideElement(element, version) {
+//   if (version === "a") {
+//     element.classList.remove("visible-a");
+//     element.classList.add("hidden-a");
+//     element.addEventListener("transitionend", function handleTransitionEnd() {
+//       if (element.classList.contains("hidden-a")) {
+//         element.style.display = "none";
+//       }
+//       element.removeEventListener("transitionend", handleTransitionEnd);
+//     });
+//   } else if (version === "b") {
+//     element.classList.remove("visible-b");
+//     element.classList.add("hidden-b");
+//     element.addEventListener("transitionend", function handleTransitionEnd() {
+//       if (element.classList.contains("hidden-b")) {
+//         element.style.display = "none";
+//       }
+//       element.removeEventListener("transitionend", handleTransitionEnd);
+//     });
+//   }
+// }
+
 /**
- * Hides an element. Only works with block elements
- * @param {element} element The element to be shown
- * @param {*} version The animation style. If no version is given, use the default style
+ * Hides an element using CSS transitions.
+ * @param {HTMLElement} element The element to be hidden
+ * @param {string} version The animation style. If no version is given, use the default style
  */
 export function hideElement(element, version) {
   if (version === "a") {
     element.classList.remove("visible-a");
     element.classList.add("hidden-a");
-    element.addEventListener("transitionend", function handleTransitionEnd() {
-      if (element.classList.contains("hidden-a")) {
-        element.style.display = "none";
-      }
-      element.removeEventListener("transitionend", handleTransitionEnd);
-    });
   } else if (version === "b") {
     element.classList.remove("visible-b");
     element.classList.add("hidden-b");
-    element.addEventListener("transitionend", function handleTransitionEnd() {
-      if (element.classList.contains("hidden-b")) {
-        element.style.display = "none";
-      }
-      element.removeEventListener("transitionend", handleTransitionEnd);
-    });
   }
 }
 

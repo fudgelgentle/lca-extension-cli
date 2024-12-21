@@ -25,16 +25,16 @@
   z-index: 2147483647;
 }
 
-.master-lca, .floating-lca-menu, .lca-viz-action-btn {
+.master-lca, .floating-lca-menu {
   border: 2px solid #52B788;
   box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
   background-color: white;
 }
 
-.floating-lca-menu, .lca-viz-action-btn {
+.floating-lca-menu {
   justify-content: center;
 }
-.floating-lca-menu:hover, .lca-viz-action-btn:hover {
+.floating-lca-menu:hover {
   background-color: var(--light-green);
   transition: all 0.5s;
 }
@@ -281,7 +281,7 @@
 .title-container, .lca-viz-close-container, .select-phone-container {
   background-color: var(--eco-turquoise-100);
 }
-.lca-viz-close-container, .floating-lca-menu, .close-phone-btn, .trash-btn, .lca-viz-action-btn, .lca-viz-MEF {
+.lca-viz-close-container, .floating-lca-menu, .close-phone-btn, .trash-btn, .lca-viz-MEF {
   cursor: pointer;
 }
 .co2e-data-container {

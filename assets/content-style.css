@@ -53,7 +53,7 @@
   cursor: grab;
   transition: opacity 0.5s ease, width 0.5s ease;
   padding-top: 64px; /* Add enough padding for the header */
-  max-height: 90vh;
+  max-height: 80vh;
   max-width: 700px;
   overflow-y: scroll;
 }
@@ -161,16 +161,19 @@
   color: #52B788;
 }
 
-#lca-viz-action-btn {
+/* #lca-viz-action-btn */
+#lca-viz-action-btn-container {
   position: absolute;
-  border: 1.6px solid #52B788;
-  box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
-  background-color: white;
-  justify-content: center;
   z-index: 2147483647;
   opacity: 0;
   visibility: hidden;
   transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+#lca-viz-action-btn {
+  border: 1.6px solid #52B788;
+  box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.25);
+  background-color: white;
+  justify-content: center;
 }
 /* #lca-viz-action-btn.lca-viz-show {
   opacity: 1;
@@ -179,7 +182,8 @@
 .lca-viz-interactable {
   cursor: pointer;
 }
-.lca-viz-interactable:hover {
+
+.lca-viz-green-hover:hover {
   background-color: var(--light-green);
   transition: all 0.5s;
 }
@@ -199,9 +203,11 @@
 }
 .lca-viz-param-fill {
   justify-content: space-between;
-  background-color: #EEF2F0;
   padding-left: 16px;
   padding-right: 16px;
+}
+.lca-viz-param-fill, .lca-viz-total-emissions {
+  background-color: #EEF2F0;
 }
 .lca-viz-special-text-container-2 {
   display: inline-flex;
@@ -470,7 +476,7 @@
 
 .lca-viz-question-expand {
   /* height: 460px; */
-  height: 40px;
+  /* height: 40px; */
   transition: all 0.5s;
 }
 

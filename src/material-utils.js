@@ -1,8 +1,9 @@
 
 // Contains utilities method that is used in content.js
 
-import { expand_icon_wide } from "./content";
+// import { expand_icon_wide } from "./content";
 import { lca_32 } from "./content";
+import { formatToSignificantFigures, getBeefInfo } from "./popup-content"
 
 /**
  * Returns the HTML code for ratio section given a list of ratios
@@ -23,7 +24,7 @@ export function createRatioSection(ratioList, textSource, index) {
   const ratioSection = `
     <div id="lca-viz-r-section-${index}" class="lca-viz-ratio-container br-4 pd-16">
             <div class="lca-viz-toggle flex-center cg-8">
-              <span class="fz-12">Toggle Ratio</span>
+              <span class="fz-12">Custom Ratio</span>
               <div class="lca-viz-toggle-container">
                 <input type="checkbox" class="lca-viz-toggle-checkbox" id="lca-viz-toggle-switch-${index}">
                 <label for="lca-viz-toggle-switch-${index}" class="lca-viz-toggle-label"></label>
@@ -32,7 +33,7 @@ export function createRatioSection(ratioList, textSource, index) {
             <div class="lca-viz-ratio-detail-text hidden">
               <div class="flex-center lca-viz-space-between">
                 <div class="lca-viz-converted-ratio lca-viz-space-between br-4 fz-16 pd-8 flex-center cg-8 bg-eef2f0">
-                  <span>Converted ratio: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+                  <span>Calculated mass ratio: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
                   <div class="lca-viz-ratio-values flex-center cg-8">
                     ${nRatioList.map((element) =>
                       `<span class="lca-viz-ratio-text br-4 bg-d2ead7">${element.ratio_value}</span>
@@ -88,7 +89,7 @@ export function createRatioSection(ratioList, textSource, index) {
 }
 
 /**
- * Returns the HTML code for a single parameter.
+ * Returns the HTML code for each parameter.
  * @param {String} rawMaterialName The name of the raw material
  * @param {Number} index Its index
  * @param {Number} unit The unit of the material
@@ -147,6 +148,90 @@ export function getParam(rawMaterialName, index, unit, defaultVal = 1, isProcess
       </div>
   `;
   return paramDiv;
+}
+
+/**
+ * Takes in the total emissions value and returns the HTML code for the total emissions section
+ * @param {Number} totalEmissions The total emissions value in 'g CO2e'
+ * @returns The HTML code for the total emissions section
+ */
+export function getTotalEmissionsHTML(totalEmissions) {
+  let { milesDriven, treesOffset, beefValue, beefUnit } = getEquivalencyInfo(totalEmissions);
+
+  return `
+    <div class="lca-viz-total-emissions-title flex-center lca-viz-space-between">
+      <span><b>Total Emissions: </b></span>
+      <div class="flex-center cg-8 fz-12 mb-12">
+        <select id="lca-viz-unit-select" class="br-4 pd-4">
+          <option value="0">Miles driven 🚗</option>
+          <option value="1">Trees offset 🌳</option>
+          <option value="2">Beef Consumed 🥩</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="lca-viz-total-emissions flex-column-center br-8 rg-12 pd-16">
+      <span class="fz-20 co2e-value mt-4">
+        <b><span id="lcz-total-emissions">${totalEmissions}</span> g CO2e</b>
+      </span>
+      <div class="lca-viz-unit-container freight flex-center cg-4">
+        <div class="lca-viz-unit-div">
+          <div class="flex-center lca-viz-justify-center cg-8">
+            <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">
+              or <span id="lcz-miles-driven">${milesDriven}</span> miles driven by a car &nbsp;🚗
+            </p>
+          </div>
+        </div>
+
+        <div class="lca-viz-unit-div">
+          <div class="flex-center lca-viz-justify-center cg-8">
+            <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">
+              or <span id="lcz-trees-offset">${treesOffset}</span> trees annually &nbsp;🌳
+            </p>
+          </div>
+        </div>
+
+        <div class="lca-viz-unit-div">
+          <div class="flex-center lca-viz-justify-center cg-8">
+            <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">
+              or <span id="lcz-beef">${beefValue} ${beefUnit}</span> of beef consumed &nbsp;🥩
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+/**
+ * Updates the values in the total emissions section with the new emissions
+ * @param {Number} totalEmissions The total emissions value in 'g CO2e'
+ */
+export function updateTotalEmissions(totalEmissions) {
+  const totalEmissionsTxt = document.getElementById("lcz-total-emissions");
+  const milesDrivenTxt = document.getElementById("lcz-miles-driven");
+  const treesOffsetTxt = document.getElementById("lcz-trees-offset");
+  const beefTxt = document.getElementById("lcz-beef");
+
+  let { milesDriven, treesOffset, beefValue, beefUnit } = getEquivalencyInfo(totalEmissions);
+
+  totalEmissionsTxt.textContent = totalEmissions;
+  milesDrivenTxt.textContent = milesDriven;
+  treesOffsetTxt.textContent = treesOffset;
+  beefTxt.textContent = beefValue + " " + beefUnit;
+}
+
+/**
+ * Returns all of the CO2e equivalency information including miles driven, trees offset, and beef consumed
+ * @param {Number} totalEmissions The total emissions value in 'g CO2e'
+ * @returns An object containing all information for CO2e equivalency
+ */
+export function getEquivalencyInfo(totalEmissions) {
+  const emissionsInKg = (totalEmissions / 1000);
+  const milesDriven = formatToSignificantFigures(emissionsInKg * 2.5);
+  const treesOffset = formatToSignificantFigures(emissionsInKg * 0.048);
+  let { beefValue, beefUnit } = getBeefInfo(emissionsInKg);
+  return { milesDriven, treesOffset, beefValue, beefUnit };
 }
 
 
@@ -378,13 +463,14 @@ export function getQuestionLCA(title, textSource, scenario, isDeviceExist) {
           <small id="lca-viz-calculate-error" class="lca-viz-input-error"></small>
         </div>
       </div>
-      <div class="lca-viz-bottom-gradient"></div>
-      <div class="lca-viz-expand-collapse-container">
-        <div class="lca-viz-expand-collapse-content flex-center lca-viz-justify-center cg-8">
-          <img src="${expand_icon_wide}" alt="Click to expand content" class="icon-24 lca-viz-expand-collapse-icon">
-        </div>
-      </div>
   `;
+  // ! removed the expand collapse:
+  // <div class="lca-viz-bottom-gradient"></div>
+  // <div class="lca-viz-expand-collapse-container">
+  //   <div class="lca-viz-expand-collapse-content flex-center lca-viz-justify-center cg-8">
+  //     <img src="${expand_icon_wide}" alt="Click to expand content" class="icon-24 lca-viz-expand-collapse-icon">
+  //   </div>
+  // </div>
   console.log('returing resultHTML');
   return resultHTML;
 }
