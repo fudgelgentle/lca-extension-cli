@@ -26,6 +26,10 @@
   --btn-disabled-text: #636363;
 }
 
+.lca-viz-lca-logo {
+  background-color: transparent !important;
+}
+
 .lca-viz-header {
   position: absolute;
   top: 0;
@@ -121,6 +125,8 @@
   width: 24px;
   height: 24px;
   stroke: #000;
+  z-index: 10;
+  background-color: transparent;
 }
 
 .lca-viz-highlight {

@@ -380,9 +380,11 @@ export function getCloudEmissionsResult(data, scenario) {
     console.log("energyDuration = ", energyDuration);
     console.log("location = ", location);
     power = formatToSignificantFigures(power);
-    milesDriven = formatToSignificantFigures(emissions * 2.5);
-    treesOffset = formatToSignificantFigures(emissions * 0.048);
+    // milesDriven = formatToSignificantFigures(emissions * 2.5);
+    // treesOffset = formatToSignificantFigures(emissions * 0.048);
   }
+  milesDriven = formatToSignificantFigures(emissions * 2.5);
+  treesOffset = formatToSignificantFigures(emissions * 0.048);
   const isLocationNull = !location || location === "";
 
   let {beefValue, beefUnit} = getBeefInfo(emissions);
@@ -395,13 +397,13 @@ export function getCloudEmissionsResult(data, scenario) {
     <div class="lca-viz-cloud-emissions-container hidden-a">
       <section class="lca-viz-cloud-container br-8">
         <div class="lca-viz-cloud-results-info-container pd-16 mt-12 hidden-a">
-          <div class="flex-stretch lca-viz-title-and-question mt-8">
+          <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
             <p class="fz-16 mt-0 mb-0"><b>${
               scenario === "cloud"
                 ? "Your cloud instance's estimated carbon emissions:"
                 : "Estimated Carbon Footprint of Use "
             }</b></p>
-            <div class="btn btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
+            <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
               <div class="left">
                 <h3 class="fz-12 lca-lexend">How are cloud instance emissions calculated?</h3>
                 <p class="fz-12 lca-lexend">We are using Climatiq's Cloud Computing Services, which provides emissions metrics for services like Amazon Web Services (AWS), Microsoft Azure, and Google Cloud Platform (GCP).
@@ -620,7 +622,7 @@ export function setupLCABannerAndFloatingMenu() {
 }
 
 // 3 popup cases: phone, freight, cloud
-export async function injectPopupContent(popupCase, freightData = null, mContainer = null,sRoot = null) {
+export async function injectPopupContent(popupCase, freightData = null, mContainer = null, sRoot = null) {
   const lcaBanner = getLCABanner();
 
   if (!masterContainer) masterContainer = mContainer;
@@ -941,13 +943,6 @@ export function formatToSignificantFigures(num, significantFigures = 2) {
   const magnitude = Math.floor(Math.log10(Math.abs(num)));
   const roundingFactor = Math.pow(10, magnitude - significantFigures + 1);
   const roundedNum = Math.round(num / roundingFactor) * roundingFactor;
-  // if (magnitude >= significantFigures || magnitude < -3) {
-  //   return roundedNum.toPrecision(significantFigures);
-  // } else {
-  //   const decimalPlaces = Math.max(0, significantFigures - magnitude - 1);
-  //   return roundedNum.toFixed(decimalPlaces);
-  // }
-  // Force fixed-point notation instead of scientific notation
   const decimalPlaces = Math.max(0, significantFigures - magnitude - 1);
   return roundedNum.toFixed(decimalPlaces);
 }
@@ -973,9 +968,9 @@ function getInvalidFreightData() {
         </div>
       </div>
       <div class="freight-content visible-a" style="display: block;">
-        <div class="flex-stretch lca-viz-title-and-question mt-8">
+        <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
           <p class="fz-16 mt-0 mb-16"><b>The shipping data cannot be found</b></p>
-          <div class="btn btn-primary lca-viz-tooltip"><img src="chrome-extension://moaglnlpoploemkipmdjfmhcjfbandkm/../assets/img/question-icon.png" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
+          <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="chrome-extension://moaglnlpoploemkipmdjfmhcjfbandkm/../assets/img/question-icon.png" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
             <div class="left">
               <h3 class="fz-12 lca-lexend">How are package emissions calculated?</h3>
               <p class="fz-12 lca-lexend">We are using Climatiq's Intermodal Services, which collects data from various sources to calculate the shipping emissions, including GLEC v3 Framework, ISO 14083 standard, Emission Factor Database (EFDB), OpenStreetMap, and more.</p>
@@ -1055,9 +1050,9 @@ function injectFreightHTMLContent(freightData) {
           <b>By Air: </b>
         </p>
         ${airDiffHTML}
-        <p class="fz-12 mt-4 mb-4">${shippingOptionsText}</p>
+        <p class="fz-12 lcz-mt-4 mb-4">${shippingOptionsText}</p>
         <div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
-          <span class="fz-20 co2e-value mt-4"><b>${airCo2eValue} kg CO2e</b></span>
+          <span class="fz-20 co2e-value lcz-mt-4"><b>${airCo2eValue} kg CO2e</b></span>
           <div class="lca-viz-unit-container freight flex-center cg-4">
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
@@ -1084,7 +1079,7 @@ function injectFreightHTMLContent(freightData) {
             </div>
           </div>
         </div>
-        <div class="lca-viz-google-maps-air flex-center mt-8"></div>
+        <div class="lca-viz-google-maps-air flex-center lcz-mt-8"></div>
       </div>
     `;
   }
@@ -1105,9 +1100,9 @@ function injectFreightHTMLContent(freightData) {
           <b>By Ground: </b>
         </p>
         ${groundDiffHTML}
-        <p class="fz-12 mt-4 mb-4">${shippingOptionsText}</p>
+        <p class="fz-12 lcz-mt-4 mb-4">${shippingOptionsText}</p>
         <div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
-          <span class="fz-20 co2e-value mt-4"><b>${groundCo2eValue} kg CO2e</b></span>
+          <span class="fz-20 co2e-value lcz-mt-4"><b>${groundCo2eValue} kg CO2e</b></span>
           <div class="lca-viz-unit-container freight flex-center cg-4">
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
@@ -1134,7 +1129,7 @@ function injectFreightHTMLContent(freightData) {
             </div>
           </div>
         </div>
-        <div class="lca-viz-google-maps-ground flex-center mt-8"></div>
+        <div class="lca-viz-google-maps-ground flex-center lcz-mt-8"></div>
       </div>
     `;
   }
@@ -1154,9 +1149,9 @@ function injectFreightHTMLContent(freightData) {
       </div>
       <div class="freight-content hidden-a">
 
-        <div class="flex-stretch lca-viz-title-and-question mt-8">
+        <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
           <p class="fz-16 mt-0 mb-16"><b>${titleText}</b></p>
-          <div class="btn btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
+          <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
             <div class="left">
               <h3 class="fz-12 lca-lexend">How are package emissions calculated?</h3>
               <p class="fz-12 lca-lexend">We are using Climatiq's Intermodal Services, which collects data from various sources to calculate the shipping emissions, including GLEC v3 Framework, ISO 14083 standard, Emission Factor Database (EFDB), OpenStreetMap, and more.</p>
@@ -1889,9 +1884,9 @@ function displayPhoneSpecEmissions() {
   const deviceName = data.device;
 
   container.innerHTML += `
-    <div class="flex-stretch lca-viz-title-and-question mt-8">
+    <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
       <p class="phone-spec-title" id="currentPhone"><b>${deviceName} Estimated Carbon Emissions</b></p>
-      <div class="btn btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
+      <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
         <div class="left">
           <h3 class="fz-12 lca-lexend">How are phone emissions calculated?</h3>
           <p class="fz-12 lca-lexend">We use data from phone companies' product carbon footprint reports. If there is no data, a large language model (LLM) is used to estimate emissions based on publicly available data online.</p>

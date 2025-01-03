@@ -1564,7 +1564,7 @@ async function init() {
       map.innerHTML = `
         <div class="flex-center lca-viz-header cg-12 pd-12">
         <div class="flex-center cg-12 lca-viz-header-title">
-          <img alt="logo" src="${lca_48}" class="icon-20">
+          <img alt="logo" src="${lca_48}" class="icon-20 lca-viz-lca-logo">
           <span><b>Living Sustainability</b></span>
         </div>
         <button id="lca-viz-close-map" class="lca-viz-close-button flex-center">
@@ -1573,9 +1573,9 @@ async function init() {
           </svg>
         </button>
         </div>
-        <div class="flex-stretch lca-viz-title-and-question mt-8">
+        <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
           <span class="lca-viz-raw-material-title"><b>Estimated Carbon Footprint of Raw Materials</b></span>
-          <div class="btn btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
+          <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
             <div class="left">
               <h3 class="fz-12 lca-lexend">How are raw material emissions calculated?</h3>
               <p class="fz-12">We are using a large language model (LLM) to extract relevant raw materials and conduct a life cycle assessment (LCA) of the raw materials using available public datasets on the internet.</p>
@@ -1594,7 +1594,7 @@ async function init() {
       const paramSpan = document.createElement("span");
       paramSpan.innerHTML = "<b>Parameters:</b>";
       const paramSpan2 = document.createElement("p");
-      paramSpan2.classList.add("mt-4", "fz-16", "lca-viz-param-subtext");
+      paramSpan2.classList.add("lcz-mt-4", "fz-16", "lca-viz-param-subtext");
       paramSpan2.innerHTML =
         "Adjust the values below to see the carbon emissions of different materials.";
 
@@ -1604,7 +1604,7 @@ async function init() {
 
       const totalEmissionsSection = document.createElement("div");
       totalEmissionsSection.classList.add("lca-viz-total-emissions-container");
-      totalEmissionsSection.classList.add("mt-8", "mb-8");
+      totalEmissionsSection.classList.add("lcz-mt-8", "mb-8");
 
       map.appendChild(totalEmissionsSection);
       map.appendChild(paramSection);

@@ -58,7 +58,7 @@ export function createRatioSection(ratioList, textSource, index) {
             ${nRatioList.map((element, i) =>
               `<div class="lca-viz-ratio-control fz-16 bg-d2ead7 br-8 pd-16">
                 <div class="control-section">${element.name}</div>
-                <div class="flex-center cg-4 mt-8 lca-viz-justify-center">
+                <div class="flex-center cg-4 lcz-mt-8 lca-viz-justify-center">
                   <!-- ? up-down-btn -->
                   <div class="lca-viz-special-text-container-2">
                     <div class="lca-viz-special-text-2 lca-viz-active-st">
@@ -171,7 +171,7 @@ export function getTotalEmissionsHTML(totalEmissions) {
     </div>
 
     <div class="lca-viz-total-emissions flex-column-center br-8 rg-12 pd-16">
-      <span class="fz-20 co2e-value mt-4">
+      <span class="fz-20 co2e-value lcz-mt-4">
         <b><span id="lcz-total-emissions">${totalEmissions}</span> g CO2e</b>
       </span>
       <div class="lca-viz-unit-container freight flex-center cg-4">
@@ -487,19 +487,19 @@ export function getQuestionForm(scenario, isDeviceExist) {
       <form class="lca-viz-question-form">
         <div>
           <label for="lca-input-from"><b>From *</b> </label>
-          <input type="text" id="lca-input-from" name="from" class="lca-viz-question-from-to br-8 mt-8 mb-2 invalid" required>
+          <input type="text" id="lca-input-from" name="from" class="lca-viz-question-from-to br-8 lcz-mt-8 mb-2 invalid" required>
           <small id="lca-viz-from-error" class="lca-viz-input-error">Enter a location.</small>
         </div>
         <div class="mt-24">
           <label for="lca-input-to"><b>To *</b></label>
-          <input type="text" id="lca-input-to" name="to" class="lca-viz-question-from-to br-8 mt-8 mb-2 invalid" required>
+          <input type="text" id="lca-input-to" name="to" class="lca-viz-question-from-to br-8 lcz-mt-8 mb-2 invalid" required>
           <small id="lca-viz-to-error" class="lca-viz-input-error">Enter a location.</small>
         </div>
         <div class="lca-viz-package-weight-container mt-24">
           <label for="lca-input-package-weight" class="package-weight-label"><b>Weight *</b></label><br>
           <div class="lca-viz-package-parent flex-stretch cg-8 mb-2">
-            <input type="number" name="package-weight" min="1" step="1" id="lca-input-package-weight" class="lca-viz-question-weight br-8 mt-8 lca-lexend invalid" required>
-            <div class="lca-viz-package-unit-container br-8 mt-8">
+            <input type="number" name="package-weight" min="1" step="1" id="lca-input-package-weight" class="lca-viz-question-weight br-8 lcz-mt-8 lca-lexend invalid" required>
+            <div class="lca-viz-package-unit-container br-8 lcz-mt-8">
               <select id="lca-input-package-unit" name="package-unit" class="lca-viz-question-unit lca-lexend" required>
                 <option value="lbs">lbs</option>
                 <option value="kg">kg</option>
@@ -516,14 +516,14 @@ export function getQuestionForm(scenario, isDeviceExist) {
       <form class="lca-viz-question-form">
         <div>
           <label for="lca-input-from"><b>${isDeviceExist ? "Device" : "Process name"}</b> </label>
-          <input type="text" id="lca-input-from" name="from" class="lca-viz-question-from-to br-8 mt-8 mb-2 read-only" readonly>
+          <input type="text" id="lca-input-from" name="from" class="lca-viz-question-from-to br-8 lcz-mt-8 mb-2 read-only" readonly>
           <small id="lca-viz-from-error" class="lca-viz-input-error">Enter a device name.</small>
         </div>
         <div class="lca-viz-package-weight-container mt-24">
           <label for="lca-input-package-weight" class="package-weight-label"><b>Usage Duration *</b></label><br>
           <div class="lca-viz-duration-parent flex-stretch cg-8 mb-2">
-            <input type="number" name="package-weight" min="1" step="1" id="lca-input-package-weight" class="lca-viz-question-weight br-8 mt-8 lca-lexend invalid" required>
-            <div class="lca-viz-package-unit-container br-8 mt-8">
+            <input type="number" name="package-weight" min="1" step="1" id="lca-input-package-weight" class="lca-viz-question-weight br-8 lcz-mt-8 lca-lexend invalid" required>
+            <div class="lca-viz-package-unit-container br-8 lcz-mt-8">
               <select id="lca-input-package-unit" name="package-unit" class="lca-viz-question-unit lca-lexend" required>
                 <option value="h">hours</option>
                 <option value="min">minutes</option>
@@ -535,7 +535,7 @@ export function getQuestionForm(scenario, isDeviceExist) {
         </div>
         <div class="mt-24">
           <label for="lca-input-to"><b>Location </b></label>
-          <input type="text" id="lca-input-to" name="to" class="lca-viz-question-from-to br-8 mt-8 mb-2" placeholder="This is optional">
+          <input type="text" id="lca-input-to" name="to" class="lca-viz-question-from-to br-8 lcz-mt-8 mb-2" placeholder="This is optional">
           <small id="lca-viz-to-error" class="lca-viz-input-error">Enter a location.</small>
         </div>
       </form>
