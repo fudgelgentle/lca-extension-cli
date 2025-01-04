@@ -99,7 +99,7 @@
   outline: none;
   background: #E2EBE7;
   font-size: inherit;
-  color: inherit;
+  color: black;
   border-radius: 2px;
   text-align: center;
   width: 3em;
@@ -138,6 +138,9 @@
 }
 .lca-lexend {
   font-family: "Lexend", sans-serif;
+}
+.lca-viz-fnt-inherit {
+  font-family: inherit;
 }
 
 #lca-viz-action-btn-text {

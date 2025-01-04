@@ -77,7 +77,9 @@ function initialize() {
   });
 }
 
-// Export getter functions
+/**
+ * This function is used to invoke popup-content.js's initialization.
+ */
 export function getMasterContainer() {
   if (!window.popupInjected) {
     window.popupInjected = true;
@@ -328,10 +330,7 @@ function handleCalculateButton() {
  * @param {Boolean} isCloud Boolean indicating if this scenario is "cloud". If not, it will be for "energy"
  */
 export function displayCloudEmissions(emissionsResultHTML, isCloud) {
-  if (isCloud)
-    shadowRoot
-      .querySelector(".lca-viz-cloud-master-container")
-      .classList.add("hidden-a");
+  if (isCloud) shadowRoot.querySelector(".lca-viz-cloud-master-container").classList.add("hidden-a");
   masterContainer.insertAdjacentHTML("beforeend", emissionsResultHTML);
   handleCO2eEquivalencyChange();
   requestAnimationFrame(async () => {
@@ -425,26 +424,26 @@ export function getCloudEmissionsResult(data, scenario) {
           ${
             emissions
               ? `<div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
-              <span class="fz-20 co2e-value"><b>${readableCO2e} ${readableUnit} <span class="fz-12">${
+              <span class="fz-20 co2e-value"><b><span id="lcz-root-emissions">${readableCO2e} ${readableUnit}</span> <span class="fz-12">${
                   scenario === "cloud" ? "(per month)" : ""
                 }</span></b></span>
 
               <div class="lca-viz-unit-container cloud flex-center cg-4">
                 <div class="lca-viz-unit-div">
                   <div class="flex-center lca-viz-justify-center cg-8">
-                    <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${milesDriven} miles driven by a car &nbsp;🚗</p>
+                    <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or <span id="lcz-miles">${milesDriven}</span> miles driven by a car &nbsp;🚗</p>
                   </div>
                 </div>
 
                 <div class="lca-viz-unit-div">
                   <div class="flex-center lca-viz-justify-center cg-8">
-                    <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${treesOffset} trees annually &nbsp;🌳</p>
+                    <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or <span id="lcz-trees">${treesOffset}</span> trees annually &nbsp;🌳</p>
                   </div>
                 </div>
 
                 <div class="lca-viz-unit-div">
                   <div class="flex-center lca-viz-justify-center cg-8">
-                    <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${beefValue} ${beefUnit} of beef consumed &nbsp;🥩</p>
+                    <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or <span id="lcz-beef">${beefValue} ${beefUnit}</span> of beef consumed &nbsp;🥩</p>
                   </div>
                 </div>
               </div>
@@ -482,7 +481,7 @@ export function getCloudEmissionsResult(data, scenario) {
               </p>
               <p class="fz-16 mb-2"><b>Usage Duration:</b> <br>
                 <div class="flex-center cg-8">
-                  <span id="" class="fz-12">${energyDuration} ${durationUnit}</span>
+                  <span class="fz-12"><span id="lca-viz-e-time-val">${energyDuration}</span> ${durationUnit}</span>
                 </div>
               </p>
               ${
@@ -537,9 +536,9 @@ export function getBeefInfo(emissions) {
     beefValue = kgBeef * 1000; // 1 kg = 1000 g
     beefUnit = "g";
   }
-  console.log('beefValue before formatting: ' + beefValue);
+  // console.log('beefValue before formatting: ' + beefValue);
   beefValue = formatToSignificantFigures(beefValue);
-  console.log('beefValue = ' + beefValue + ', beefUnit = ' + beefUnit);
+  // console.log('beefValue = ' + beefValue + ', beefUnit = ' + beefUnit);
   return { beefValue, beefUnit };
 }
 
@@ -915,7 +914,7 @@ function getReadableUnit(kg) {
  * converted CO2e value and its corresponding unit (g CO2e, kg CO2e, or t CO2e).
  * e.g. getReadableCO2e(0.0011972) returns { co2e_value: 1.2, unit: 'g CO2e' }
  */
-function getReadableCO2e(kgCO2e) {
+export function getReadableCO2e(kgCO2e) {
   if (kgCO2e < 1.0) {
     const grams = parseFloat((kgCO2e * 1000).toFixed(2));
     return { co2e_value: grams, unit: "g CO2e" };

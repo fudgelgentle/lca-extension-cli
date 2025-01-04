@@ -33,7 +33,11 @@ import {
   hideAndClearMasterContainer,
   hidePopup,
   setupLCABannerAndFloatingMenu,
-  handleCO2eEquivalencyChange
+  handleCO2eEquivalencyChange,
+  shadowRoot,
+  getReadableCO2e,
+  formatToSignificantFigures,
+  getBeefInfo
 } from "./popup-content";
 import { injectPopupContent } from "./popup-content";
 import { updateFreightContent } from "./popup-content";
@@ -68,9 +72,13 @@ let isPopupActive = false;
 
 // The current scenario, either "freight" or "energy"
 let currScenario = null;
-// The duration in seconds for the energy usage.
+
+// The 5 global variables below are used to store data for the energy scenario (which is used to update the energy data).
 let wattage = 0;
 let energyEFactor = 0;
+let emissionsPerKwh = 0;
+let durationEVal;
+let durationEUnit;
 
 let globalSelectionData = {
   parentNode: null, // Will store a Node
@@ -91,6 +99,10 @@ let isBrushEnabled = false;
 let masterQContainer;
 let floatingQMenu;
 let shadowQRoot;
+
+// Keeps track of the original value for the time and its unit for energy scenario.
+let eTimeString;
+let eTimeUnitString;
 
 window.onload = async () => {
   console.log("loading resouces........");
@@ -372,8 +384,8 @@ async function init() {
 
     // !case: proccesses
     // TODO:
-    handleProcesses();
-    handleIntextProcesses();
+    // handleProcesses();
+    // handleIntextProcesses();
   }
 
   function handleProcesses() {
@@ -406,7 +418,6 @@ async function init() {
               const targetInput = syncContainer.querySelector(
                 `.lca-viz-parameter-text[data-type="${type}"]`
               );
-
               syncInputs(targetInput, inputNode);
             });
 
@@ -904,36 +915,37 @@ async function init() {
   //     const regex = new RegExp(`\\b${escapedName}\\b`, "gi");
   //     modifiedText = modifiedText.replace(regex,`<span class="lca-viz-param-bold"><b>${name}</b></span>`);
   //   });
-  //   // ! Don't delete this. This is for bolding the process name + adding the up-down-button in the sentence.
-  //   // processesNames.forEach((process) => {
-  //   //   const escapedName = escapeRegExp(process.name);
-  //   //   const regexName = new RegExp(`\\b${escapedName}\\b`, "gi");
-  //   //   modifiedText = modifiedText.replace(regexName,`<span class="lca-viz-param-bold"><b>${process.name}</b></span>`);
 
-  //   //   const escapedPower = escapeRegExp(String(process.power_original));
-  //   //   const regexPower = new RegExp(`\\b${escapedPower}\\b`, "gi");
+    // ! Don't delete this. This is for bolding the process name + adding the up-down-button in the sentence.
+    // processesNames.forEach((process) => {
+    //   const escapedName = escapeRegExp(process.name);
+    //   const regexName = new RegExp(`\\b${escapedName}\\b`, "gi");
+    //   modifiedText = modifiedText.replace(regexName,`<span class="lca-viz-param-bold"><b>${process.name}</b></span>`);
 
-  //   //   modifiedText = modifiedText.replace(regexPower,
-  //   //     `
-  //   //       <span class="lca-viz-origin-number lca-viz-hidden">${process.power_original}</span>
-  //   //       <div class="lca-viz-processes-intext-${process.index} lca-viz-inline" data-value="${process.power_original}">
-  //   //         ${createUpDownBtn(process.index, process.power_original_unit, process.power_original, "power")}
-  //   //       </div>
-  //   //     `
-  //   //   );
-  //   //   // <span class="lca-viz-original-time-text">${process.power_original}</span>
-  //   //   const escapedTime = escapeRegExp(String(process.time_original));
-  //   //   const regexTime = new RegExp(`\\b${escapedTime}\\b`, "gi");
-  //   //   modifiedText = modifiedText.replace(
-  //   //     regexTime,
-  //   //     `
-  //   //       <span class="lca-viz-origin-number lca-viz-hidden">${process.time_original}</span>
-  //   //       <div class="lca-viz-processes-intext-${process.index} lca-viz-inline" data-value="${process.time_original}">
-  //   //         ${createUpDownBtn(process.index, process.time_original_unit, process.time_original, "time")}
-  //   //       </div>
-  //   //     `
-  //   //   );
-  //   // });
+    //   const escapedPower = escapeRegExp(String(process.power_original));
+    //   const regexPower = new RegExp(`\\b${escapedPower}\\b`, "gi");
+
+    //   modifiedText = modifiedText.replace(regexPower,
+    //     `
+    //       <span class="lca-viz-origin-number lca-viz-hidden">${process.power_original}</span>
+    //       <div class="lca-viz-processes-intext-${process.index} lca-viz-inline" data-value="${process.power_original}">
+    //         ${createUpDownBtn(process.index, process.power_original_unit, process.power_original, "power")}
+    //       </div>
+    //     `
+    //   );
+      // <span class="lca-viz-original-time-text">${process.power_original}</span>
+    //   const escapedTime = escapeRegExp(String(process.time_original));
+    //   const regexTime = new RegExp(`\\b${escapedTime}\\b`, "gi");
+    //   modifiedText = modifiedText.replace(
+    //     regexTime,
+    //     `
+    //       <span class="lca-viz-origin-number lca-viz-hidden">${process.time_original}</span>
+    //       <div class="lca-viz-processes-intext-${process.index} lca-viz-inline" data-value="${process.time_original}">
+    //         ${createUpDownBtn(process.index, process.time_original_unit, process.time_original, "time")}
+    //       </div>
+    //     `
+    //   );
+    // });
 
   //   modifiedText =
   //     modifiedText +
@@ -1027,6 +1039,11 @@ async function init() {
     });
   }
 
+  // Escape special characters in material names for regex
+  function escapeRegExp(text) {
+    return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
+
 
   function handleEnergyHighlight(data, parentNode, range, selection, textSource) {
     const energyData = data.use_phase;
@@ -1060,7 +1077,11 @@ async function init() {
     let nameList = [];
     if (processData.device) nameList.push(processData.device);
     if (processData.power_original) nameList.push(processData.power_original + " " + processData.power_original_unit);
-    if (processData.time_original) nameList.push(processData.time_original + " " + processData.time_original_unit);
+    if (processData.time_original) {
+      nameList.push(processData.time_original + " " + processData.time_original_unit);
+      eTimeString = processData.time_original;
+      eTimeUnitString = processData.time_original_unit;
+    }
     addHighlightBold(nameList, parentNode, range, selection);
 
     autoFillInput(processData, inputMapping);
@@ -1222,11 +1243,6 @@ async function init() {
     };
   }
 
-  // Escape special characters in material names for regex
-  function escapeRegExp(text) {
-    return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  }
-
   function initializeChart(rawMaterialData) {
     currentChartData = rawMaterialData;
     let chartConfig = getChartConfig();
@@ -1323,39 +1339,6 @@ async function init() {
         currentNode
       );
     }
-  }
-
-  /**
-   * Returns the HTML for up and down button given the parameter.
-   * @param {String | Number} parameter The parameter of the raw material
-   */
-  function createUpDownBtn(index, unit, defaultValue, type) {
-    const upDownBtn = `
-          <div class="lca-viz-special-text-container-2 lca-viz-up-down-btn-master-${index} lca-viz-up-down-btn-master-${index}-${type}">
-            <div class="lca-viz-special-text-intext lca-viz-active-st lca-viz-param-fill">
-              <input class="lca-viz-parameter-text input-normal lca-viz-parameter-2" id="lca-viz-input-${index}" data-type="${type}" data-value-unit="${unit}" type="number" value="${defaultValue}">
-              <div class="lca-viz-up-down-btn-container-intext flex-column">
-                <div class="lca-viz-active lca-viz-up-down-btn lca-viz-up">
-                  <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M3.60595 1.24256C3.99375 0.781809 4.7032 0.781808 5.091 1.24256L8.00777 4.70806C8.53906 5.3393 8.09032 6.30353 7.26525 6.30353L1.4317 6.30353C0.606637 6.30353 0.157892 5.33931 0.689181 4.70807L3.60595 1.24256Z" fill="currentColor"/>
-                  </svg>
-                </div>
-                <div class="lca-viz-active lca-viz-up-down-btn lca-viz-down">
-                  <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M5.09107 5.74914C4.70327 6.20989 3.99382 6.20989 3.60602 5.74914L0.689251 2.28363C0.157962 1.65239 0.606707 0.688168 1.43177 0.688168L7.26532 0.688168C8.09039 0.688168 8.53913 1.65239 8.00784 2.28363L5.09107 5.74914Z" fill="currentColor"/>
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-    `;
-    // ~~ DO NOT DELETE
-    // <div title="Click to display CO2 emissions" class="display-chart-btn-container lca-on">
-    //   <svg width="24" height="24" class="display-chart-btn eye-on" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    //     <path d="M10.7429 5.09232C11.1494 5.03223 11.5686 5 12.0004 5C17.1054 5 20.4553 9.50484 21.5807 11.2868C21.7169 11.5025 21.785 11.6103 21.8231 11.7767C21.8518 11.9016 21.8517 12.0987 21.8231 12.2236C21.7849 12.3899 21.7164 12.4985 21.5792 12.7156C21.2793 13.1901 20.8222 13.8571 20.2165 14.5805M6.72432 6.71504C4.56225 8.1817 3.09445 10.2194 2.42111 11.2853C2.28428 11.5019 2.21587 11.6102 2.17774 11.7765C2.1491 11.9014 2.14909 12.0984 2.17771 12.2234C2.21583 12.3897 2.28393 12.4975 2.42013 12.7132C3.54554 14.4952 6.89541 19 12.0004 19C14.0588 19 15.8319 18.2676 17.2888 17.2766M3.00042 3L21.0004 21M9.8791 9.87868C9.3362 10.4216 9.00042 11.1716 9.00042 12C9.00042 13.6569 10.3436 15 12.0004 15C12.8288 15 13.5788 14.6642 14.1217 14.1213" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-    //   </svg>
-    // </div>
-    return upDownBtn;
   }
 
   /**
@@ -1890,29 +1873,14 @@ function extractNameAndEmissions(data) {
     const independentList = data.raw_materials.independent_materials;
     independentMaterialHTML =
       "<div class='lca-viz-independent-container'>" +
-      independentList
-        .map((item, index) => {
-          const emissionsAmount =
-            item.amount *
-            extractEmissionsFactor(item.carbon_emission_factor).co2e_value;
-          results.push({
-            name: item.name,
-            emissions: emissionsAmount,
-          });
-          return getParam(
-            item.name,
-            item.index,
-            "g",
-            item.amount,
-            undefined,
-            undefined,
-            undefined
-          );
-        })
-        .join("") +
+        independentList.map((item, index) => {
+            const emissionsAmount = item.amount * extractEmissionsFactor(item.carbon_emission_factor).co2e_value;
+            results.push({name: item.name, emissions: emissionsAmount,});
+            return getParam(item.name, item.index, "g", item.amount, undefined, undefined, undefined);
+          }).join("") +
       "</div>";
   }
-  // ! Don't delete this. Keep it just in case.
+  // ! Don't delete this. Keep it just in case. This is for processes
   // Process processes
   // if (data.processes) {
   //   const processesList = data.processes;
@@ -2040,7 +2008,7 @@ function handleQuestionForm() {
     // If location is not given, use the emissions factor from LLM, which is based on US electricity average.
     if (!location || location === "") {
       // The emissions is in this unit: ~ g CO2eq per 1 kwH
-      const emissionsPerKwh = extractEmissionsFactor(energyEFactor).co2e_value;
+      emissionsPerKwh = extractEmissionsFactor(energyEFactor).co2e_value;
       energyEmissions = parseFloat((kwh * emissionsPerKwh) / 1000);
       // Else, use electricity maps API with location.
     } else {
@@ -2061,6 +2029,7 @@ function handleQuestionForm() {
       if (response.ok) {
         const responseData = await response.json();
         energyEmissions = parseFloat(responseData.carbon_footprint);
+        emissionsPerKwh = parseFloat(responseData.carbon_intensity);
       } else {
         console.log("error: cannot fetch electricity maps API");
         return;
@@ -2082,6 +2051,161 @@ function handleQuestionForm() {
     hideQuestionUI();
     showMasterContainer();
     isPopupActive = true;
+
+    handleIntextEnergy(durationVal, durationUnit);
+  }
+
+  /**
+   * Allows for users to manipulate the time inside the highlighted text and see the change in emissions.
+   * @param {String} inputTime The time value that was used to calculate the emissions.
+   * @param {String} inputTimeUnit The time unit that was used to calculate the emissions.
+   * @param {Number} emissionsPerKwh This will be used to calculate the new emissions.
+   * @param {Number} wattage This will be used to calculate the new emissions.
+   */
+  function handleIntextEnergy(inputTime, inputTimeUnit) {
+    durationEUnit = inputTimeUnit;
+    const highlightedTextNode = document.querySelector('.lca-viz-highlight-container').children[0].querySelectorAll(".lca-viz-param-bold");
+    let editNode;
+    highlightedTextNode.forEach((node) => {
+      console.log('node.textContent:', node.textContent);
+      console.log('eTimeString + " " + eTimeUnitString:', eTimeString + " " + eTimeUnitString);
+      if (node.textContent === (eTimeString + " " + eTimeUnitString)) {
+        editNode = node;
+      }
+    });
+
+    const upDownBtn = document.createElement('div');
+    upDownBtn.classList.add('lca-viz-param-bold', 'lca-viz-inline');
+    upDownBtn.innerHTML = `
+        <span class="lca-viz-origin-number lca-viz-hidden">${inputTime}</span>
+        <div class="lca-viz-processes-intext-0 lca-viz-inline" data-value="${eTimeString}">
+          ${createUpDownBtn(0, inputTimeUnit, inputTime, "time")}
+        </div>
+        <span class="lca-viz-param-bold"><b>${inputTimeUnit}</b></span>
+    `;
+    editNode.replaceWith(upDownBtn);
+
+    const selector = document.querySelector('.lca-viz-up-down-btn-master-0');
+    const ratioUpBtn = selector.querySelector(".lca-viz-up");
+    const ratioDownBtn = selector.querySelector(".lca-viz-down");
+    const index = 0;
+    ratioUpBtn.addEventListener("click", () => {
+      updateValueEnergy(1, index);
+    });
+    ratioDownBtn.addEventListener("click", () => {
+      updateValueEnergy(-1, index);
+    });
+  }
+
+  /**
+   * Updates the carbon emissions value of the energy popup window
+   * @param {Number} duration
+   * @param {Number} emissionsPerKwh
+   * @param {Number} wattage
+   */
+  function updateEnergyData() {
+    const durationInSeconds = convertToSeconds(durationEVal, durationEUnit);
+    const kwh = (wattage / 1000) * (durationInSeconds / 3600);
+    const energyEmissions = parseFloat((kwh * emissionsPerKwh) / 1000);
+
+    // we need this to make the shadow root active
+    getMasterContainer();
+
+    // updates the "Usage Duration"
+    const shadowRootTime = shadowRoot.getElementById('lca-viz-e-time-val');
+    shadowRootTime.textContent = durationEVal;
+    // console.log('shadowRootTime: ');
+    // console.log(shadowRootTime);
+    console.log('new usage duration: ', durationEVal);
+
+    // updates the carbon emissions
+    const readableEmissions = getReadableCO2e(energyEmissions);
+    const readableCO2e = readableEmissions.co2e_value;
+    const readableUnit = readableEmissions.unit;
+    const shadowRootEmissions = shadowRoot.getElementById('lcz-root-emissions');
+    shadowRootEmissions.textContent = readableCO2e + " " + readableUnit;
+    console.log('new emissions: ', readableCO2e + " " + readableUnit);
+    // console.log('shadowRootEmissions: ');
+    // console.log(shadowRootEmissions);
+
+    // update the co2e equivalencies
+    const milesDriven = formatToSignificantFigures(readableCO2e * 2.5);
+    const treesOffset = formatToSignificantFigures(readableCO2e * 0.048);
+    let {beefValue, beefUnit} = getBeefInfo(readableCO2e);
+    const shadowRootMiles = shadowRoot.getElementById('lcz-miles');
+    const shadowRootTrees = shadowRoot.getElementById('lcz-trees');
+    const shadowRootBeef = shadowRoot.getElementById('lcz-beef');
+    shadowRootMiles.textContent = milesDriven;
+    shadowRootTrees.textContent = treesOffset;
+    shadowRootBeef.textContent = beefValue + " " + beefUnit;
+    console.log('new miles: ', milesDriven);
+    console.log('new trees: ', treesOffset);
+    console.log('new beef: ', beefValue + " " + beefUnit);
+    // console.log('shadowRootMiles: ');
+    // console.log(shadowRootMiles);
+    // console.log('shadowRootTrees: ');
+    // console.log(shadowRootTrees);
+    // console.log('shadowRootBeef: ');
+    // console.log(shadowRootBeef);
+  }
+
+  /**
+   * Handles the value update for energy scenario
+   * @param {Number} emissionsPerKwh This will be used to calculate the new emissions.
+   * @param {Number} wattage This will be used to calculate the new emissions.
+   */
+  function updateValueEnergy(weightChange, index, newWeight = null) {
+    console.log("weightChange = " + weightChange);
+    console.log("index = " + index);
+    const inputNode = document.getElementById("lca-viz-input-" + index);
+    console.log(inputNode);
+    let currentWeight = parseInt(inputNode.value);
+    if (newWeight !== null) {
+      currentWeight = newWeight;
+    } else {
+      if (weightChange < 0 && currentWeight <= 1) {
+        return;
+      }
+      currentWeight += weightChange;
+    }
+
+    // TODO: update the carbon emissions
+    durationEVal = currentWeight;
+    updateEnergyData();
+
+    inputNode.value = currentWeight;
+  }
+
+  /**
+   * Returns the HTML for up and down button given the parameter.
+   */
+  function createUpDownBtn(index, unit, defaultValue, type) {
+    const upDownBtn = `
+          <div class="lca-viz-special-text-container-2 lca-viz-up-down-btn-master-${index} lca-viz-up-down-btn-master-${index}-${type}">
+            <div class="lca-viz-special-text-intext lca-viz-active-st lca-viz-param-fill">
+              <input class="lca-viz-parameter-text input-normal lca-viz-parameter-2 lca-viz-fnt-inherit" id="lca-viz-input-${index}" data-type="${type}" data-value-unit="${unit}" type="number" value="${defaultValue}">
+              <div class="lca-viz-up-down-btn-container-intext flex-column">
+                <div class="lca-viz-active lca-viz-up-down-btn lca-viz-up">
+                  <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M3.60595 1.24256C3.99375 0.781809 4.7032 0.781808 5.091 1.24256L8.00777 4.70806C8.53906 5.3393 8.09032 6.30353 7.26525 6.30353L1.4317 6.30353C0.606637 6.30353 0.157892 5.33931 0.689181 4.70807L3.60595 1.24256Z" fill="currentColor"/>
+                  </svg>
+                </div>
+                <div class="lca-viz-active lca-viz-up-down-btn lca-viz-down">
+                  <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M5.09107 5.74914C4.70327 6.20989 3.99382 6.20989 3.60602 5.74914L0.689251 2.28363C0.157962 1.65239 0.606707 0.688168 1.43177 0.688168L7.26532 0.688168C8.09039 0.688168 8.53913 1.65239 8.00784 2.28363L5.09107 5.74914Z" fill="currentColor"/>
+                  </svg>
+                </div>
+              </div>
+            </div>
+          </div>
+    `;
+    // ~~ DO NOT DELETE
+    // <div title="Click to display CO2 emissions" class="display-chart-btn-container lca-on">
+    //   <svg width="24" height="24" class="display-chart-btn eye-on" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+    //     <path d="M10.7429 5.09232C11.1494 5.03223 11.5686 5 12.0004 5C17.1054 5 20.4553 9.50484 21.5807 11.2868C21.7169 11.5025 21.785 11.6103 21.8231 11.7767C21.8518 11.9016 21.8517 12.0987 21.8231 12.2236C21.7849 12.3899 21.7164 12.4985 21.5792 12.7156C21.2793 13.1901 20.8222 13.8571 20.2165 14.5805M6.72432 6.71504C4.56225 8.1817 3.09445 10.2194 2.42111 11.2853C2.28428 11.5019 2.21587 11.6102 2.17774 11.7765C2.1491 11.9014 2.14909 12.0984 2.17771 12.2234C2.21583 12.3897 2.28393 12.4975 2.42013 12.7132C3.54554 14.4952 6.89541 19 12.0004 19C14.0588 19 15.8319 18.2676 17.2888 17.2766M3.00042 3L21.0004 21M9.8791 9.87868C9.3362 10.4216 9.00042 11.1716 9.00042 12C9.00042 13.6569 10.3436 15 12.0004 15C12.8288 15 13.5788 14.6642 14.1217 14.1213" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+    //   </svg>
+    // </div>
+    return upDownBtn;
   }
 
   async function handleFreightInput() {

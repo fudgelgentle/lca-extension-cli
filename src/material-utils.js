@@ -314,7 +314,7 @@ export function getMockData() {
 }
 
 /**
- *
+ * Returns an object containing the co2e_value, co2e_unit, and material_unit. co2e_value is the emissions factor per co2e_unit
  * @param {String} emissionsString Takes in the string in the following format: "<value> g CO2-eq per <material_unit>"
  * @returns {Object} An object containing the co2e_value, co2e_unit, and material_unit
  */
