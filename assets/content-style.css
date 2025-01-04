@@ -347,11 +347,11 @@
 }
 
 .lca-viz-param-toggle-on {
-  width: 0;
+  /* width: 0; */
   transition: width 0.5s ease;
 }
 .lca-viz-ratio-detail-text {
-  height: 0px;
+  /* height: 0px; */
   transition: height 0.5s ease;
 }
 

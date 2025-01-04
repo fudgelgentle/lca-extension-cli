@@ -702,9 +702,7 @@ async function init() {
    * ! Note: can ONLY call this method ONCE
    */
   function handleToggleSwitch() {
-    const toggleSwitches = document.querySelectorAll(
-      ".lca-viz-toggle-checkbox"
-    );
+    const toggleSwitches = document.querySelectorAll(".lca-viz-toggle-checkbox");
     const lcaVizMap = document.getElementById("lca-viz-map");
     const originalWidth = lcaVizMap.scrollWidth;
     console.log("originalWidth = " + originalWidth);
@@ -720,15 +718,9 @@ async function init() {
       toggleSwitch.addEventListener("change", () => {
         console.log("detected toggle switch clicking");
         const uniqueId = document.getElementById("lca-viz-r-section-" + index);
-        const textDetails = uniqueId.querySelector(
-          ".lca-viz-ratio-detail-text"
-        );
-        const paramToggleOn = uniqueId.querySelector(
-          ".lca-viz-param-toggle-on"
-        );
-        const paramToggleOff = uniqueId.querySelector(
-          ".lca-viz-param-toggle-off"
-        );
+        const textDetails = uniqueId.querySelector(".lca-viz-ratio-detail-text");
+        const paramToggleOn = uniqueId.querySelector(".lca-viz-param-toggle-on");
+        const paramToggleOff = uniqueId.querySelector(".lca-viz-param-toggle-off");
         // const originalWidth = lcaVizMap.scrollWidth;
         const ratioTextList = uniqueId.querySelectorAll(".control-section");
         ratioTextList.forEach((div) => {
@@ -737,10 +729,60 @@ async function init() {
           }
         });
 
+        // if (toggleSwitch.checked) {
+        //   const ratioContainer = toggleSwitch.closest(".lca-viz-ratio-container");
+        //   const inputList = ratioContainer.querySelectorAll(".input-ratio");
+        //   inputList.forEach((input) => {
+        //     const newWeight = input.dataset.ratioValue;
+        //     const index = parseInt(input.id.match(/\d+$/)[0]);
+        //     updateValueRatio(0, index, newWeight);
+        //   });
+        //   lcaVizMap.style.width = `${originalWidth}px`;
+        //   setTimeout(() => {
+        //     show(textDetails);
+        //     hide(paramToggleOff);
+        //     show(paramToggleOn);
+        //     const newWidth = paramToggleOn.scrollWidth + 100;
+        //     lcaVizMap.style.width = `${newWidth}px`;
+        //   }, 0);
+        //   paramToggleOn.style.width = "auto";
+        //   textDetails.style.height = "auto";
+        // } else {
+        //   const ratioContainer = toggleSwitch.closest(".lca-viz-ratio-container");
+        //   const inputList = ratioContainer.querySelectorAll(".input-normal");
+        //   inputList.forEach((input) => {
+        //     const newWeight = 1;
+        //     const index = parseInt(input.id.match(/\d+$/)[0]);
+        //     updateValue(0, index, newWeight);
+        //   });
+
+        //   setTimeout(() => {
+        //     hide(textDetails);
+        //     hide(paramToggleOn);
+        //     show(paramToggleOff);
+        //     lcaVizMap.style.width = `${originalWidth}px`;
+        //   }, 0);
+        // }
         if (toggleSwitch.checked) {
-          const ratioContainer = toggleSwitch.closest(
-            ".lca-viz-ratio-container"
-          );
+          const ratioContainer = toggleSwitch.closest(".lca-viz-ratio-container");
+          const inputList = ratioContainer.querySelectorAll(".input-normal");
+          inputList.forEach((input) => {
+            const newWeight = 1;
+            const index = parseInt(input.id.match(/\d+$/)[0]);
+            updateValue(0, index, newWeight);
+          });
+          lcaVizMap.style.width = `${originalWidth}px`;
+          setTimeout(() => {
+            hide(textDetails);
+            hide(paramToggleOn);
+            show(paramToggleOff);
+            const newWidth = paramToggleOff.scrollWidth;
+            lcaVizMap.style.width = `${newWidth}px`;
+          }, 0);
+          // paramToggleOn.style.width = "auto";
+          // textDetails.style.height = "auto";
+        } else {
+          const ratioContainer = toggleSwitch.closest(".lca-viz-ratio-container");
           const inputList = ratioContainer.querySelectorAll(".input-ratio");
           inputList.forEach((input) => {
             const newWeight = input.dataset.ratioValue;
@@ -755,26 +797,11 @@ async function init() {
             const newWidth = paramToggleOn.scrollWidth + 100;
             lcaVizMap.style.width = `${newWidth}px`;
           }, 0);
-          paramToggleOn.style.width = "auto";
-          textDetails.style.height = "auto";
-        } else {
-          const ratioContainer = toggleSwitch.closest(
-            ".lca-viz-ratio-container"
-          );
-          const inputList = ratioContainer.querySelectorAll(".input-normal");
-          inputList.forEach((input) => {
-            const newWeight = 1;
-            const index = parseInt(input.id.match(/\d+$/)[0]);
-            updateValue(0, index, newWeight);
-          });
-
-          setTimeout(() => {
-            hide(textDetails);
-            hide(paramToggleOn);
-            show(paramToggleOff);
-            lcaVizMap.style.width = `${originalWidth}px`;
-          }, 0);
+          // paramToggleOn.style.width = "auto";
+          // textDetails.style.height = "auto";
         }
+        paramToggleOn.style.width = "auto";
+        textDetails.style.height = "auto";
       });
     });
   }
@@ -1244,18 +1271,6 @@ async function init() {
       LCAActionBtn.classList.remove("lca-viz-green-hover");
       LCAActionBtnContainer.classList.add("lca-viz-non-interactable"); // Make non-clickable
     }
-    // ! old code
-    // else if (state === "analyzing") {
-    //   floatingLCAImg.src = loading_icon_2;
-    //   LCAActionBtnText.textContent = "Analyzing...";
-    //   LCAActionBtnText.classList.remove("lca-viz-hidden");
-    //   LCAActionBtn.classList.remove("lca-viz-interactable");
-    // } else if (state === "error") {
-    //   floatingLCAImg.src = close_icon_red;
-    //   LCAActionBtnText.textContent = "No raw materials detected.";
-    //   LCAActionBtnText.classList.remove("lca-viz-hidden");
-    //   LCAActionBtn.classList.remove("lca-viz-interactable");
-    // }
   }
 
   /**

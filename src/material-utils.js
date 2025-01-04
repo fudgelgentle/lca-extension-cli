@@ -23,67 +23,67 @@ export function createRatioSection(ratioList, textSource, index) {
 
   const ratioSection = `
     <div id="lca-viz-r-section-${index}" class="lca-viz-ratio-container br-4 pd-16">
-            <div class="lca-viz-toggle flex-center cg-8">
-              <span class="fz-12">Custom Ratio</span>
-              <div class="lca-viz-toggle-container">
-                <input type="checkbox" class="lca-viz-toggle-checkbox" id="lca-viz-toggle-switch-${index}">
-                <label for="lca-viz-toggle-switch-${index}" class="lca-viz-toggle-label"></label>
-              </div>
-            </div>
-            <div class="lca-viz-ratio-detail-text hidden">
-              <div class="flex-center lca-viz-space-between">
-                <div class="lca-viz-converted-ratio lca-viz-space-between br-4 fz-16 pd-8 flex-center cg-8 bg-eef2f0">
-                  <span>Calculated mass ratio: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
-                  <div class="lca-viz-ratio-values flex-center cg-8">
-                    ${nRatioList.map((element) =>
-                      `<span class="lca-viz-ratio-text br-4 bg-d2ead7">${element.ratio_value}</span>
-                      ${element.index < nRatioList.length - 1 ? `<span>:</span>` : ``}`
-                    ).join('')}
-                  </div>
-                </div>
-                <div class="lca-viz-empty-space"></div>
-              </div>
-              <p class="lca-viz-text-source fz-12"><b>Text source:</b> <i>“${textSource}”</i></p>
-            </div>
-            <!-- & param for toggle ratio off -->
-            <div class="lca-viz-param-toggle-off">
-              <br>
+      <div class="lca-viz-toggle flex-center cg-8">
+        <span class="fz-12">Freeform Ratio</span>
+        <div class="lca-viz-toggle-container">
+          <input type="checkbox" class="lca-viz-toggle-checkbox" id="lca-viz-toggle-switch-${index}">
+          <label for="lca-viz-toggle-switch-${index}" class="lca-viz-toggle-label"></label>
+        </div>
+      </div>
+      <div class="lca-viz-ratio-detail-text">
+        <div class="flex-center lca-viz-space-between">
+          <div class="lca-viz-converted-ratio lca-viz-space-between br-4 fz-16 pd-8 flex-center cg-8 bg-eef2f0">
+            <span>Calculated mass ratio: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
+            <div class="lca-viz-ratio-values flex-center cg-8">
               ${nRatioList.map((element) =>
-                getParam(element.name, element.index, 'g', 1, undefined, undefined, undefined)
+                `<span class="lca-viz-ratio-text br-4 bg-d2ead7">${element.ratio_value}</span>
+                ${element.index < nRatioList.length - 1 ? `<span>:</span>` : ``}`
               ).join('')}
             </div>
-
-            <!-- & param for toggle ratio on -->
-            <div class="lca-viz-param-toggle-on lca-viz-space-between hidden flex-center bg-eef2f0 pd-16 br-8 cg-8 mt-12">
-            ${nRatioList.map((element, i) =>
-              `<div class="lca-viz-ratio-control fz-16 bg-d2ead7 br-8 pd-16">
-                <div class="control-section">${element.name}</div>
-                <div class="flex-center cg-4 lcz-mt-8 lca-viz-justify-center">
-                  <!-- ? up-down-btn -->
-                  <div class="lca-viz-special-text-container-2">
-                    <div class="lca-viz-special-text-2 lca-viz-active-st">
-                      <div class="lca-viz-up-down-btn-container">
-                        <div class="lca-viz-active lca-viz-up-down-btn lca-viz-down">
-                          <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M5.09107 5.74914C4.70327 6.20989 3.99382 6.20989 3.60602 5.74914L0.689251 2.28363C0.157962 1.65239 0.606707 0.688168 1.43177 0.688168L7.26532 0.688168C8.09039 0.688168 8.53913 1.65239 8.00784 2.28363L5.09107 5.74914Z" fill="currentColor"/>
-                          </svg>
-                        </div>
-                        <input class="lca-viz-parameter-text input-ratio" id="input-ratio-no-${element.index}" data-ratio-value="${element.ratio_value}" type="number" value="${element.ratio_value}">
-                        <div class="lca-viz-active lca-viz-up-down-btn lca-viz-up">
-                          <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M3.60595 1.24256C3.99375 0.781809 4.7032 0.781808 5.091 1.24256L8.00777 4.70806C8.53906 5.3393 8.09032 6.30353 7.26525 6.30353L1.4317 6.30353C0.606637 6.30353 0.157892 5.33931 0.689181 4.70807L3.60595 1.24256Z" fill="currentColor"/>
-                          </svg>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                  <!-- ? ^^^^^^^ -->
-                  <span>g</span>
-                </div>
-              </div>${i < nRatioList.length - 1 ? `<span>:</span>` : ``}`
-            ).join('')}
-            </div>
           </div>
+          <div class="lca-viz-empty-space"></div>
+        </div>
+        <p class="lca-viz-text-source fz-12"><b>Text source:</b> <i>“${textSource}”</i></p>
+      </div>
+      <!-- & param for toggle ratio off -->
+      <div class="lca-viz-param-toggle-off hidden">
+        <br>
+        ${nRatioList.map((element) =>
+          getParam(element.name, element.index, 'g', 1, undefined, undefined, undefined)
+        ).join('')}
+      </div>
+
+      <!-- & param for toggle ratio on -->
+      <div class="lca-viz-param-toggle-on lca-viz-space-between flex-center bg-eef2f0 pd-16 br-8 cg-8 mt-12">
+      ${nRatioList.map((element, i) =>
+        `<div class="lca-viz-ratio-control fz-16 bg-d2ead7 br-8 pd-16">
+          <div class="control-section">${element.name}</div>
+          <div class="flex-center cg-4 lcz-mt-8 lca-viz-justify-center">
+            <!-- ? up-down-btn -->
+            <div class="lca-viz-special-text-container-2">
+              <div class="lca-viz-special-text-2 lca-viz-active-st">
+                <div class="lca-viz-up-down-btn-container">
+                  <div class="lca-viz-active lca-viz-up-down-btn lca-viz-down">
+                    <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M5.09107 5.74914C4.70327 6.20989 3.99382 6.20989 3.60602 5.74914L0.689251 2.28363C0.157962 1.65239 0.606707 0.688168 1.43177 0.688168L7.26532 0.688168C8.09039 0.688168 8.53913 1.65239 8.00784 2.28363L5.09107 5.74914Z" fill="currentColor"/>
+                    </svg>
+                  </div>
+                  <input class="lca-viz-parameter-text input-ratio" id="input-ratio-no-${element.index}" data-ratio-value="${element.ratio_value}" type="number" value="${element.ratio_value}">
+                  <div class="lca-viz-active lca-viz-up-down-btn lca-viz-up">
+                    <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M3.60595 1.24256C3.99375 0.781809 4.7032 0.781808 5.091 1.24256L8.00777 4.70806C8.53906 5.3393 8.09032 6.30353 7.26525 6.30353L1.4317 6.30353C0.606637 6.30353 0.157892 5.33931 0.689181 4.70807L3.60595 1.24256Z" fill="currentColor"/>
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <!-- ? ^^^^^^^ -->
+            <span>g</span>
+          </div>
+        </div>${i < nRatioList.length - 1 ? `<span>:</span>` : ``}`
+      ).join('')}
+      </div>
+    </div>
   `;
   return ratioSection;
 }

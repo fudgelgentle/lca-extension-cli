@@ -737,7 +737,7 @@ function getLCABanner() {
     <section class="lca-banner flex-stretch">
       <div class="flex-center title-container br-8 pd-12">
         <img src="${lca_48}" alt="LCA Image" class="icon-20">
-        <p class="title-text fz-20 eco-bold"><b>Living Sustainability</b></p>
+        <p class="title-text fz-20 eco-bold lca-viz-text-align-center"><b>Living Sustainability</b></p>
       </div>
       <div class="flex-center lca-viz-close-container br-8 pd-16">
         <svg class="icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
