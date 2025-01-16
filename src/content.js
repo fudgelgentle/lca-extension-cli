@@ -888,106 +888,9 @@ async function init() {
   }
 
   /**
-   * Handles the behavior for highlighting raw material data.
-   */
-  // function handleRawMaterialHighlight(materialData, parentNode, range, selection) {
-  //   console.log("%j", materialData);
-  //   const materialList = materialData;
-
-  //   const fullText = parentNode.textContent;
-  //   const startOffset = range.startOffset;
-  //   const endOffset = range.endOffset;
-  //   const startContainerText = range.startContainer.textContent;
-  //   const endContainerText = range.endContainer.textContent;
-
-  //   // Extract the segments of the text
-  //   const beforeText = fullText.slice(0, fullText.indexOf(startContainerText) + startOffset);
-  //   const highlightedText = selection.toString();
-  //   const afterText = fullText.slice(fullText.indexOf(endContainerText) + endOffset);
-
-  //   const div = document.createElement("div");
-  //   div.classList.add("lca-viz-inline");
-
-  //   let modifiedText = `<div class="lca-viz-mark lca-viz-inline">${highlightedText}</div>`;
-  //   const { rawMaterialNames, processesNames } = getMaterialNames(materialList);
-  //   rawMaterialNames.forEach((name) => {
-  //     const escapedName = escapeRegExp(name);
-  //     const regex = new RegExp(`\\b${escapedName}\\b`, "gi");
-  //     modifiedText = modifiedText.replace(regex,`<span class="lca-viz-param-bold"><b>${name}</b></span>`);
-  //   });
-
-    // ! Don't delete this. This is for bolding the process name + adding the up-down-button in the sentence.
-    // processesNames.forEach((process) => {
-    //   const escapedName = escapeRegExp(process.name);
-    //   const regexName = new RegExp(`\\b${escapedName}\\b`, "gi");
-    //   modifiedText = modifiedText.replace(regexName,`<span class="lca-viz-param-bold"><b>${process.name}</b></span>`);
-
-    //   const escapedPower = escapeRegExp(String(process.power_original));
-    //   const regexPower = new RegExp(`\\b${escapedPower}\\b`, "gi");
-
-    //   modifiedText = modifiedText.replace(regexPower,
-    //     `
-    //       <span class="lca-viz-origin-number lca-viz-hidden">${process.power_original}</span>
-    //       <div class="lca-viz-processes-intext-${process.index} lca-viz-inline" data-value="${process.power_original}">
-    //         ${createUpDownBtn(process.index, process.power_original_unit, process.power_original, "power")}
-    //       </div>
-    //     `
-    //   );
-      // <span class="lca-viz-original-time-text">${process.power_original}</span>
-    //   const escapedTime = escapeRegExp(String(process.time_original));
-    //   const regexTime = new RegExp(`\\b${escapedTime}\\b`, "gi");
-    //   modifiedText = modifiedText.replace(
-    //     regexTime,
-    //     `
-    //       <span class="lca-viz-origin-number lca-viz-hidden">${process.time_original}</span>
-    //       <div class="lca-viz-processes-intext-${process.index} lca-viz-inline" data-value="${process.time_original}">
-    //         ${createUpDownBtn(process.index, process.time_original_unit, process.time_original, "time")}
-    //       </div>
-    //     `
-    //   );
-    // });
-
-  //   modifiedText =
-  //     modifiedText +
-  //     `
-  //     <div class="lca-viz-inline" id="lca-viz-end">
-  //       <img src="${off_lca_btn}" alt="Turn off the LCA visualizer" class="icon-10 off-lca-btn lca-viz-hidden">
-  //     </div>
-  //   `;
-  //   // const markElement = `<mark class="lca-viz-mark">${modifiedText}</mark>`;
-  //   div.innerHTML = modifiedText;
-
-  //   currentHighlightedNode = div;
-  //   console.log("setting currentHighlightedNode: ", div);
-  //   const newClasses = ["lca-viz-highlight-container"];
-  //   const newParentNode = replaceTagNameAndKeepStyles(parentNode, "div", newClasses);
-  //   parentNode.parentNode.replaceChild(newParentNode, parentNode);
-  //   parentNode = newParentNode;
-  //   parentNode.innerHTML = "";
-  //   if (beforeText) {
-  //     parentNode.appendChild(document.createTextNode(beforeText));
-  //   }
-  //   parentNode.appendChild(div);
-  //   if (afterText) {
-  //     parentNode.appendChild(document.createTextNode(afterText));
-  //   }
-  //   // If the user clicks on the red 'off-lca-btn', the highlighted text will be removed entirely.
-  //   const offLcaBtn = document.querySelector(".off-lca-btn");
-  //   offLcaBtn.addEventListener("click", () => {
-  //     currentHighlightedNode.removeEventListener("click", redisplayChart);
-  //     resetHighlight(currentHighlightedNode);
-  //     currentHighlightedNode = null;
-  //   });
-  //   hideLCAActionBtn();
-  //   initializeChart(materialData);
-  // }
-
-  /**
    * Performs the action of adding a green highlight and a green bold text onto the highlighted sentence
-   * @param {Boolean} addOffBtn Flag to determine if the 'off' button should be added to the end of the
-   *                            highlighted sentence or not.
    */
-  function addHighlightBold(nameList, parentNode, range, selection) {
+  function addHighlightBold(nameList, parentNode, range, selection, isEnergy = false) {
     const fullText = parentNode.textContent;
     const startOffset = range.startOffset;
     const endOffset = range.endOffset;
@@ -1007,7 +910,11 @@ async function init() {
     nameList.forEach((name) => {
       const escapedName = escapeRegExp(name);
       const regex = new RegExp(`\\b${escapedName}\\b`, "gi");
-      modifiedText = modifiedText.replace(regex,`<span class="lca-viz-param-bold"><b>${name}</b></span>`);
+      if (isEnergy) {
+        modifiedText = modifiedText.replace(regex,`<span class="lca-viz-param-bold lcz-editable-param"><b>${name}</b></span>`);
+      } else {
+        modifiedText = modifiedText.replace(regex,`<span class="lca-viz-param-bold"><b>${name}</b></span>`);
+      }
     })
 
     modifiedText = modifiedText +
@@ -1082,7 +989,7 @@ async function init() {
       eTimeString = processData.time_original;
       eTimeUnitString = processData.time_original_unit;
     }
-    addHighlightBold(nameList, parentNode, range, selection);
+    addHighlightBold(nameList, parentNode, range, selection, true);
 
     autoFillInput(processData, inputMapping);
     // Autofills duration
@@ -2063,9 +1970,13 @@ function handleQuestionForm() {
    * @param {Number} wattage This will be used to calculate the new emissions.
    */
   function handleIntextEnergy(inputTime, inputTimeUnit) {
+    console.log('handleIntextEnergyCalled');
     durationEUnit = inputTimeUnit;
-    const highlightedTextNode = document.querySelector('.lca-viz-highlight-container').children[0].querySelectorAll(".lca-viz-param-bold");
+    // const highlightedTextNode = document.querySelector('.lca-viz-highlight-container').children[0].querySelectorAll(".lca-viz-param-bold");
+    const highlightedTextNode = document.querySelectorAll('.lcz-editable-param');
     let editNode;
+    console.log('highlightedTextNode = ');
+    console.log(highlightedTextNode);
     highlightedTextNode.forEach((node) => {
       console.log('node.textContent:', node.textContent);
       console.log('eTimeString + " " + eTimeUnitString:', eTimeString + " " + eTimeUnitString);

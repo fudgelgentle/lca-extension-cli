@@ -397,15 +397,20 @@ export function getCloudEmissionsResult(data, scenario) {
       <section class="lca-viz-cloud-container br-8">
         <div class="lca-viz-cloud-results-info-container pd-16 mt-12 hidden-a">
           <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
-            <p class="fz-16 mt-0 mb-0"><b>${
-              scenario === "cloud"
-                ? "Your cloud instance's estimated carbon emissions:"
-                : "Estimated Carbon Footprint of Use "
-            }</b></p>
+            <p class="fz-16 mt-0 mb-0"><b>Estimated Carbon Footprint of Use</b></p>
             <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
               <div class="left">
-                <h3 class="fz-12 lca-lexend">How are cloud instance emissions calculated?</h3>
-                <p class="fz-12 lca-lexend">We are using Climatiq's Cloud Computing Services, which provides emissions metrics for services like Amazon Web Services (AWS), Microsoft Azure, and Google Cloud Platform (GCP).
+                ${(scenario === "cloud") ?
+                  `<h3 class="fz-12 lca-lexend">How we estimate cloud computing emissions</h3>`
+                  :
+                  `<h3 class="fz-12 lca-lexend">How we estimate the emissions of use</h3>`
+                }
+
+                ${(scenario === "cloud") ?
+                  `<p class="fz-12 lca-lexend">The total carbon footprint of cloud instance usage consists of both operational and embodied emissions. Operational emissions are calculated by multiplying your instance usage by the provider's energy conversion factors and Power Usage Effectiveness (PUE), then applying regional power grid emissions factors. We combine this with embodied emissions, which account for the manufacturing impact of datacenter servers allocated to your compute usage.  This estimation uses Microsoft Sustainability Calculator, Cloud Carbon Footprint, and Climatiq.`
+                  :
+                  `<p class="fz-12 lca-lexend">The carbon footprint of use is determined based on the device or process's power consumption, usage duration, and the geographical location of use. If no location is specified, the default assumption is the United States.`
+                }
                 <i></i>
               </div>
             </div>
@@ -469,7 +474,7 @@ export function getCloudEmissionsResult(data, scenario) {
                   <span id="lca-viz-cloud-instance-value" class="fz-12">${instance}</span>
                 </div>
               </p>
-              <p class="fz-16 mb-2"><b>Usage Duration:</b> <br>
+              <p class="fz-16 mb-2"><b>Usage Rate:</b> <br>
                 <span class="fz-12">${duration} hours per day</span>
               </p>
             `
@@ -545,11 +550,12 @@ export function getBeefInfo(emissions) {
 async function getCloudData() {
   const region = formatRegionNames(regionText);
   const instance = cloudSizeText.toLowerCase();
-  const duration = parseInt(durationText);
+  // multiply by 30 because we want the monthly usage (30 days)
+  const duration = parseInt(durationText) * 30;
   const data = {
     region: region,
     instance: instance,
-    duration: parseInt(durationText),
+    duration: duration,
     duration_unit: "h",
   };
   if (region && instance && duration) {
@@ -2112,7 +2118,6 @@ async function getFedexTransportMode(shippingType, fromValue, toValue) {
   } else {
     // If it takes longer than this amount of hours by road, then assume the shipping type is air
     let hoursThreshold;
-
     if (
       shippingType === "fedex sameday" ||
       shippingType === "fedex priority overnight" ||

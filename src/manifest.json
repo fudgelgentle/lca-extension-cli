@@ -8,7 +8,7 @@
     "manifest_version": 3,
     "default_locale": "en",
     "minimum_chrome_version": "88",
-    "permissions": ["scripting", "tabs", "activeTab", "storage", "webRequest"],
+    "permissions": ["activeTab", "storage"],
     "icons": {
         "128": "assets/img/lca-128.png"
     },
