@@ -68,7 +68,7 @@ export function createRatioSection(ratioList, textSource, index) {
                       <path d="M5.09107 5.74914C4.70327 6.20989 3.99382 6.20989 3.60602 5.74914L0.689251 2.28363C0.157962 1.65239 0.606707 0.688168 1.43177 0.688168L7.26532 0.688168C8.09039 0.688168 8.53913 1.65239 8.00784 2.28363L5.09107 5.74914Z" fill="currentColor"/>
                     </svg>
                   </div>
-                  <input class="lca-viz-parameter-text input-ratio" id="input-ratio-no-${element.index}" data-ratio-value="${element.ratio_value}" type="number" value="${element.ratio_value}">
+                  <input class="lca-viz-parameter-text input-ratio" id="input-ratio-no-${element.index}" data-ratio-value="${element.ratio_value}" type="number" step="any" value="${element.ratio_value}">
                   <div class="lca-viz-active lca-viz-up-down-btn lca-viz-up">
                     <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
                       <path d="M3.60595 1.24256C3.99375 0.781809 4.7032 0.781808 5.091 1.24256L8.00777 4.70806C8.53906 5.3393 8.09032 6.30353 7.26525 6.30353L1.4317 6.30353C0.606637 6.30353 0.157892 5.33931 0.689181 4.70807L3.60595 1.24256Z" fill="currentColor"/>

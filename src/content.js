@@ -258,31 +258,9 @@ async function init() {
     });
   }
 
-  function activeUpDownBtn() {
-    const upDownBtn = document.querySelectorAll(".lca-viz-up-down-btn");
-    const parameterText = document.querySelectorAll(".lca-viz-special-text-2");
-
-    upDownBtn.forEach((btn) => {
-      if (btn.classList.contains("lca-viz-active")) {
-        replaceClass(btn, "lca-viz-active", "lca-viz-inactive");
-      } else {
-        replaceClass(btn, "lca-viz-inactive", "lca-viz-active");
-      }
-    });
-    parameterText.forEach((text) => {
-      if (text.classList.contains("lca-viz-active-st")) {
-        replaceClass(text, "lca-viz-active-st", "lca-viz-inactive-st");
-      } else {
-        replaceClass(text, "lca-viz-inactive-st", "lca-viz-active-st");
-      }
-    });
-  }
-
   function handleUpDownBtnBehavior() {
     // ! case: ratio
-    const toggleOnContainers = document.querySelectorAll(
-      ".lca-viz-param-toggle-on"
-    );
+    const toggleOnContainers = document.querySelectorAll(".lca-viz-param-toggle-on");
     if (toggleOnContainers) {
       toggleOnContainers.forEach((container) => {
         const ratioUpBtnList = container.querySelectorAll(".lca-viz-up");
@@ -304,7 +282,7 @@ async function init() {
         inputNodeList.forEach((input) => {
           input.addEventListener("input", () => {
             const newWeight = parseFloat(input.value);
-            if (newWeight >= 1) {
+            if (newWeight > 0) {
               const index = parseInt(input.id.match(/\d+$/)[0]);
               updateValueRatio(0, index, newWeight);
             }
@@ -613,12 +591,8 @@ async function init() {
   function updateValueRatio(weightChange, index, newWeight = null) {
     console.log("index = " + index);
     const inputNode = document.getElementById("input-ratio-no-" + index);
-    const closestToggleContainer = inputNode.closest(
-      ".lca-viz-param-toggle-on"
-    );
-    const inputNodetoggleOff = document.getElementById(
-      "lca-viz-input-" + index
-    );
+    const closestToggleContainer = inputNode.closest(".lca-viz-param-toggle-on");
+    const inputNodetoggleOff = document.getElementById("lca-viz-input-" + index);
     let currentWeight = parseInt(inputNode.value);
 
     if (newWeight !== null) {
