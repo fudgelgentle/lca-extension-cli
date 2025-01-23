@@ -1970,7 +1970,6 @@ function handleQuestionForm() {
    * @param {Number} wattage This will be used to calculate the new emissions.
    */
   function handleIntextEnergy(inputTime, inputTimeUnit) {
-    console.log('handleIntextEnergyCalled');
     durationEUnit = inputTimeUnit;
     // const highlightedTextNode = document.querySelector('.lca-viz-highlight-container').children[0].querySelectorAll(".lca-viz-param-bold");
     const highlightedTextNode = document.querySelectorAll('.lcz-editable-param');
@@ -2006,6 +2005,14 @@ function handleQuestionForm() {
     ratioDownBtn.addEventListener("click", () => {
       updateValueEnergy(-1, index);
     });
+    const input = selector.querySelector('.lca-viz-parameter-text');
+    input.addEventListener("input", () => {
+      const newWeight = parseFloat(input.value);
+      if (newWeight >= 1) {
+        const index = parseInt(input.id.match(/\d+$/)[0]);
+        updateValueEnergy(0, index, newWeight);
+      }
+    });
   }
 
   /**
@@ -2017,6 +2024,7 @@ function handleQuestionForm() {
   function updateEnergyData() {
     const durationInSeconds = convertToSeconds(durationEVal, durationEUnit);
     const kwh = (wattage / 1000) * (durationInSeconds / 3600);
+    // emissions of the energy in kg CO2e
     const energyEmissions = parseFloat((kwh * emissionsPerKwh) / 1000);
 
     // we need this to make the shadow root active
@@ -2040,9 +2048,9 @@ function handleQuestionForm() {
     // console.log(shadowRootEmissions);
 
     // update the co2e equivalencies
-    const milesDriven = formatToSignificantFigures(readableCO2e * 2.5);
-    const treesOffset = formatToSignificantFigures(readableCO2e * 0.048);
-    let {beefValue, beefUnit} = getBeefInfo(readableCO2e);
+    const milesDriven = formatToSignificantFigures(energyEmissions * 2.5);
+    const treesOffset = formatToSignificantFigures(energyEmissions * 0.048);
+    let {beefValue, beefUnit} = getBeefInfo(energyEmissions);
     const shadowRootMiles = shadowRoot.getElementById('lcz-miles');
     const shadowRootTrees = shadowRoot.getElementById('lcz-trees');
     const shadowRootBeef = shadowRoot.getElementById('lcz-beef');
@@ -2052,12 +2060,6 @@ function handleQuestionForm() {
     console.log('new miles: ', milesDriven);
     console.log('new trees: ', treesOffset);
     console.log('new beef: ', beefValue + " " + beefUnit);
-    // console.log('shadowRootMiles: ');
-    // console.log(shadowRootMiles);
-    // console.log('shadowRootTrees: ');
-    // console.log(shadowRootTrees);
-    // console.log('shadowRootBeef: ');
-    // console.log(shadowRootBeef);
   }
 
   /**
@@ -2083,7 +2085,6 @@ function handleQuestionForm() {
     // TODO: update the carbon emissions
     durationEVal = currentWeight;
     updateEnergyData();
-
     inputNode.value = currentWeight;
   }
 
