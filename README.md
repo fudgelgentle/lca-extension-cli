@@ -1,6 +1,8 @@
-# lca-extension-cli
+# Living Sustainability
 
-The Life Cycle Assessment Visualization creates a carbon footprint visualization based on relevant text information of mobile devices.
+Living Sustainability is an AI-based Chrome Extension that transforms complex environmental data into interactive visualizations, making it easier for users to understand carbon emissions and make sustainable choices.
+
+![Poster of the extension](assets/img/living_poster.png)
 
 # Running the extension locally:
 1. Clone the repository
