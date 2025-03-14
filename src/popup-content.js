@@ -28,7 +28,9 @@ const truck_icon = chrome.runtime.getURL("../assets/img/truck-icon.png");
 const sync_icon = chrome.runtime.getURL("../assets/img/sync-icon.png");
 const question_icon = chrome.runtime.getURL("../assets/img/question-icon.png");
 
+// masterContainer is the main container that contains the popup content.
 export let masterContainer = null;
+// floatingMenu is the container that contains the floating menu.
 export let floatingMenu = null;
 export let shadowRoot = null;
 
@@ -59,6 +61,7 @@ if (isDomainValid(popupDomains)) {
   }
 }
 
+// Initializes the popup content.
 function initialize() {
   return new Promise((resolve) => {
     setupPopupShadowDOM();
@@ -67,7 +70,6 @@ function initialize() {
       const isAutoDetectEnabled = storedStates.autodetect || false;
       await loadCSS(chrome.runtime.getURL("../assets/popup-content.css"));
       if (isAutoDetectEnabled) {
-        console.log("auto detect is enabled!");
         trackFreight();
         await trackPhone();
         trackCloud();
@@ -77,14 +79,10 @@ function initialize() {
   });
 }
 
-/**
- * This function is used to invoke popup-content.js's initialization.
- */
+// Invokes popup-content.js's initialization.
 export function getMasterContainer() {
   if (!window.popupInjected) {
     window.popupInjected = true;
-    console.log("popup not injected yet. initializing....");
-    // initialize();
     return initialize().then(() => {
       return masterContainer;
     });
@@ -93,9 +91,8 @@ export function getMasterContainer() {
   }
 }
 
+// Sets up the shadow DOM for the popup content.
 export function setupPopupShadowDOM() {
-  // Setting up the master container and attaching the css
-  console.log("setting up shadow DOM.................");
   masterContainer = document.createElement("div");
   masterContainer.setAttribute("role", "main");
   masterContainer.setAttribute("tabindex", "0");
@@ -108,14 +105,13 @@ export function setupPopupShadowDOM() {
   document.body.append(placeholder);
   shadowRoot = placeholder.attachShadow({ mode: "open" });
   shadowRoot.appendChild(masterContainer);
-  console.log("masterContainer in popup: ");
-  console.log(masterContainer);
 }
 
+// Tracks the phone model and inject the popup content.
 async function trackPhone() {
-  // Example usage
   const pageTitle = document.title;
   const phoneModel = detectPhoneModel(pageTitle);
+  // This is the list of domains that we will check for phone model detection.
   const allowedDomains = [
     "amazon.com",
     "bestbuy.com",
@@ -141,7 +137,6 @@ async function trackPhone() {
 
 // Checks if the calculate button is ready to be used
 function checkCalculateButtonReady() {
-  console.log("checkCalculateButtonReady called");
   if (
     checkInputTextValid() &&
     isYesNoButtonClicked &&
@@ -157,6 +152,7 @@ function checkCalculateButtonReady() {
   }
 }
 
+// Checks if the input text is valid
 function checkInputTextValid() {
   return (
     regionText !== "" &&
@@ -166,13 +162,13 @@ function checkInputTextValid() {
   );
 }
 
+// Checks if the number input is filled
 function checkIsNumberInputFilled() {
   const numberInputContainer = shadowRoot.querySelector(
     ".lca-viz-number-input-container"
   );
   const numberInput = shadowRoot.getElementById("lca-viz-number-input");
   if (numberInput.value && numberInput.value > 0) {
-    console.log("numberInput has a value: ", numberInput.value);
     return true;
   } else if (numberInputContainer.classList.contains("hidden")) {
     return true;
@@ -180,6 +176,7 @@ function checkIsNumberInputFilled() {
   return false;
 }
 
+// Starts the cloud popup function
 async function startCloudPopup() {
   if (regionText !== "" && cloudSizeText !== "") {
     await handleCloudPopup();
@@ -191,27 +188,22 @@ async function startCloudPopup() {
       regionSpan.textContent = regionText;
       instanceSpan.textContent = cloudSizeText;
       checkCalculateButtonReady();
-    } else {
-      console.log("region and instance span not found..");
     }
   }
 }
 
+// Checks if the cloud URL is valid
 function checkCloudUrl(callback) {
   const currentHash = window.location.hash;
   if (
     currentHash === "#create/Microsoft.VirtualMachine-ARM" ||
     currentHash === "#create/Microsoft.VirtualMachine"
   ) {
-    console.log("on create virtual machine page");
-    console.log("currentHash: ", currentHash);
     callback();
-  } else {
-    console.log("not on create virtual machine page");
-    console.log("currentHash: ", currentHash);
   }
 }
 
+// Tracks the cloud URL (Microsoft Azureand injects the popup content.
 function trackCloud() {
   // Check the URL on initial load and on hash changes
   const allowedDomains = ["azure.com"];
@@ -223,15 +215,13 @@ function trackCloud() {
         window.location.href ===
         "https://portal.azure.com/#browse/Microsoft.Compute%2FVirtualMachines"
       ) {
-        console.log("navigation change to virtual machine page detected");
         startObservingElements();
-      } else {
-        console.log("no navigation change to virtual machine detected");
       }
     });
   }
 }
 
+// Starts observing the elements for the cloud popup. If the region or size input is found, it will start the cloud popup.
 async function startObservingElements() {
   observeElementTextAndClassContent("Region", ["azc-form-label"], (element) => {
     setTimeout(() => {
@@ -254,6 +244,7 @@ async function startObservingElements() {
     }, 1000);
   });
 
+  // Observes the size input and starts the cloud popup if the size input is found.
   observeElementTextAndClassContent("Size", ["azc-form-label"], (element) => {
     setTimeout(() => {
       const cloudSizeInput =
@@ -276,6 +267,7 @@ async function startObservingElements() {
   });
 }
 
+// Gets the element by the text content
 function getElementByTextContent(nodeList, matchingText) {
   const nList = document.querySelectorAll(nodeList);
   nList.forEach((element) => {
@@ -285,6 +277,7 @@ function getElementByTextContent(nodeList, matchingText) {
   });
 }
 
+// Injects the cloud popup UI and handles the calculate button and yes/no button behavior
 async function handleCloudPopup() {
   if (!shadowRoot.querySelector(".lca-viz-cloud-master-container")) {
     await injectPopupContent("cloud");
@@ -293,6 +286,7 @@ async function handleCloudPopup() {
   }
 }
 
+// Handles the calculate button behavior for the cloud popup
 function handleCalculateButton() {
   const calculateBtn = shadowRoot.querySelector(".lca-viz-calculate-btn");
   const btnText = shadowRoot.querySelector(".lca-viz-calculate-btn-txt");
@@ -330,7 +324,10 @@ function handleCalculateButton() {
  * @param {Boolean} isCloud Boolean indicating if this scenario is "cloud". If not, it will be for "energy"
  */
 export function displayCloudEmissions(emissionsResultHTML, isCloud) {
-  if (isCloud) shadowRoot.querySelector(".lca-viz-cloud-master-container").classList.add("hidden-a");
+  if (isCloud)
+    shadowRoot
+      .querySelector(".lca-viz-cloud-master-container")
+      .classList.add("hidden-a");
   masterContainer.insertAdjacentHTML("beforeend", emissionsResultHTML);
   handleCO2eEquivalencyChange();
   requestAnimationFrame(async () => {
@@ -349,7 +346,7 @@ export function displayCloudEmissions(emissionsResultHTML, isCloud) {
 /**
  * Fills in the carbon information for the cloud and energy popup UI.
  * @param {String} scenario Either "cloud" or "energy"
- * @returns
+ * @returns The HTML content of the carbon emissions
  */
 export function getCloudEmissionsResult(data, scenario) {
   let emissions;
@@ -372,12 +369,6 @@ export function getCloudEmissionsResult(data, scenario) {
     if (durationUnit === "min") durationUnit = "minute(s)";
     if (durationUnit === "h") durationUnit = "hour(s)";
     location = data.location;
-    console.log("emissions = ", emissions);
-    console.log("emissions type of =" + typeof emissions);
-    console.log("device = ", deviceProcess);
-    console.log("power = ", power);
-    console.log("energyDuration = ", energyDuration);
-    console.log("location = ", location);
     power = formatToSignificantFigures(power);
     // milesDriven = formatToSignificantFigures(emissions * 2.5);
     // treesOffset = formatToSignificantFigures(emissions * 0.048);
@@ -386,7 +377,7 @@ export function getCloudEmissionsResult(data, scenario) {
   treesOffset = formatToSignificantFigures(emissions * 0.048);
   const isLocationNull = !location || location === "";
 
-  let {beefValue, beefUnit} = getBeefInfo(emissions);
+  let { beefValue, beefUnit } = getBeefInfo(emissions);
 
   const readableEmissions = getReadableCO2e(emissions);
   const readableCO2e = readableEmissions.co2e_value;
@@ -400,16 +391,16 @@ export function getCloudEmissionsResult(data, scenario) {
             <p class="fz-16 mt-0 mb-0"><b>Estimated Carbon Footprint of Use</b></p>
             <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
               <div class="left">
-                ${(scenario === "cloud") ?
-                  `<h3 class="fz-12 lca-lexend">How we estimate cloud computing emissions</h3>`
-                  :
-                  `<h3 class="fz-12 lca-lexend">How we estimate the emissions of use</h3>`
+                ${
+                  scenario === "cloud"
+                    ? `<h3 class="fz-12 lca-lexend">How we estimate cloud computing emissions</h3>`
+                    : `<h3 class="fz-12 lca-lexend">How we estimate the emissions of use</h3>`
                 }
 
-                ${(scenario === "cloud") ?
-                  `<p class="fz-12 lca-lexend">The total carbon footprint of cloud instance usage consists of both operational and embodied emissions. Operational emissions are calculated by multiplying your instance usage by the provider's energy conversion factors and Power Usage Effectiveness (PUE), then applying regional power grid emissions factors. We combine this with embodied emissions, which account for the manufacturing impact of datacenter servers allocated to your compute usage.  This estimation uses Microsoft Sustainability Calculator, Cloud Carbon Footprint, and Climatiq.`
-                  :
-                  `<p class="fz-12 lca-lexend">The carbon footprint of use is determined based on the device or process's power consumption, usage duration, and the geographical location of use. If no location is specified, the default assumption is the United States.`
+                ${
+                  scenario === "cloud"
+                    ? `<p class="fz-12 lca-lexend">The total carbon footprint of cloud instance usage consists of both operational and embodied emissions. Operational emissions are calculated by multiplying your instance usage by the provider's energy conversion factors and Power Usage Effectiveness (PUE), then applying regional power grid emissions factors. We combine this with embodied emissions, which account for the manufacturing impact of datacenter servers allocated to your compute usage.  This estimation uses Microsoft Sustainability Calculator, Cloud Carbon Footprint, and Climatiq.`
+                    : `<p class="fz-12 lca-lexend">The carbon footprint of use is determined based on the device or process's power consumption, usage duration, and the geographical location of use. If no location is specified, the default assumption is the United States.`
                 }
                 <i></i>
               </div>
@@ -547,6 +538,7 @@ export function getBeefInfo(emissions) {
   return { beefValue, beefUnit };
 }
 
+// Fetches the cloud emissions data from the server.
 async function getCloudData() {
   const region = formatRegionNames(regionText);
   const instance = cloudSizeText.toLowerCase();
@@ -577,6 +569,7 @@ async function getCloudData() {
   }
 }
 
+// Handles the yes/no button behavior for the cloud popup
 function handleYesNoButton() {
   let yesButton = shadowRoot.querySelector(".lca-viz-yes-button");
   let noButton = shadowRoot.querySelector(".lca-viz-no-button");
@@ -607,9 +600,8 @@ function handleYesNoButton() {
   });
 }
 
-// Function to fetch and inject CSS into the shadow DOM
+// Fetches and injects CSS into the shadow DOM
 async function loadCSS(url) {
-  console.log("loading css");
   const response = await fetch(url);
   const cssText = await response.text();
   const style = document.createElement("style");
@@ -617,6 +609,7 @@ async function loadCSS(url) {
   shadowRoot.appendChild(style);
 }
 
+// Sets up the LCA banner and floating menu
 export function setupLCABannerAndFloatingMenu() {
   const lcaBanner = getLCABanner();
   masterContainer.insertAdjacentHTML("beforeend", lcaBanner);
@@ -626,15 +619,18 @@ export function setupLCABannerAndFloatingMenu() {
   toggleButtonState();
 }
 
-// 3 popup cases: phone, freight, cloud
-export async function injectPopupContent(popupCase, freightData = null, mContainer = null, sRoot = null) {
+// Injects the popup content based on the popup case: phone, freight, cloud
+export async function injectPopupContent(
+  popupCase,
+  freightData = null,
+  mContainer = null,
+  sRoot = null
+) {
   const lcaBanner = getLCABanner();
 
   if (!masterContainer) masterContainer = mContainer;
   if (!shadowRoot) shadowRoot = sRoot;
 
-  console.log("masterContainer in popup-content.js: ");
-  console.log(masterContainer);
   masterContainer.insertAdjacentHTML("beforeend", lcaBanner);
   const lcaFloatingMenu = getLCAFloatingMenu();
   masterContainer.insertAdjacentHTML("beforebegin", lcaFloatingMenu);
@@ -670,6 +666,7 @@ export async function injectPopupContent(popupCase, freightData = null, mContain
   }
 }
 
+// Stops the input propogation of the input element
 function stopInputPropogation(input) {
   input.addEventListener("keydown", (event) => {
     event.stopPropagation();
@@ -682,6 +679,7 @@ function stopInputPropogation(input) {
   });
 }
 
+// Returns the HTML code for the floating menu
 function getLCAFloatingMenu() {
   const floatingMenu = `
     <div class="flex-center floating-lca-menu pd-12 br-8 hidden-b" id="lca-viz-floating-menu">
@@ -706,10 +704,12 @@ function toggleButtonState() {
   });
 }
 
+// Hides the popup
 export function hidePopup() {
   floatingMenu.remove();
 }
 
+// Shows the master container
 export function showMasterContainer() {
   if (masterContainer) {
     // masterContainer should only be using hidden-b, but I'm safeguarding this in case.
@@ -720,16 +720,19 @@ export function showMasterContainer() {
     // showElement(masterContainer, "b");
     masterContainer.addEventListener("transitionend", { once: true });
   }
-
 }
 
+// Hides and clears the master container
 export function hideAndClearMasterContainer() {
   if (masterContainer) {
     masterContainer.classList.add("hidden-b");
-    masterContainer.addEventListener("transitionend", clearMasterContainer, { once: true,});
+    masterContainer.addEventListener("transitionend", clearMasterContainer, {
+      once: true,
+    });
   }
 }
 
+// Clears the content inside the master container
 export function clearMasterContainer() {
   if (masterContainer) masterContainer.replaceChildren();
 }
@@ -754,6 +757,7 @@ function getLCABanner() {
   return lcaBanner;
 }
 
+// Returns the HTML code for the cloud emissions skeleton
 function getCloudEmissionsSkeleton() {
   const cloudEmissionsSkeleton = `
     <div class="lca-viz-cloud-master-container hidden-a">
@@ -805,7 +809,6 @@ function getCloudEmissionsSkeleton() {
 }
 
 /**
- *
  * @returns {HTMLElement} Returns the skeleton code for phone emissions.
  */
 function getPhoneEmissionsSkeleton() {
@@ -861,6 +864,7 @@ function getPhoneEmissionsSkeleton() {
   return phoneEmissionsSkeleton;
 }
 
+// Displays the UI for the phone emissions
 async function showPhoneEmissions() {
   shadowRoot.querySelector(".phone-container").classList.remove("hidden-a");
   await hidePhoneLoadingIcon();
@@ -874,6 +878,7 @@ async function showPhoneEmissions() {
   handlePhoneSearch();
 }
 
+// Displays the UI for the freight emissions
 async function showFreightHTMLContent() {
   shadowRoot.querySelector(".freight-container").classList.remove("hidden-a");
   masterContainer.focus();
@@ -882,6 +887,7 @@ async function showFreightHTMLContent() {
   showElement(freightContent, "a");
 }
 
+// Displays the UI for the cloud emissions
 async function showCloudEmissions() {
   shadowRoot
     .querySelector(".lca-viz-cloud-master-container")
@@ -952,6 +958,7 @@ export function formatToSignificantFigures(num, significantFigures = 2) {
   return roundedNum.toFixed(decimalPlaces);
 }
 
+// Updates the content of the freight UI
 export async function updateFreightContent(freightData) {
   const freightContainer = shadowRoot.querySelector(".freight-container");
   const lcaBanner = shadowRoot.querySelector(".lca-banner");
@@ -984,9 +991,10 @@ function getInvalidFreightData() {
           </div>
         </div>
       </div>
-    </div>`
+    </div>`;
 }
 
+// Injects the freight HTML content
 function injectFreightHTMLContent(freightData) {
   if (!freightData) {
     return getInvalidFreightData();
@@ -1190,8 +1198,6 @@ function injectFreightHTMLContent(freightData) {
   return freightEmissions;
 }
 
-//  ************* Analyzing Freight Data *****************
-
 // Tracks the current web page the extension is on to see if they are 'eligible' for displaying freight emissions
 function trackFreight() {
   let allowedDomains = ["fedex.com"];
@@ -1206,9 +1212,8 @@ function trackFreight() {
   }
 }
 
-// Observes if an element contains certain .textContent and classList properties
 /**
- *
+ * Observes if an element contains certain .textContent and classList properties
  * @param {String} matchingText The matching text. For example, "Size" or "Region"
  * @param {Array} matchingClassesArr The array containing the matching classes. For example, ["azc-form-label"];
  * @param {callback} callback
@@ -1241,12 +1246,12 @@ function observeElementTextAndClassContent(
   observer.observe(document.body, { childList: true, subtree: true });
 }
 
+// Observes the text change of the element
 function observeTextChange(element, callback) {
   const observer = new MutationObserver(() => {
     const textContent = element.textContent.trim();
     callback(textContent);
   });
-
   observer.observe(element, { childList: true, subtree: true });
 }
 
@@ -1285,6 +1290,7 @@ function onClassChange(element, callback) {
   return observer.disconnect;
 }
 
+// Records the change of the from and to address
 function recordFromToAddressChange() {
   const fromAddressElement = document.getElementById("fromGoogleAddress");
   const toAddressElement = document.getElementById("toGoogleAddress");
@@ -1304,6 +1310,7 @@ function recordFromToAddressChange() {
   onClassChange(toAddressElement, checkBothValid);
 }
 
+// Records the change of the package type
 function recordPackageTypeChange() {
   const packageType = document.getElementById("package-details__package-type");
   if (packageType) {
@@ -1321,6 +1328,7 @@ function recordPackageTypeChange() {
   }
 }
 
+// Observes the change of the shipping options
 function observeAndStoreShippingOptions() {
   observeFedexShippingOptions(() => {
     console.log(
@@ -1330,6 +1338,7 @@ function observeAndStoreShippingOptions() {
   });
 }
 
+// Handles the change of the shipping options
 function handleFedexChange() {
   // console.log(`Changed value in ${event.target.tagName}:`, event.target.value);
   const fedexButton = document.getElementById(
@@ -1362,6 +1371,7 @@ function recordAllInputChange() {
   });
 }
 
+// Handles the change of the shipping options
 async function handleFedexDataToFreight() {
   let currShippingOptions = [];
   const availableOptions = document.querySelectorAll(
@@ -1427,6 +1437,7 @@ async function handleFedexDataToFreight() {
   }
 }
 
+// Loads the Google maps
 async function loadGoogleMaps(freightAirData, freightGroundData) {
   if (freightAirData) {
     await sendGoogleMapsData(freightAirData, "air", () => {
@@ -1440,6 +1451,7 @@ async function loadGoogleMaps(freightAirData, freightGroundData) {
   }
 }
 
+// Sends the Google maps data to the server
 async function sendGoogleMapsData(data, mode, callback) {
   let POST_URL = "";
   if (mode === "air") {
@@ -1463,6 +1475,7 @@ async function sendGoogleMapsData(data, mode, callback) {
   }
 }
 
+// Injects the Google maps into the maps container
 function injectGoogleMaps(mode) {
   const iframe = document.createElement("iframe");
   let mapsContainer;
@@ -1488,6 +1501,7 @@ function injectGoogleMaps(mode) {
   mapsContainer.appendChild(iframe);
 }
 
+// Converts the weight from lbs to kg
 function toKg(lbs) {
   return lbs * 0.453;
 }
@@ -1513,9 +1527,8 @@ function search() {
     }
   }
 }
-/**
- * Handles the interaction of the phone comparison, including the compare and close button
- */
+
+// Handles the interaction of the phone comparison, including the compare and close button
 async function handlePhoneCompare() {
   const compareBtn = shadowRoot.querySelector(".compare-btn");
   const comparePhone = shadowRoot.querySelector(".compare-phone");
@@ -1759,12 +1772,6 @@ function findGreener(emissionsOne, emissionsTwo) {
   }
 }
 
-// case 1 --> get '--' : return null
-// case 2 --> eOne greener: return "one"
-// case 3 --> eTwo greener: return "two"
-// if null --> return ""
-// if "one" --> return "greener"
-
 /**
    * Function to create aligned storage arrays from arrays of objects
    * Example input:
@@ -1848,8 +1855,6 @@ function toGB(storage) {
 async function populatePhoneModel() {
   // const phoneModel = await getRecommendedModels(currentPhoneData.device);
   const phoneModel = currentRecommendedPhones;
-  console.log("recommeded phone model = ");
-  console.log(currentRecommendedPhones);
 
   const phoneModelContainer = shadowRoot.querySelector(
     ".phone-model-container"
@@ -1984,11 +1989,10 @@ function displayPhoneSpecEmissions() {
   handleCO2eEquivalencyChange();
 }
 
-// TODO: ***********************************************************
-// TODO: Refactor the loading icon functions, reduce from 3 functions -> 1 function
 // Use this function to display a loading animation while waiting for the API calls
-async function hidePhoneLoadingIcon() {
-  let loadingBox = shadowRoot.querySelector(".loading-box");
+export async function hideLoadingIcon(boxNumber = "") {
+  const boxClass = boxNumber ? `loading-box-${boxNumber}` : "loading-box";
+  let loadingBox = shadowRoot.querySelector(`.${boxClass}`);
   if (loadingBox) {
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -1997,41 +2001,15 @@ async function hidePhoneLoadingIcon() {
       }, 1500);
     });
   } else {
-    console.error("loadingBox not found");
+    console.error(`${boxClass} not found`);
     return Promise.resolve();
   }
 }
 
-function hideFreightLoadingIcon() {
-  let loadingBox = shadowRoot.querySelector(".loading-box-2");
-  if (loadingBox) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        loadingBox.classList.add("hidden-a");
-        resolve();
-      }, 1500);
-    });
-  } else {
-    console.error("loadingBox not found");
-    return Promise.resolve();
-  }
-}
-
-export function hideCloudLoadingIcon() {
-  let loadingBox = shadowRoot.querySelector(".loading-box-3");
-  if (loadingBox) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        loadingBox.classList.add("hidden-a");
-        resolve();
-      }, 1500);
-    });
-  } else {
-    console.error("loadingBox not found");
-    return Promise.resolve();
-  }
-}
-// TODO: ***********************************************************
+// Export aliases for backward compatibility
+export const hidePhoneLoadingIcon = () => hideLoadingIcon();
+export const hideFreightLoadingIcon = () => hideLoadingIcon("2");
+export const hideCloudLoadingIcon = () => hideLoadingIcon("3");
 
 /**
  * Shows an element. Only works with flex and block elements
@@ -2062,6 +2040,7 @@ function showElement(element, version) {
   }
 }
 
+// Formats the instance names for the cloud emissions
 function formatInstanceNames(input) {
   // Remove the "Standard" prefix
   let instanceName = input.replace(/^Standard_/, "");
@@ -2083,6 +2062,7 @@ function formatRegionNames(input) {
 }
 
 /**
+ * Determines the appropriate transportation mode based on the shipping type and locations
  * @param {String} shippingType The Fedex shipping type (e.g. "fedex ground", "fedex 1day freight")
  * @param {String} fromValue The starting location
  * @param {String} toValue The destination location
@@ -2160,7 +2140,8 @@ async function getFedexTransportMode(shippingType, fromValue, toValue) {
   }
 }
 
-/** Injects a banner into the fedex webpage to highlight the most eco-friendly shipping options in the given array.
+/**
+ * Injects a banner into the fedex webpage to highlight the most eco-friendly shipping options in the given array.
  * @param {Array} optionsArray Array containing a list of shipping options
  */
 function showGreenestOption(optionsArray) {
@@ -2169,7 +2150,6 @@ function showGreenestOption(optionsArray) {
   );
   availableOptions.forEach((option) => {
     const formattedOption = option.outerText.toLowerCase().replace(/®/g, "");
-    console.log("formattedOptn = " + formattedOption);
     if (optionsArray.includes(formattedOption)) {
       const parentNode = option.parentNode.parentNode.parentNode.parentNode;
       const priceButton = parentNode.querySelector(".magr-c-rates__button");
@@ -2182,13 +2162,11 @@ function showGreenestOption(optionsArray) {
 }
 
 /**
- *
- * @param {String} fromLocation
- * @param {String} toLocation
- * @param {Number} cargoWeight the weight of the cargo in kg
+ * Gets the freight emissions from the Climatiq API
+ * @param {Object} data The data to be sent to the Climatiq API
+ * @returns The freight emissions from the Climatiq API
  */
 async function getFreightEmissions(data) {
-  console.log("calling testClimatiqAPI...");
   try {
     const response = await fetch(LCA_SERVER_URL + "/api/freight", {
       method: "POST",
@@ -2211,33 +2189,6 @@ async function getFreightEmissions(data) {
   }
 }
 
-// /**
-//  * Hides an element. Only works with block elements
-//  * @param {element} element The element to be shown
-//  * @param {*} version The animation style. If no version is given, use the default style
-//  */
-// export function hideElement(element, version) {
-//   if (version === "a") {
-//     element.classList.remove("visible-a");
-//     element.classList.add("hidden-a");
-//     element.addEventListener("transitionend", function handleTransitionEnd() {
-//       if (element.classList.contains("hidden-a")) {
-//         element.style.display = "none";
-//       }
-//       element.removeEventListener("transitionend", handleTransitionEnd);
-//     });
-//   } else if (version === "b") {
-//     element.classList.remove("visible-b");
-//     element.classList.add("hidden-b");
-//     element.addEventListener("transitionend", function handleTransitionEnd() {
-//       if (element.classList.contains("hidden-b")) {
-//         element.style.display = "none";
-//       }
-//       element.removeEventListener("transitionend", handleTransitionEnd);
-//     });
-//   }
-// }
-
 /**
  * Hides an element using CSS transitions.
  * @param {HTMLElement} element The element to be hidden
@@ -2258,10 +2209,20 @@ export function hideElement(element, version) {
  * @param {boolean} isHighlight default is false. isHighlight is true when this function is called from the LCA brush scenario.
  * @returns The freight data used to display the freight emissions and geo-map.
  */
-export async function getFreightData(fromAddress, toAddress, totalWeight, currShippingOptions, isHighlight = false) {
+export async function getFreightData(
+  fromAddress,
+  toAddress,
+  totalWeight,
+  currShippingOptions,
+  isHighlight = false
+) {
   let groundMode, airMode;
   if (!isHighlight) {
-    ({ groundMode, airMode } = await categorizeShippingOption(fromAddress, toAddress,currShippingOptions));
+    ({ groundMode, airMode } = await categorizeShippingOption(
+      fromAddress,
+      toAddress,
+      currShippingOptions
+    ));
   } else {
     groundMode = [""];
     airMode = [""];
@@ -2290,7 +2251,12 @@ export async function getFreightData(fromAddress, toAddress, totalWeight, currSh
     }
   }
   if (airMode.length > 0) {
-    const airData = formatFreightData(fromAddress, toAddress, "air", totalWeight);
+    const airData = formatFreightData(
+      fromAddress,
+      toAddress,
+      "air",
+      totalWeight
+    );
     freightAirData = await getFreightEmissions(airData);
     if (freightAirData) {
       aData = {
@@ -2318,13 +2284,18 @@ export async function getFreightData(fromAddress, toAddress, totalWeight, currSh
 }
 
 /**
+ * Categorizes the shipping options into ground and air modes
  * @param {String} fromAddress The origin address
  * @param {String} toAddress The destination address
  * @param {Array} shippingOptions The list of all given Fedex shipping options
  * @returns Two arrays, one containing the shipping options that have ground transport mode,
  *          another containing the shipping options that have air transport mode.
  */
-async function categorizeShippingOption(fromAddress, toAddress, shippingOptions) {
+async function categorizeShippingOption(
+  fromAddress,
+  toAddress,
+  shippingOptions
+) {
   let airMode = [];
   let groundMode = [];
   // Use Promise.all to wait for all async operations to complete
@@ -2349,13 +2320,17 @@ async function categorizeShippingOption(fromAddress, toAddress, shippingOptions)
   });
 
   showGreenestOption(groundMode);
-
-  console.log("ground mode: ", groundMode);
-  console.log("airmode: ", airMode);
   return { groundMode, airMode };
 }
 
-// totalWeight is in kg
+/**
+ * Formats the freight data for the Climatiq API
+ * @param {String} fromAddress The origin address
+ * @param {String} toAddress The destination address
+ * @param {String} mode The mode of transportation
+ * @param {Number} totalWeight The total weight of the cargo
+ * @returns The formatted freight data
+ */
 function formatFreightData(fromAddress, toAddress, mode, totalWeight) {
   let transportMode;
   if (mode === "air") {
