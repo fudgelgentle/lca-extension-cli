@@ -4,7 +4,7 @@ Living Sustainability is an AI-based Chrome Extension that transforms complex en
 
 ![Poster of the extension](assets/img/living_poster.png)
 
-# Running the extension locally:
+# Development:
 1. Clone the repository
 2. Run `npm install extension-cli` in the root directory.
 3. Now, run `npx xt-build` in the root directory. You will see `release.zip` being created
@@ -17,8 +17,6 @@ Living Sustainability is an AI-based Chrome Extension that transforms complex en
 **Running updated code:** If there are changes/updates in the repo, to get the latest update, please delete the current `release` folder (if it exists), run `npx xt-build`, unzip `release.zip` to get the new `release` folder, then refresh the extension on Google Extensions.
 
 **Adding new scripts:**  Whenever adding a new .js script to src, make sure to edit `js_bundles` in `package.json` to 'whitelist' that .js file. Otherwise, the .js file will not work.
-
-## Development
 
 This extension was created with [Extension CLI](https://oss.mobilefirst.me/extension-cli/)!
 
