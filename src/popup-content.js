@@ -488,7 +488,7 @@ export function getCloudEmissionsResult(data, scenario) {
                   : ``
               }
               <p class="fz-16 mb-2"><b>Power:</b> <br>
-                <span class="fz-12">${power} kWh</span>
+                <span class="fz-12">${power} W</span>
               </p>
             `
           }

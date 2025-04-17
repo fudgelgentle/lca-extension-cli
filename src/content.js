@@ -1583,7 +1583,7 @@ function handleQuestionForm() {
     const data = {
       emissions: energyEmissions,
       device_process: deviceProcessName,
-      power: kwh,
+      power: wattage,
       duration: durationVal,
       duration_unit: durationUnit,
       location: location,
