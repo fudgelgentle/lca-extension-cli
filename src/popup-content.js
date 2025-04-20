@@ -96,9 +96,9 @@ export function setupPopupShadowDOM() {
   masterContainer = document.createElement("div");
   masterContainer.setAttribute("role", "main");
   masterContainer.setAttribute("tabindex", "0");
-  masterContainer.classList.add("master-lca");
-  masterContainer.classList.add("br-8");
-  masterContainer.classList.add("hidden");
+  masterContainer.classList.add("lca-viz-master-lca");
+  masterContainer.classList.add("lcz-br-8");
+  masterContainer.classList.add("lca-viz-hidden");
   document.body.append(masterContainer);
   const placeholder = document.createElement("div");
   placeholder.setAttribute("id", "placeholder");
@@ -170,7 +170,7 @@ function checkIsNumberInputFilled() {
   const numberInput = shadowRoot.getElementById("lca-viz-number-input");
   if (numberInput.value && numberInput.value > 0) {
     return true;
-  } else if (numberInputContainer.classList.contains("hidden")) {
+  } else if (numberInputContainer.classList.contains("lca-viz-hidden")) {
     return true;
   }
   return false;
@@ -327,13 +327,13 @@ export function displayCloudEmissions(emissionsResultHTML, isCloud) {
   if (isCloud)
     shadowRoot
       .querySelector(".lca-viz-cloud-master-container")
-      .classList.add("hidden-a");
+      .classList.add("lcz-hidden-a");
   masterContainer.insertAdjacentHTML("beforeend", emissionsResultHTML);
   handleCO2eEquivalencyChange();
   requestAnimationFrame(async () => {
     shadowRoot
       .querySelector(".lca-viz-cloud-emissions-container")
-      .classList.remove("hidden-a");
+      .classList.remove("lcz-hidden-a");
     // masterContainer.focus();
     if (!isCloud) await hideCloudLoadingIcon();
     const cloudContent = shadowRoot.querySelector(
@@ -384,12 +384,12 @@ export function getCloudEmissionsResult(data, scenario) {
   const readableUnit = readableEmissions.unit;
 
   const emissionsResultHTML = `
-    <div class="lca-viz-cloud-emissions-container hidden-a">
-      <section class="lca-viz-cloud-container br-8">
-        <div class="lca-viz-cloud-results-info-container pd-16 mt-12 hidden-a">
+    <div class="lca-viz-cloud-emissions-container lcz-hidden-a">
+      <section class="lca-viz-cloud-container lcz-br-8">
+        <div class="lca-viz-cloud-results-info-container pd-16 lcz-mt-12 lcz-hidden-a">
           <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
-            <p class="fz-16 mt-0 mb-0"><b>Estimated Carbon Footprint of Use</b></p>
-            <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
+            <p class="fz-16 lcz-mt-0 lcz-mb-0"><b>Estimated Carbon Footprint of Use</b></p>
+            <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="lcz-icon-20" id="lca-viz-q-icon">
               <div class="left">
                 ${
                   scenario === "cloud"
@@ -408,9 +408,9 @@ export function getCloudEmissionsResult(data, scenario) {
           </div>
 
 
-          <div class="flex-center cg-8 fz-16 mb-12">
+          <div class="flex-center cg-8 fz-16 lcz-mb-12">
             <p>CO2e Equivalency: </p>
-            <select id="lca-viz-unit-select" class="br-4 pd-4">
+            <select id="lca-viz-unit-select" class="lcz-br-4 pd-4">
               <option value="0">Miles driven 🚗</option>
               <option value="1">Trees offset 🌳</option>
               <option value="2">Beef Consumed 🥩</option>
@@ -419,7 +419,7 @@ export function getCloudEmissionsResult(data, scenario) {
 
           ${
             emissions
-              ? `<div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
+              ? `<div class="freight-emissions flex-column-center lcz-br-8 rg-12 pd-16">
               <span class="fz-20 co2e-value"><b><span id="lcz-root-emissions">${readableCO2e} ${readableUnit}</span> <span class="fz-12">${
                   scenario === "cloud" ? "(per month)" : ""
                 }</span></b></span>
@@ -427,24 +427,24 @@ export function getCloudEmissionsResult(data, scenario) {
               <div class="lca-viz-unit-container cloud flex-center cg-4">
                 <div class="lca-viz-unit-div">
                   <div class="flex-center lca-viz-justify-center cg-8">
-                    <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or <span id="lcz-miles">${milesDriven}</span> miles driven by a car &nbsp;🚗</p>
+                    <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">or <span id="lcz-miles">${milesDriven}</span> miles driven by a car &nbsp;🚗</p>
                   </div>
                 </div>
 
                 <div class="lca-viz-unit-div">
                   <div class="flex-center lca-viz-justify-center cg-8">
-                    <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or <span id="lcz-trees">${treesOffset}</span> trees annually &nbsp;🌳</p>
+                    <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">or <span id="lcz-trees">${treesOffset}</span> trees annually &nbsp;🌳</p>
                   </div>
                 </div>
 
                 <div class="lca-viz-unit-div">
                   <div class="flex-center lca-viz-justify-center cg-8">
-                    <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or <span id="lcz-beef">${beefValue} ${beefUnit}</span> of beef consumed &nbsp;🥩</p>
+                    <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">or <span id="lcz-beef">${beefValue} ${beefUnit}</span> of beef consumed &nbsp;🥩</p>
                   </div>
                 </div>
               </div>
             </div>`
-              : `<div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
+              : `<div class="freight-emissions flex-column-center lcz-br-8 rg-12 pd-16">
               <span class="fz-20 co2e-value"><b>Data unavailable</b></span>
               <div class="flex-center cg-4">
                 <span class="trash-value fz-16">Region or instance is not supported.</span>
@@ -455,39 +455,39 @@ export function getCloudEmissionsResult(data, scenario) {
           ${
             scenario === "cloud"
               ? `
-              <p class="fz-16 mb-2"><b>Region:</b> <br>
+              <p class="fz-16 lcz-mb-2"><b>Region:</b> <br>
                 <div class="flex-center cg-8">
                   <span id="lca-viz-cloud-region-value" class="fz-12">${region}</span>
                 </div>
               </p>
-              <p class="fz-16 mb-2"><b>Server Instance Type:</b> <br>
+              <p class="fz-16 lcz-mb-2"><b>Server Instance Type:</b> <br>
                 <div class="flex-center cg-8">
                   <span id="lca-viz-cloud-instance-value" class="fz-12">${instance}</span>
                 </div>
               </p>
-              <p class="fz-16 mb-2"><b>Usage Rate:</b> <br>
+              <p class="fz-16 lcz-mb-2"><b>Usage Rate:</b> <br>
                 <span class="fz-12">${duration} hours per day</span>
               </p>
             `
               : `
-              <p class="fz-16 mb-2"><b>Device / Process:</b> <br>
+              <p class="fz-16 lcz-mb-2"><b>Device / Process:</b> <br>
                 <div class="flex-center cg-8">
                   <span id="" class="fz-12">${deviceProcess}</span>
                 </div>
               </p>
-              <p class="fz-16 mb-2"><b>Usage Duration:</b> <br>
+              <p class="fz-16 lcz-mb-2"><b>Usage Duration:</b> <br>
                 <div class="flex-center cg-8">
                   <span class="fz-12"><span id="lca-viz-e-time-val">${energyDuration}</span> ${durationUnit}</span>
                 </div>
               </p>
               ${
                 !isLocationNull
-                  ? `<p class="fz-16 mb-2"><b>Location:</b> <br>
+                  ? `<p class="fz-16 lcz-mb-2"><b>Location:</b> <br>
                   <span class="fz-12">${location}</span>
                 </p>`
                   : ``
               }
-              <p class="fz-16 mb-2"><b>Power:</b> <br>
+              <p class="fz-16 lcz-mb-2"><b>Power:</b> <br>
                 <span class="fz-12">${power} W</span>
               </p>
             `
@@ -495,8 +495,8 @@ export function getCloudEmissionsResult(data, scenario) {
         </div>
         ${
           scenario === "energy"
-            ? `<div class="loading-box-3 flex-center br-8 pd-16 mt-12">
-            <div class="loader">
+            ? `<div class="lcz-loading-box-3 flex-center lcz-br-8 pd-16 lcz-mt-12">
+            <div class="lcz-loader">
               <div class="lca-viz-circle"></div>
               <div class="lca-viz-circle"></div>
               <div class="lca-viz-circle"></div>
@@ -579,7 +579,7 @@ function handleYesNoButton() {
     isYesNoButtonClicked = true;
     shadowRoot
       .querySelector(".lca-viz-number-input-container")
-      .classList.add("hidden");
+      .classList.add("lca-viz-hidden");
     durationText = 24;
     checkCalculateButtonReady();
   });
@@ -589,7 +589,7 @@ function handleYesNoButton() {
     isYesNoButtonClicked = true;
     shadowRoot
       .querySelector(".lca-viz-number-input-container")
-      .classList.remove("hidden");
+      .classList.remove("lca-viz-hidden");
     checkCalculateButtonReady();
 
     const numberInput = shadowRoot.getElementById("lca-viz-number-input");
@@ -644,7 +644,7 @@ export async function injectPopupContent(
     stopInputPropogation(shadowRoot.getElementById("search-phone"));
     // Delay the execution of showPhoneEmissions to ensure DOM elements are available
     setTimeout(() => {
-      masterContainer.classList.remove("hidden");
+      masterContainer.classList.remove("lca-viz-hidden");
       showPhoneEmissions();
     }, 0);
   } else if (popupCase === "freight") {
@@ -652,7 +652,7 @@ export async function injectPopupContent(
     masterContainer.insertAdjacentHTML("beforeend", freightContent);
     setTimeout(() => {
       handleCO2eEquivalencyChange();
-      masterContainer.classList.remove("hidden");
+      masterContainer.classList.remove("lca-viz-hidden");
       showFreightHTMLContent();
     }, 0);
     await loadGoogleMaps(freightData.originalAir, freightData.originalGround);
@@ -660,7 +660,7 @@ export async function injectPopupContent(
     const cloudSkeletonHTML = getCloudEmissionsSkeleton();
     masterContainer.insertAdjacentHTML("beforeend", cloudSkeletonHTML);
     setTimeout(() => {
-      masterContainer.classList.remove("hidden");
+      masterContainer.classList.remove("lca-viz-hidden");
       showCloudEmissions();
     }, 0);
   }
@@ -682,8 +682,8 @@ function stopInputPropogation(input) {
 // Returns the HTML code for the floating menu
 function getLCAFloatingMenu() {
   const floatingMenu = `
-    <div class="flex-center floating-lca-menu pd-12 br-8 hidden-b" id="lca-viz-floating-menu">
-      <img src="${lca_48}" alt="LCA Image" class="floating-lca-img icon-24">
+    <div class="flex-center lca-viz-floating-lca-menu pd-12 lcz-br-8 lcz-hidden-b" id="lca-viz-floating-menu">
+      <img src="${lca_48}" alt="LCA Image" class="floating-lca-img lcz-icon-24">
     </div>
   `;
   return floatingMenu;
@@ -713,10 +713,10 @@ export function hidePopup() {
 export function showMasterContainer() {
   if (masterContainer) {
     // masterContainer should only be using hidden-b, but I'm safeguarding this in case.
-    masterContainer.classList.remove("hidden");
-    masterContainer.classList.remove("hidden-a");
+    masterContainer.classList.remove("lca-viz-hidden");
+    masterContainer.classList.remove("lcz-hidden-a");
 
-    masterContainer.classList.remove("hidden-b");
+    masterContainer.classList.remove("lcz-hidden-b");
     // showElement(masterContainer, "b");
     masterContainer.addEventListener("transitionend", { once: true });
   }
@@ -725,7 +725,7 @@ export function showMasterContainer() {
 // Hides and clears the master container
 export function hideAndClearMasterContainer() {
   if (masterContainer) {
-    masterContainer.classList.add("hidden-b");
+    masterContainer.classList.add("lcz-hidden-b");
     masterContainer.addEventListener("transitionend", clearMasterContainer, {
       once: true,
     });
@@ -743,12 +743,12 @@ export function clearMasterContainer() {
 function getLCABanner() {
   const lcaBanner = `
     <section class="lca-banner flex-stretch">
-      <div class="flex-center title-container br-8 pd-12">
-        <img src="${lca_48}" alt="LCA Image" class="icon-20">
+      <div class="flex-center title-container lcz-br-8 pd-12">
+        <img src="${lca_48}" alt="LCA Image" class="lcz-icon-20">
         <p class="title-text fz-20 eco-bold lca-viz-text-align-center"><b>Living Sustainability</b></p>
       </div>
-      <div class="flex-center lca-viz-close-container br-8 pd-16">
-        <svg class="icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <div class="flex-center lca-viz-close-container lcz-br-8 pd-16">
+        <svg class="lcz-icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
           <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
@@ -760,45 +760,45 @@ function getLCABanner() {
 // Returns the HTML code for the cloud emissions skeleton
 function getCloudEmissionsSkeleton() {
   const cloudEmissionsSkeleton = `
-    <div class="lca-viz-cloud-master-container hidden-a">
-      <section class="lca-viz-cloud-container br-8">
-        <div class="loading-box-3 flex-center br-8 pd-16 mt-12">
-          <div class="loader">
+    <div class="lca-viz-cloud-master-container lcz-hidden-a">
+      <section class="lca-viz-cloud-container lcz-br-8">
+        <div class="lcz-loading-box-3 flex-center lcz-br-8 pd-16 lcz-mt-12">
+          <div class="lcz-loader">
             <div class="lca-viz-circle"></div>
             <div class="lca-viz-circle"></div>
             <div class="lca-viz-circle"></div>
           </div>
         </div>
-        <div class="lca-viz-cloud-info-container pd-16 mt-12 hidden-a">
-          <p class="fz-20 margin-0"><b>Cloud Instance Carbon Emissions</b></p>
-          <p class="fz-16 mb-2"><b>Region:</b> <br>
+        <div class="lca-viz-cloud-info-container pd-16 lcz-mt-12 lcz-hidden-a">
+          <p class="fz-20 lcz-margin-0"><b>Cloud Instance Carbon Emissions</b></p>
+          <p class="fz-16 lcz-mb-2"><b>Region:</b> <br>
             <div class="flex-center cg-8">
               <span id="lca-viz-cloud-region-value" class="fz-12">${regionText}</span>
-              <img src="${sync_icon}" alt="Sync icon" class="icon-16">
+              <img src="${sync_icon}" alt="Sync icon" class="lcz-icon-16">
             </div>
           </p>
-          <p class="fz-16 mb-2"><b>Server Instance Type:</b> <br>
+          <p class="fz-16 lcz-mb-2"><b>Server Instance Type:</b> <br>
             <div class="flex-center cg-8">
               <span id="lca-viz-cloud-instance-value" class="fz-12">${cloudSizeText}</span>
-              <img src="${sync_icon}" alt="Sync icon" class="icon-16">
+              <img src="${sync_icon}" alt="Sync icon" class="lcz-icon-16">
             </div>
           </p>
-          <p class="fz-16 mb-8"><b>Usage Duration:</b> <br>
+          <p class="fz-16 lcz-mb-8"><b>Usage Duration:</b> <br>
             <span id="lca-viz-cloud-usage-value" class="fz-12">Will your server instance be operating 24/7?</span>
             <span class="lca-viz-asterisk">*</span>
           </p>
-          <div class="lca-viz-yes-no-container fz-12 br-8">
+          <div class="lca-viz-yes-no-container fz-12 lcz-br-8">
             <div class="lca-viz-yes-button">Yes</div>
             <div class="lca-viz-no-button">No</div>
           </div>
-          <div class="lca-viz-number-input-container hidden">
+          <div class="lca-viz-number-input-container lca-viz-hidden">
             <label for="quantity"><p class="fz-12">How long will your server instance be operating per day? <span class="lca-viz-asterisk">*</span></p></label>
-            <input type="number" id="lca-viz-number-input" class="fz-12 br-8" name="quantity" min="1" max="24"> &nbsp;<span class="fz-12">hours a day</span>
+            <input type="number" id="lca-viz-number-input" class="fz-12 lcz-br-8" name="quantity" min="1" max="24"> &nbsp;<span class="fz-12">hours a day</span>
           </div>
           <br>
-          <div class="lca-viz-calculate-container disabled br-8 pd-4">
+          <div class="lca-viz-calculate-container disabled lcz-br-8 pd-4">
             <div class="flex-center lca-viz-calculate-btn">
-              <p class="fz-16 margin-8 lca-viz-calculate-btn-txt">Calculate</p>
+              <p class="fz-16 lcz-margin-8 lca-viz-calculate-btn-txt">Calculate</p>
             </div>
           </div>
         </div>
@@ -814,49 +814,49 @@ function getCloudEmissionsSkeleton() {
 function getPhoneEmissionsSkeleton() {
   const phoneEmissionsSkeleton = `
     <div class="phone-master-container">
-      <section class="phone-container br-8 pd-16 mt-12 hidden-a">
-        <div class="loading-box flex-center br-8 pd-16 mt-12">
-          <div class="loader">
+      <section class="phone-container lcz-br-8 pd-16 lcz-mt-12 lcz-hidden-a">
+        <div class="lcz-loading-box flex-center lcz-br-8 pd-16 lcz-mt-12">
+          <div class="lcz-loader">
             <div class="lca-viz-circle"></div>
             <div class="lca-viz-circle"></div>
             <div class="lca-viz-circle"></div>
           </div>
         </div>
-        <section class="phone-spec-container fz-20 mt-12 hidden-a"></section>
+        <section class="phone-spec-container fz-20 lcz-mt-12 lcz-hidden-a"></section>
       </section>
 
-      <section class="compare-phone br-8 hidden-a">
-        <div class="compare-container br-8 pd-4 lca-viz-hidden">
+      <section class="compare-phone lcz-br-8 lcz-hidden-a">
+        <div class="compare-container lcz-br-8 pd-4 lca-viz-hidden">
           <div class="flex-center compare-btn">
-            <img src="${plus_square_icon}" class="icon-20">
-            <p class="fz-16 margin-8">Compare</p>
+            <img src="${plus_square_icon}" class="lcz-icon-20">
+            <p class="fz-16 lcz-margin-8">Compare</p>
           </div>
         </div>
-        <div class="select-phone-container br-8 pd-16 slide-content lca-viz-hidden">
+        <div class="select-phone-container lcz-br-8 pd-16 slide-content lca-viz-hidden">
           <div class="flex-center close-phone-btn">
-            <svg class="icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <svg class="lcz-icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
             </svg>
           </div>
-          <p class="margin-0 fz-20">Select phone model</p>
+          <p class="lcz-margin-0 fz-20">Select phone model</p>
           <p class="phone-spec-title fz-12">Comparing with: <span id="lca-viz-compare-with"><b>iPhone 15 Pro</b></span></p>
-          <div class="lca-viz-search-container br-8 pd-16 fz-16">
-            <input type="text" id="search-phone" class="grey-text fz-16" placeholder="Search..." title="Type to search for phone models">
+          <div class="lca-viz-search-container lcz-br-8 pd-16 fz-16">
+            <input type="text" id="search-phone" class="lcz-grey-text fz-16" placeholder="Search..." title="Type to search for phone models">
             <div class="phone-model-container">
             </div>
           </div>
         </div>
-        <div class="mt-24 mb-16 lca-viz-competitor-section">
-          <p class="margin-0 fz-20 mb-16 pdl-4"><b>Compare similar phones:</b></p>
+        <div class="lcz-mt-24 lcz-mb-16 lca-viz-competitor-section">
+          <p class="lcz-margin-0 fz-20 lcz-mb-16 pdl-4"><b>Compare similar phones:</b></p>
           <div class="lca-viz-competitor-container rg-12">
         </div>
 
         </div>
       </section>
 
-      <section class="side-by-side-section hidden-a mt-12">
+      <section class="lcz-side-by-side-section lcz-hidden-a lcz-mt-12">
         <div class="side-by-side-container flex-center">
-          <div class="side-by-side-spec-container grid-1fr-1fr cg-12"></div>
+          <div class="lcz-side-by-side-spec-container lcz-grid-1fr-1fr cg-12"></div>
         </div>
       </section>
     </div>
@@ -866,12 +866,12 @@ function getPhoneEmissionsSkeleton() {
 
 // Displays the UI for the phone emissions
 async function showPhoneEmissions() {
-  shadowRoot.querySelector(".phone-container").classList.remove("hidden-a");
+  shadowRoot.querySelector(".phone-container").classList.remove("lcz-hidden-a");
   await hidePhoneLoadingIcon();
   const phoneSpecContainer = shadowRoot.querySelector(".phone-spec-container");
   const comparePhone = shadowRoot.querySelector(".compare-phone");
   showElement(phoneSpecContainer, "a");
-  comparePhone.classList.remove("hidden-a");
+  comparePhone.classList.remove("lcz-hidden-a");
   masterContainer.focus();
   displayPhoneSpecEmissions();
   await handlePhoneCompare();
@@ -880,7 +880,7 @@ async function showPhoneEmissions() {
 
 // Displays the UI for the freight emissions
 async function showFreightHTMLContent() {
-  shadowRoot.querySelector(".freight-container").classList.remove("hidden-a");
+  shadowRoot.querySelector(".freight-container").classList.remove("lcz-hidden-a");
   masterContainer.focus();
   await hideFreightLoadingIcon();
   const freightContent = shadowRoot.querySelector(".freight-content");
@@ -891,7 +891,7 @@ async function showFreightHTMLContent() {
 async function showCloudEmissions() {
   shadowRoot
     .querySelector(".lca-viz-cloud-master-container")
-    .classList.remove("hidden-a");
+    .classList.remove("lcz-hidden-a");
   masterContainer.focus();
   await hideCloudLoadingIcon();
   const cloudContent = shadowRoot.querySelector(
@@ -971,18 +971,18 @@ export async function updateFreightContent(freightData) {
 
 // Returns the HTML for invalid freight data
 function getInvalidFreightData() {
-  return `<div class="freight-container br-8 pd-16 mt-12">
-      <div class="loading-box-2 flex-center br-8 pd-16 mt-12 hidden-a">
-        <div class="loader">
+  return `<div class="freight-container lcz-br-8 pd-16 lcz-mt-12">
+      <div class="lcz-loading-box-2 flex-center lcz-br-8 pd-16 lcz-mt-12 lcz-hidden-a">
+        <div class="lcz-loader">
           <div class="lca-viz-circle"></div>
           <div class="lca-viz-circle"></div>
           <div class="lca-viz-circle"></div>
         </div>
       </div>
-      <div class="freight-content visible-a" style="display: block;">
+      <div class="freight-content lcz-visible-a" style="display: block;">
         <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
-          <p class="fz-16 mt-0 mb-16"><b>The shipping data cannot be found</b></p>
-          <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="chrome-extension://moaglnlpoploemkipmdjfmhcjfbandkm/../assets/img/question-icon.png" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
+          <p class="fz-16 lcz-mt-0 lcz-mb-16"><b>The shipping data cannot be found</b></p>
+          <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="chrome-extension://moaglnlpoploemkipmdjfmhcjfbandkm/../assets/img/question-icon.png" alt="Hover me to get additional information" class="lcz-icon-20" id="lca-viz-q-icon">
             <div class="left">
               <h3 class="fz-12 lca-lexend">How are package emissions calculated?</h3>
               <p class="fz-12 lca-lexend">We are using Climatiq's Intermodal Services, which collects data from various sources to calculate the shipping emissions, including GLEC v3 Framework, ISO 14083 standard, Emission Factor Database (EFDB), OpenStreetMap, and more.</p>
@@ -1019,10 +1019,10 @@ function injectFreightHTMLContent(freightData) {
     const airDiff = parseInt((difference / groundEmission) * 100);
     // const groundDiff = (parseInt((difference / airEmission) * 100));
     if (airEmission > groundEmission) {
-      airDiffHTML = `<p class="emissions-diff-plus fz-12 br-4 margin-0"><b>+${airDiff}% emissions</b></p>`;
+      airDiffHTML = `<p class="emissions-diff-plus fz-12 lcz-br-4 lcz-margin-0"><b>+${airDiff}% emissions</b></p>`;
       // groundDiffHTML = `<p class="emissions-diff-minus fz-12 br-4 margin-0"><b>-${groundDiff}% emissions</b></p>`;
     } else {
-      airDiffHTML = `<p class="emissions-diff-minus fz-12 br-4 margin-0"><b>-${airDiff}% emissions</b></p>`;
+      airDiffHTML = `<p class="emissions-diff-minus fz-12 lcz-br-4 lcz-margin-0"><b>-${airDiff}% emissions</b></p>`;
       // groundDiffHTML = `<p class="emissions-diff-plus fz-12 br-4 margin-0"><b>+${groundDiff}% emissions</b></p>`;
     }
   }
@@ -1058,18 +1058,18 @@ function injectFreightHTMLContent(freightData) {
       .join(", ");
     airHTML = `
       <div class="options-container">
-        <p class="shipping-options fz-12 mb-4">
-          <img src="${airplane_icon}" class="icon-14 align-middle" alt="airplane icon">
+        <p class="shipping-options fz-12 lcz-mb-4">
+          <img src="${airplane_icon}" class="lcz-icon-14 align-middle" alt="airplane icon">
           <b>By Air: </b>
         </p>
         ${airDiffHTML}
-        <p class="fz-12 lcz-mt-4 mb-4">${shippingOptionsText}</p>
-        <div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
+        <p class="fz-12 lcz-mt-4 lcz-mb-4">${shippingOptionsText}</p>
+        <div class="freight-emissions flex-column-center lcz-br-8 rg-12 pd-16">
           <span class="fz-20 co2e-value lcz-mt-4"><b>${airCo2eValue} kg CO2e</b></span>
           <div class="lca-viz-unit-container freight flex-center cg-4">
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${Math.ceil(
+                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">or ${Math.ceil(
                   airCo2eValue * 2.5
                 )} miles driven by a car &nbsp;🚗</p>
               </div>
@@ -1077,7 +1077,7 @@ function injectFreightHTMLContent(freightData) {
 
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(
+                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">or ${(
                   airCo2eValue * 0.048
                 ).toFixed(1)} trees annually &nbsp;🌳</p>
               </div>
@@ -1085,7 +1085,7 @@ function injectFreightHTMLContent(freightData) {
 
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(
+                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">or ${(
                   airCo2eValue * 0.033
                 ).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
               </div>
@@ -1108,18 +1108,18 @@ function injectFreightHTMLContent(freightData) {
       .join(", ");
     groundHTML = `
       <div class="options-container">
-        <p class="shipping-options fz-12 mb-4">
-          <img src="${truck_icon}" class="icon-14 align-middle" alt="truck icon">
+        <p class="shipping-options fz-12 lcz-mb-4">
+          <img src="${truck_icon}" class="lcz-icon-14 align-middle" alt="truck icon">
           <b>By Ground: </b>
         </p>
         ${groundDiffHTML}
-        <p class="fz-12 lcz-mt-4 mb-4">${shippingOptionsText}</p>
-        <div class="freight-emissions flex-column-center br-8 rg-12 pd-16">
+        <p class="fz-12 lcz-mt-4 lcz-mb-4">${shippingOptionsText}</p>
+        <div class="freight-emissions flex-column-center lcz-br-8 rg-12 pd-16">
           <span class="fz-20 co2e-value lcz-mt-4"><b>${groundCo2eValue} kg CO2e</b></span>
           <div class="lca-viz-unit-container freight flex-center cg-4">
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${Math.ceil(
+                <p class="lcz- lcz-grey-text fz-16 lca-viz-text-align-center">or ${Math.ceil(
                   groundCo2eValue * 2.5
                 )} miles driven by a car &nbsp;🚗</p>
               </div>
@@ -1127,7 +1127,7 @@ function injectFreightHTMLContent(freightData) {
 
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(
+                <p class="lcz- lcz-grey-text fz-16 lca-viz-text-align-center">or ${(
                   groundCo2eValue * 0.048
                 ).toFixed(1)} trees annually &nbsp;🌳</p>
               </div>
@@ -1135,7 +1135,7 @@ function injectFreightHTMLContent(freightData) {
 
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">or ${(
+                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">or ${(
                   groundCo2eValue * 0.033
                 ).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
               </div>
@@ -1152,19 +1152,19 @@ function injectFreightHTMLContent(freightData) {
   }
 
   const freightEmissions = `
-    <div class="freight-container br-8 pd-16 mt-12 hidden-a">
-      <div class="loading-box-2 flex-center br-8 pd-16 mt-12">
-        <div class="loader">
+    <div class="freight-container lcz-br-8 pd-16 lcz-mt-12 lcz-hidden-a">
+      <div class="lcz-loading-box-2 flex-center lcz-br-8 pd-16 lcz-mt-12">
+        <div class="lcz-loader">
           <div class="lca-viz-circle"></div>
           <div class="lca-viz-circle"></div>
           <div class="lca-viz-circle"></div>
         </div>
       </div>
-      <div class="freight-content hidden-a">
+      <div class="freight-content lcz-hidden-a">
 
         <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
-          <p class="fz-16 mt-0 mb-16"><b>${titleText}</b></p>
-          <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
+          <p class="fz-16 lcz-mt-0 mb-16"><b>${titleText}</b></p>
+          <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="lcz-icon-20" id="lca-viz-q-icon">
             <div class="left">
               <h3 class="fz-12 lca-lexend">How are package emissions calculated?</h3>
               <p class="fz-12 lca-lexend">We are using Climatiq's Intermodal Services, which collects data from various sources to calculate the shipping emissions, including GLEC v3 Framework, ISO 14083 standard, Emission Factor Database (EFDB), OpenStreetMap, and more.</p>
@@ -1175,7 +1175,7 @@ function injectFreightHTMLContent(freightData) {
 
         <div class="flex-center cg-8 fz-16">
           <p>CO2e Equivalency: </p>
-          <select id="lca-viz-unit-select" class="br-4 pd-4">
+          <select id="lca-viz-unit-select" class="lcz-br-4 pd-4">
             <option value="0">Miles driven 🚗</option>
             <option value="1">Trees offset 🌳</option>
             <option value="2">Beef Consumed 🥩</option>
@@ -1563,7 +1563,7 @@ async function handlePhoneCompare() {
       const phoneId = parseInt(phone.id);
 
       console.log("phone Id = " + phoneId);
-      competitorSection.classList.add("hidden-a");
+      competitorSection.classList.add("lcz-hidden-a");
       displaySideBySideComparison(phoneId);
     });
   });
@@ -1665,15 +1665,15 @@ function displaySideBySideComparison(phoneId) {
     (phone) => phone.index === phoneId
   );
 
-  const wrapper = shadowRoot.querySelector(".side-by-side-section");
+  const wrapper = shadowRoot.querySelector(".lcz-side-by-side-section");
   const phoneContainer = shadowRoot.querySelector(".phone-container");
 
-  let specContainer = shadowRoot.querySelector(".side-by-side-spec-container");
+  let specContainer = shadowRoot.querySelector(".lcz-side-by-side-spec-container");
   specContainer.innerHTML = "";
   specContainer.innerHTML += `
-    <p class="margin-0 side-phone-text fz-16"><b>${currentPhone.device}</b></p>
-    <p class="margin-0 side-phone-text fz-16"><b>${comparedPhone.device}</b></p>
-    <img src="${red_trash_icon}" class="icon-16 trash-btn" alt="remove device">
+    <p class="lcz- lcz-side-phone-text fz-16"><b>${currentPhone.device}</b></p>
+    <p class="lcz-margin-0 lcz-side-phone-text fz-16"><b>${comparedPhone.device}</b></p>
+    <img src="${red_trash_icon}" class="lcz-icon-16 trash-btn" alt="remove device">
   `;
 
   let arrayResult = alignStorageArrays(currentPhone.specs, comparedPhone.specs);
@@ -1684,38 +1684,38 @@ function displaySideBySideComparison(phoneId) {
     const result = findGreener(currentArray[i].co2e, comparedArray[i].co2e);
     // Returns a boolean checking
     specContainer.innerHTML += `
-      <div class="details-container fz-16">
+      <div class="lcz-details-container fz-16">
         <div class="flex-center most-green cg-4">
           <p><b>${currentArray[i].storage}</b>&nbsp;</p>
           ${
             currentArray[i].mostEco
-              ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
+              ? `<img src="${most_green_icon}" class="lcz-icon-16 emissions-diff-minus lcz-br-4 lcz-margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
               : ""
           }
         </div>
-        <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg ${
+        <div class="flex-center co2e-data-container pd-8 lcz-br-8 cg-4 lca-viz-lexend-reg ${
           result === "one" ? "greener" : result === "two" ? "" : ""
         }">
-          <p class="margin-0">${
+          <p class="lcz-margin-0">${
             currentArray[i].co2e !== "--"
               ? currentArray[i].co2e + " kg CO2e"
               : "--"
           } </p>
         </div>
       </div>
-      <div class="details-container fz-16">
+      <div class="lcz-details-container fz-16">
         <div class="flex-center most-green cg-4">
           <p><b>${comparedArray[i].storage}</b>&nbsp;</p>
           ${
             comparedArray[i].mostEco
-              ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
+              ? `<img src="${most_green_icon}" class="lcz-icon-16 emissions-diff-minus lcz-br-4 lcz-margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
               : ""
           }
         </div>
-        <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg ${
+        <div class="flex-center co2e-data-container pd-8 lcz-br-8 cg-4 lca-viz-lexend-reg ${
           result === "one" ? "" : result === "two" ? "greener" : ""
         }">
-          <p class="margin-0">${
+          <p class="lcz-margin-0">${
             comparedArray[i].co2e !== "--"
               ? comparedArray[i].co2e + " kg CO2e"
               : "--"
@@ -1739,13 +1739,13 @@ function displaySideBySideComparison(phoneId) {
     hideElement(wrapper, "a");
     showElement(phoneContainer, "a");
 
-    competitorSection.classList.remove("hidden-a");
+    competitorSection.classList.remove("lcz-hidden-a");
   });
 
   const lcaBanner = shadowRoot.querySelector(".lca-banner");
   lcaBanner.insertAdjacentElement("afterend", wrapper);
 
-  if (phoneContainer.classList.contains("hidden-a")) {
+  if (phoneContainer.classList.contains("lcz-hidden-a")) {
     hideElement(wrapper, "a");
     showElement(wrapper, "a");
   } else {
@@ -1862,7 +1862,7 @@ async function populatePhoneModel() {
   phoneModelContainer.innerHTML = "";
   phoneModel.forEach((phone, index) => {
     const phoneElement = document.createElement("p");
-    phoneElement.className = `phone-model-text br-4${
+    phoneElement.className = `phone-model-text lcz-br-4${
       index === phoneModel.length - 1 ? " last" : ""
     }`;
     phoneElement.textContent = phone.device;
@@ -1875,7 +1875,7 @@ async function populatePhoneModel() {
   phoneCompetitorContainer.innerHTML = "";
   phoneModel.forEach((phone) => {
     const phoneElement = `
-      <div class="lca-viz-competitor-phone br-8" id="${phone.index}">
+      <div class="lca-viz-competitor-phone lcz-br-8" id="${phone.index}">
         <p class="fz-16">${phone.device}</p>
       </div>
     `;
@@ -1896,7 +1896,7 @@ function displayPhoneSpecEmissions() {
   container.innerHTML += `
     <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
       <p class="phone-spec-title" id="currentPhone"><b>${deviceName} Estimated Carbon Emissions</b></p>
-      <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
+      <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="lcz-icon-20" id="lca-viz-q-icon">
         <div class="left">
           <h3 class="fz-12 lca-lexend">How are phone emissions calculated?</h3>
           <p class="fz-12 lca-lexend">We use data from phone companies' product carbon footprint reports. If there is no data, a large language model (LLM) is used to estimate emissions based on publicly available data online.</p>
@@ -1906,7 +1906,7 @@ function displayPhoneSpecEmissions() {
     </div>
     <div class="flex-center cg-8 fz-16">
       <p>CO2e Equivalency: </p>
-      <select id="lca-viz-unit-select" class="br-4 pd-4">
+      <select id="lca-viz-unit-select" class="lcz-br-4 pd-4">
         <option value="0">Miles driven 🚗</option>
         <option value="1">Trees offset 🌳</option>
         <option value="2">Beef Consumed 🥩</option>
@@ -1937,25 +1937,25 @@ function displayPhoneSpecEmissions() {
 
     const isMostGreen = spec.storage === mostGreenOption.storage;
     container.innerHTML += `
-      <div class="details-container fz-16" id=${index + "-c"}>
+      <div class="lcz-details-container fz-16" id=${index + "-c"}>
         <div class="flex-center ${isMostGreen ? "most-green" : ""} cg-4">
           <p><b>${spec.storage} </b>&nbsp;</p>
           ${
             isMostGreen
-              ? `<img src="${most_green_icon}" class="icon-16 emissions-diff-minus br-4 margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
-              : `<span class="emissions-diff-plus fz-12 br-4 margin-0"><b>(+${percentageIncrease.toFixed(
+              ? `<img src="${most_green_icon}" class="lcz-icon-16 emissions-diff-minus lcz-br-4 lcz-margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
+              : `<span class="emissions-diff-plus fz-12 lcz-br-4 lcz-margin-0"><b>(+${percentageIncrease.toFixed(
                   0
                 )}% emissions)</b></span>`
           }
         </div>
-        <div class="flex-center co2e-data-container pd-8 br-8 cg-4 lexend-reg">
-          <p class="margin-0">${co2eValue} kg CO2e</p>
-          <img src="${equivalent_icon}" class="icon-16" alt="Equivalent to">
+        <div class="flex-center co2e-data-container pd-8 lcz-br-8 cg-4 lca-viz-lexend-reg">
+          <p class="lcz-margin-0">${co2eValue} kg CO2e</p>
+          <img src="${equivalent_icon}" class="lcz-icon-16" alt="Equivalent to">
           <div class="lca-viz-unit-container phone flex-center cg-4">
 
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">${Math.ceil(
+                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">${Math.ceil(
                   co2eValue * 2.5
                 )} miles driven by a car &nbsp;🚗</p>
               </div>
@@ -1963,7 +1963,7 @@ function displayPhoneSpecEmissions() {
 
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">${(
+                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">${(
                   co2eValue * 0.048
                 ).toFixed(1)} trees annually &nbsp;🌳</p>
               </div>
@@ -1971,7 +1971,7 @@ function displayPhoneSpecEmissions() {
 
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">${(
+                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">${(
                   co2eValue * 0.033
                 ).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
               </div>
@@ -1991,12 +1991,12 @@ function displayPhoneSpecEmissions() {
 
 // Use this function to display a loading animation while waiting for the API calls
 export async function hideLoadingIcon(boxNumber = "") {
-  const boxClass = boxNumber ? `loading-box-${boxNumber}` : "loading-box";
+  const boxClass = boxNumber ? `lcz-loading-box-${boxNumber}` : "lcz-loading-box";
   let loadingBox = shadowRoot.querySelector(`.${boxClass}`);
   if (loadingBox) {
     return new Promise((resolve) => {
       setTimeout(() => {
-        loadingBox.classList.add("hidden-a");
+        loadingBox.classList.add("lcz-hidden-a");
         resolve();
       }, 1500);
     });
@@ -2024,8 +2024,8 @@ function showElement(element, version) {
       element.style.display = "block";
     }
     requestAnimationFrame(() => {
-      element.classList.remove("hidden-a");
-      element.classList.add("visible-a");
+      element.classList.remove("lcz-hidden-a");
+      element.classList.add("lcz-visible-a");
     });
   } else if (version === "b") {
     if (element.classList.contains("flex-center")) {
@@ -2034,8 +2034,8 @@ function showElement(element, version) {
       element.style.display = "block";
     }
     requestAnimationFrame(() => {
-      element.classList.remove("hidden-b");
-      element.classList.add("visible-b");
+      element.classList.remove("lcz-hidden-b");
+      element.classList.add("lcz-visible-b");
     });
   }
 }
@@ -2154,7 +2154,7 @@ function showGreenestOption(optionsArray) {
       const parentNode = option.parentNode.parentNode.parentNode.parentNode;
       const priceButton = parentNode.querySelector(".magr-c-rates__button");
 
-      const newContainerHTML = ` <div class="lca-viz-greenest-shipping mb-16"> ${priceButton.outerHTML} <div class="flex-center br-4 pd-8 cg-8 green-shipping lca-viz-justify-center"> <img src="${lca_48}" alt="Most eco friendly" class="icon-16"> <span>Most eco-friendly</span> </div> </div> `;
+      const newContainerHTML = ` <div class="lca-viz-greenest-shipping lcz-mb-16"> ${priceButton.outerHTML} <div class="flex-center lcz-br-4 pd-8 cg-8 green-shipping lca-viz-justify-center"> <img src="${lca_48}" alt="Most eco friendly" class="lcz-icon-16"> <span>Most eco-friendly</span> </div> </div> `;
       // Replace the original button with the new container
       priceButton.outerHTML = newContainerHTML;
     }
@@ -2196,11 +2196,11 @@ async function getFreightEmissions(data) {
  */
 export function hideElement(element, version) {
   if (version === "a") {
-    element.classList.remove("visible-a");
-    element.classList.add("hidden-a");
+    element.classList.remove("lcz-visible-a");
+    element.classList.add("lcz-hidden-a");
   } else if (version === "b") {
-    element.classList.remove("visible-b");
-    element.classList.add("hidden-b");
+    element.classList.remove("lcz-visible-b");
+    element.classList.add("lcz-hidden-b");
   }
 }
 

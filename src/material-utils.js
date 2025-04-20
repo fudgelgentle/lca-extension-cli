@@ -22,7 +22,7 @@ export function createRatioSection(ratioList, textSource, index) {
   });
 
   const ratioSection = `
-    <div id="lca-viz-r-section-${index}" class="lca-viz-ratio-container br-4 pd-16">
+    <div id="lca-viz-r-section-${index}" class="lca-viz-ratio-container lcz-br-4 pd-16">
       <div class="lca-viz-toggle flex-center cg-8">
         <span class="fz-12">Freeform Ratio</span>
         <div class="lca-viz-toggle-container">
@@ -32,11 +32,11 @@ export function createRatioSection(ratioList, textSource, index) {
       </div>
       <div class="lca-viz-ratio-detail-text">
         <div class="flex-center lca-viz-space-between">
-          <div class="lca-viz-converted-ratio lca-viz-space-between br-4 fz-16 pd-8 flex-center cg-8 bg-eef2f0">
+          <div class="lca-viz-converted-ratio lca-viz-space-between lcz-br-4 fz-16 pd-8 flex-center cg-8 bg-eef2f0">
             <span>Calculated mass ratio: &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>
             <div class="lca-viz-ratio-values flex-center cg-8">
               ${nRatioList.map((element) =>
-                `<span class="lca-viz-ratio-text br-4 bg-d2ead7">${element.ratio_value}</span>
+                `<span class="lca-viz-ratio-text lcz-br-4 bg-d2ead7">${element.ratio_value}</span>
                 ${element.index < nRatioList.length - 1 ? `<span>:</span>` : ``}`
               ).join('')}
             </div>
@@ -46,7 +46,7 @@ export function createRatioSection(ratioList, textSource, index) {
         <p class="lca-viz-text-source fz-12"><b>Text source:</b> <i>“${textSource}”</i></p>
       </div>
       <!-- & param for toggle ratio off -->
-      <div class="lca-viz-param-toggle-off hidden">
+      <div class="lca-viz-param-toggle-off lca-viz-hidden">
         <br>
         ${nRatioList.map((element) =>
           getParam(element.name, element.index, 'g', 1, undefined, undefined, undefined)
@@ -54,9 +54,9 @@ export function createRatioSection(ratioList, textSource, index) {
       </div>
 
       <!-- & param for toggle ratio on -->
-      <div class="lca-viz-param-toggle-on lca-viz-space-between flex-center bg-eef2f0 pd-16 br-8 cg-8 mt-12">
+      <div class="lca-viz-param-toggle-on lca-viz-space-between flex-center bg-eef2f0 pd-16 lcz-br-8 cg-8 lcz-mt-12">
       ${nRatioList.map((element, i) =>
-        `<div class="lca-viz-ratio-control fz-16 bg-d2ead7 br-8 pd-16">
+        `<div class="lca-viz-ratio-control fz-16 bg-d2ead7 lcz-br-8 pd-16">
           <div class="control-section">${element.name}</div>
           <div class="flex-center cg-4 lcz-mt-8 lca-viz-justify-center">
             <!-- ? up-down-btn -->
@@ -103,7 +103,7 @@ export function createRatioSection(ratioList, textSource, index) {
  */
 export function getParam(rawMaterialName, index, unit, defaultVal = 1, isProcesses = false, unit2 = null, defaultVal2 = 0) {
   const paramDiv = `
-      <div class="lca-viz-param-fill flex-center br-8 fz-16">
+      <div class="lca-viz-param-fill flex-center lcz-br-8 fz-16">
         <span>${rawMaterialName}</span>
         <div class="flex-center cg-4">
           <div class="lca-viz-special-text-container-2 ${isProcesses ? 'lca-viz-processes': ''}">
@@ -161,8 +161,8 @@ export function getTotalEmissionsHTML(totalEmissions) {
   return `
     <div class="lca-viz-total-emissions-title flex-center lca-viz-space-between">
       <span><b>Total Emissions: </b></span>
-      <div class="flex-center cg-8 fz-12 mb-12">
-        <select id="lca-viz-unit-select" class="br-4 pd-4">
+      <div class="flex-center cg-8 fz-12 lcz-mb-12">
+        <select id="lca-viz-unit-select" class="lcz-br-4 pd-4">
           <option value="0">Miles driven 🚗</option>
           <option value="1">Trees offset 🌳</option>
           <option value="2">Beef Consumed 🥩</option>
@@ -170,14 +170,14 @@ export function getTotalEmissionsHTML(totalEmissions) {
       </div>
     </div>
 
-    <div class="lca-viz-total-emissions flex-column-center br-8 rg-12 pd-16">
+    <div class="lca-viz-total-emissions flex-column-center lcz-br-8 rg-12 pd-16">
       <span class="fz-20 co2e-value lcz-mt-4">
         <b><span id="lcz-total-emissions">${totalEmissions}</span> g CO2e</b>
       </span>
       <div class="lca-viz-unit-container freight flex-center cg-4">
         <div class="lca-viz-unit-div">
           <div class="flex-center lca-viz-justify-center cg-8">
-            <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">
+            <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">
               or <span id="lcz-miles-driven">${milesDriven}</span> miles driven by a car &nbsp;🚗
             </p>
           </div>
@@ -185,7 +185,7 @@ export function getTotalEmissionsHTML(totalEmissions) {
 
         <div class="lca-viz-unit-div">
           <div class="flex-center lca-viz-justify-center cg-8">
-            <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">
+            <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">
               or <span id="lcz-trees-offset">${treesOffset}</span> trees annually &nbsp;🌳
             </p>
           </div>
@@ -193,7 +193,7 @@ export function getTotalEmissionsHTML(totalEmissions) {
 
         <div class="lca-viz-unit-div">
           <div class="flex-center lca-viz-justify-center cg-8">
-            <p class="margin-0 grey-text fz-16 lca-viz-text-align-center">
+            <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">
               or <span id="lcz-beef">${beefValue} ${beefUnit}</span> of beef consumed &nbsp;🥩
             </p>
           </div>
@@ -436,7 +436,7 @@ export function getQuestionLCA(title, textSource, scenario, isDeviceExist) {
   const resultHTML = `
       <div class="flex-center lca-viz-header-2 cg-12 pd-12">
         <div class="flex-center cg-12 lca-viz-header-title">
-          <img alt="logo" src="${lca_32}" class="icon-20">
+          <img alt="logo" src="${lca_32}" class="lcz-icon-20">
           <span><b>Living Sustainability</b></span>
         </div>
         <button id="lca-viz-close-question" class="lca-viz-close-button flex-center">
@@ -456,9 +456,9 @@ export function getQuestionLCA(title, textSource, scenario, isDeviceExist) {
           <div class="lca-viz-vl lca-viz-shipping-height"></div>
           ${getQuestionForm(scenario, isDeviceExist)}
         </div>
-        <div class="lca-viz-calculate-container-2 lca-viz-calculate-fixed invalid br-8 pd-4">
+        <div class="lca-viz-calculate-container-2 lca-viz-calculate-fixed invalid lcz-br-8 pd-4">
           <div class="lca-viz-calculate-btn">
-            <p class="fz-16 margin-8 lca-viz-calculate-btn-txt-2">Calculate emissions</p>
+            <p class="fz-16 lcz-margin-8 lca-viz-calculate-btn-txt-2">Calculate emissions</p>
           </div>
           <small id="lca-viz-calculate-error" class="lca-viz-input-error"></small>
         </div>
@@ -468,7 +468,7 @@ export function getQuestionLCA(title, textSource, scenario, isDeviceExist) {
   // <div class="lca-viz-bottom-gradient"></div>
   // <div class="lca-viz-expand-collapse-container">
   //   <div class="lca-viz-expand-collapse-content flex-center lca-viz-justify-center cg-8">
-  //     <img src="${expand_icon_wide}" alt="Click to expand content" class="icon-24 lca-viz-expand-collapse-icon">
+  //     <img src="${expand_icon_wide}" alt="Click to expand content" class="lcz-icon-24 lca-viz-expand-collapse-icon">
   //   </div>
   // </div>
   console.log('returing resultHTML');
@@ -487,19 +487,19 @@ export function getQuestionForm(scenario, isDeviceExist) {
       <form class="lca-viz-question-form">
         <div>
           <label for="lca-input-from"><b>From *</b> </label>
-          <input type="text" id="lca-input-from" name="from" class="lca-viz-question-from-to br-8 lcz-mt-8 mb-2 invalid" required>
+          <input type="text" id="lca-input-from" name="from" class="lca-viz-question-from-to lcz-br-8 lcz-mt-8 lcz-mb-2 invalid" required>
           <small id="lca-viz-from-error" class="lca-viz-input-error">Enter a location.</small>
         </div>
-        <div class="mt-24">
+        <div class="lcz-mt-24">
           <label for="lca-input-to"><b>To *</b></label>
-          <input type="text" id="lca-input-to" name="to" class="lca-viz-question-from-to br-8 lcz-mt-8 mb-2 invalid" required>
+          <input type="text" id="lca-input-to" name="to" class="lca-viz-question-from-to lcz-br-8 lcz-mt-8 lcz-mb-2 invalid" required>
           <small id="lca-viz-to-error" class="lca-viz-input-error">Enter a location.</small>
         </div>
-        <div class="lca-viz-package-weight-container mt-24">
+        <div class="lca-viz-package-weight-container lcz-mt-24">
           <label for="lca-input-package-weight" class="package-weight-label"><b>Weight *</b></label><br>
-          <div class="lca-viz-package-parent flex-stretch cg-8 mb-2">
+          <div class="lca-viz-package-parent flex-stretch cg-8 lcz-mb-2">
             <input type="number" name="package-weight" min="1" step="1" id="lca-input-package-weight" class="lca-viz-question-weight br-8 lcz-mt-8 lca-lexend invalid" required>
-            <div class="lca-viz-package-unit-container br-8 lcz-mt-8">
+            <div class="lca-viz-package-unit-container lcz-br-8 lcz-mt-8">
               <select id="lca-input-package-unit" name="package-unit" class="lca-viz-question-unit lca-lexend" required>
                 <option value="lbs">lbs</option>
                 <option value="kg">kg</option>
@@ -516,14 +516,14 @@ export function getQuestionForm(scenario, isDeviceExist) {
       <form class="lca-viz-question-form">
         <div>
           <label for="lca-input-from"><b>${isDeviceExist ? "Device" : "Process name"}</b> </label>
-          <input type="text" id="lca-input-from" name="from" class="lca-viz-question-from-to br-8 lcz-mt-8 mb-2 read-only" readonly>
+          <input type="text" id="lca-input-from" name="from" class="lca-viz-question-from-to lcz-br-8 lcz-mt-8 lcz-mb-2 read-only" readonly>
           <small id="lca-viz-from-error" class="lca-viz-input-error">Enter a device name.</small>
         </div>
-        <div class="lca-viz-package-weight-container mt-24">
+        <div class="lca-viz-package-weight-container lcz-mt-24">
           <label for="lca-input-package-weight" class="package-weight-label"><b>Usage Duration *</b></label><br>
-          <div class="lca-viz-duration-parent flex-stretch cg-8 mb-2">
-            <input type="number" name="package-weight" min="1" step="1" id="lca-input-package-weight" class="lca-viz-question-weight br-8 lcz-mt-8 lca-lexend invalid" required>
-            <div class="lca-viz-package-unit-container br-8 lcz-mt-8">
+          <div class="lca-viz-duration-parent flex-stretch cg-8 lcz-mb-2">
+            <input type="number" name="package-weight" min="1" step="1" id="lca-input-package-weight" class="lca-viz-question-weight lcz-br-8 lcz-mt-8 lca-lexend invalid" required>
+            <div class="lca-viz-package-unit-container lcz-br-8 lcz-mt-8">
               <select id="lca-input-package-unit" name="package-unit" class="lca-viz-question-unit lca-lexend" required>
                 <option value="h">hours</option>
                 <option value="min">minutes</option>
@@ -533,9 +533,9 @@ export function getQuestionForm(scenario, isDeviceExist) {
           </div>
           <small id="lca-viz-package-error" class="lca-viz-input-error">Enter usage duration.</small>
         </div>
-        <div class="mt-24">
+        <div class="lcz-mt-24">
           <label for="lca-input-to"><b>Location </b></label>
-          <input type="text" id="lca-input-to" name="to" class="lca-viz-question-from-to br-8 lcz-mt-8 mb-2" placeholder="This is optional">
+          <input type="text" id="lca-input-to" name="to" class="lca-viz-question-from-to lcz-br-8 lcz-mt-8 lcz-mb-2" placeholder="This is optional">
           <small id="lca-viz-to-error" class="lca-viz-input-error">Enter a location.</small>
         </div>
       </form>

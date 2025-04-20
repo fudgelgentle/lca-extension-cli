@@ -177,7 +177,7 @@ async function init() {
   masterQContainer = document.createElement("div");
   masterQContainer.setAttribute("role", "main");
   masterQContainer.setAttribute("id", "lca-viz-question-container");
-  masterQContainer.classList.add("lexend", "br-8", "fz-16");
+  masterQContainer.classList.add("lexend", "lcz-br-8", "fz-16");
   masterQContainer.setAttribute("tabindex", "0");
   document.body.append(masterQContainer);
   const placeholder = document.createElement("div");
@@ -450,10 +450,10 @@ async function init() {
     console.log("originalWidth = " + originalWidth);
 
     function show(element) {
-      element.classList.remove("hidden");
+      element.classList.remove("lca-viz-hidden");
     }
     function hide(element) {
-      element.classList.add("hidden");
+      element.classList.add("lca-viz-hidden");
     }
 
     toggleSwitches.forEach((toggleSwitch, index) => {
@@ -599,7 +599,7 @@ async function init() {
 
     modifiedText = modifiedText +
       `<div class="lca-viz-inline" id="lca-viz-end">
-        <img src="${off_lca_btn}" alt="Turn off the LCA visualizer" class="icon-10 off-lca-btn lca-viz-hidden">
+        <img src="${off_lca_btn}" alt="Turn off the LCA visualizer" class="lcz-icon-10 off-lca-btn lca-viz-hidden">
       </div>`;
     div.innerHTML = modifiedText;
 
@@ -1085,8 +1085,8 @@ async function init() {
   function getLCAActionBtn() {
     const actionBtn = `
       <div id="lca-viz-action-btn-container" class="pd-12">
-        <div class="flex-center lca-viz-interactable pd-12 br-8 cg-8" id="lca-viz-action-btn">
-          <img src="${lca_48}" alt="LCA Image" class="floating-lca-img icon-20">
+        <div class="flex-center lca-viz-interactable pd-12 lcz-br-8 cg-8" id="lca-viz-action-btn">
+          <img src="${lca_48}" alt="LCA Image" class="floating-lca-img lcz-icon-20 lcz-mb-0">
           <span class="lca-viz-hidden lca-lexend fz-14" id="lca-viz-action-btn-text"></span>
         </div>
       </div>
@@ -1133,7 +1133,7 @@ async function init() {
       map.innerHTML = `
         <div class="flex-center lca-viz-header cg-12 pd-12">
         <div class="flex-center cg-12 lca-viz-header-title">
-          <img alt="logo" src="${lca_48}" class="icon-20 lca-viz-lca-logo">
+          <img alt="logo" src="${lca_48}" class="lcz-icon-20 lca-viz-lca-logo">
           <span><b>Living Sustainability</b></span>
         </div>
         <button id="lca-viz-close-map" class="lca-viz-close-button flex-center">
@@ -1144,7 +1144,7 @@ async function init() {
         </div>
         <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
           <span class="lca-viz-raw-material-title"><b>Estimated Carbon Footprint of Raw Materials</b></span>
-          <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="icon-20" id="lca-viz-q-icon">
+          <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="lcz-icon-20" id="lca-viz-q-icon">
             <div class="left">
               <h3 class="fz-12 lca-lexend">How are raw material emissions calculated?</h3>
               <p class="fz-12">We are using a large language model (LLM) to extract relevant raw materials and conduct a life cycle assessment (LCA) of the raw materials using available public datasets on the internet.</p>
@@ -1173,7 +1173,7 @@ async function init() {
 
       const totalEmissionsSection = document.createElement("div");
       totalEmissionsSection.classList.add("lca-viz-total-emissions-container");
-      totalEmissionsSection.classList.add("lcz-mt-8", "mb-8");
+      totalEmissionsSection.classList.add("lcz-mt-8", "lcz-mb-8");
 
       map.appendChild(totalEmissionsSection);
       map.appendChild(paramSection);
@@ -1392,16 +1392,16 @@ async function init() {
       hideMasterQContainer();
       openContainer.style.display = "flex";
       requestAnimationFrame(() => {
-        openContainer.classList.remove("hidden-b");
-        openContainer.classList.add("visible-b");
+        openContainer.classList.remove("lcz-hidden-b");
+        openContainer.classList.add("lcz-visible-b");
       });
     });
     openContainer.addEventListener("click", () => {
       showMasterQContainer();
       openContainer.style.display = "flex";
       requestAnimationFrame(() => {
-        openContainer.classList.add("hidden-b");
-        openContainer.classList.remove("visible-b");
+        openContainer.classList.add("lcz-hidden-b");
+        openContainer.classList.remove("lcz-visible-b");
       });
     });
   }
@@ -1873,8 +1873,8 @@ function toggleValidation(input, errorId, isValid) {
  */
 function getLCAFloatingMenu() {
   const floatingMenu = `
-    <div class="flex-center floating-lca-menu pd-12 br-8 hidden-b" id="lca-viz-question-menu">
-      <img src="${lca_48}" alt="LCA Image" class="floating-lca-img icon-24">
+    <div class="flex-center lca-viz-floating-lca-menu pd-12 lcz-br-8 lcz-hidden-b" id="lca-viz-question-menu">
+      <img src="${lca_48}" alt="LCA Image" class="floating-lca-img lcz-icon-24">
     </div>
   `;
   return floatingMenu;
@@ -1896,7 +1896,7 @@ function showMasterQContainer() {
 function hideFloatingQMenu() {
   floatingQMenu.style.display = "flex";
   requestAnimationFrame(() => {
-    floatingQMenu.classList.add("hidden-b");
-    floatingQMenu.classList.remove("visible-b");
+    floatingQMenu.classList.add("lcz-hidden-b");
+    floatingQMenu.classList.remove("lcz-visible-b");
   });
 }
