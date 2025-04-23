@@ -1119,7 +1119,7 @@ function injectFreightHTMLContent(freightData) {
           <div class="lca-viz-unit-container freight flex-center cg-4">
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="lcz- lcz-grey-text fz-16 lca-viz-text-align-center">or ${Math.ceil(
+                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">or ${Math.ceil(
                   groundCo2eValue * 2.5
                 )} miles driven by a car &nbsp;🚗</p>
               </div>
@@ -1127,7 +1127,7 @@ function injectFreightHTMLContent(freightData) {
 
             <div class="lca-viz-unit-div">
               <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="lcz- lcz-grey-text fz-16 lca-viz-text-align-center">or ${(
+                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">or ${(
                   groundCo2eValue * 0.048
                 ).toFixed(1)} trees annually &nbsp;🌳</p>
               </div>
@@ -1671,9 +1671,9 @@ function displaySideBySideComparison(phoneId) {
   let specContainer = shadowRoot.querySelector(".lcz-side-by-side-spec-container");
   specContainer.innerHTML = "";
   specContainer.innerHTML += `
-    <p class="lcz- lcz-side-phone-text fz-16"><b>${currentPhone.device}</b></p>
+    <p class="lcz-margin-0 lcz-side-phone-text fz-16"><b>${currentPhone.device}</b></p>
     <p class="lcz-margin-0 lcz-side-phone-text fz-16"><b>${comparedPhone.device}</b></p>
-    <img src="${red_trash_icon}" class="lcz-icon-16 trash-btn" alt="remove device">
+    <img src="${red_trash_icon}" class="lcz-icon-16 lcz-trash-btn" alt="remove device">
   `;
 
   let arrayResult = alignStorageArrays(currentPhone.specs, comparedPhone.specs);
@@ -1734,7 +1734,7 @@ function displaySideBySideComparison(phoneId) {
     ".lca-viz-competitor-section"
   );
 
-  const trashBtn = specContainer.querySelector(".trash-btn");
+  const trashBtn = specContainer.querySelector(".lcz-trash-btn");
   trashBtn.addEventListener("click", () => {
     hideElement(wrapper, "a");
     showElement(phoneContainer, "a");
