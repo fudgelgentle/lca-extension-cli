@@ -54,3 +54,47 @@ export function handleCO2eEquivalencyChange(selector, isRawMaterial = false) {
     });
   }
 }
+
+/**
+ * Hides an element using CSS transitions.
+ * @param {HTMLElement} element The element to be hidden
+ * @param {string} version The animation style. If no version is given, use the default style
+ */
+export function hideElement(element, version) {
+  if (version === "a") {
+    element.classList.remove("lcz-visible-a");
+    element.classList.add("lcz-hidden-a");
+  } else if (version === "b") {
+    element.classList.remove("lcz-visible-b");
+    element.classList.add("lcz-hidden-b");
+  }
+}
+
+/**
+ * Shows an element. Only works with flex and block elements
+ * @param {element} element The element to be shown
+ * @param {*} version The animation style. If no version is given, use the default style
+ */
+export function showElement(element, version) {
+  if (version === "a") {
+    if (element.classList.contains("flex-center")) {
+      element.style.display = "flex";
+    } else {
+      element.style.display = "block";
+    }
+    requestAnimationFrame(() => {
+      element.classList.remove("lcz-hidden-a");
+      element.classList.add("lcz-visible-a");
+    });
+  } else if (version === "b") {
+    if (element.classList.contains("flex-center")) {
+      element.style.display = "flex";
+    } else {
+      element.style.display = "block";
+    }
+    requestAnimationFrame(() => {
+      element.classList.remove("lcz-hidden-b");
+      element.classList.add("lcz-visible-b");
+    });
+  }
+}

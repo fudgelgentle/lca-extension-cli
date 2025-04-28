@@ -4,29 +4,18 @@
 // 3. Cloud computing carbon emissions
 
 import { isDomainValid } from "./content";
-import { detectPhoneModel } from "./phone-utils";
-import { getPhoneCarbonData } from "./phone-utils";
-import { getRecommendedModels } from "./phone-utils";
+import { detectPhoneModel } from "./autodetect/phone/phone-utils";
+import { getPhoneCarbonData } from "./autodetect/phone/phone-utils";
+import { getRecommendedModels } from "./autodetect/phone/phone-utils";
 import { getFedexDataChange, observeFedexShippingOptions,
   recordAllInputChange, recordPackageTypeChange, recordFromToAddressChange } from "./autodetect/freight/freight-tracker";
-import { getFreightHTMLContent } from "./autodetect/freight/freight";
-import { handleCO2eEquivalencyChange } from "./utils/ui-utils";
+import { getFreightHTMLContent } from "./autodetect/freight/freight-ui";
+import { handleCO2eEquivalencyChange, hideElement, showElement } from "./utils/ui-utils";
+import { getPhoneEmissionsSkeleton, displayPhoneSpecEmissions, displaySideBySideComparison } from "./autodetect/phone/phone-ui";
 
 const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
 
 const lca_48 = chrome.runtime.getURL("../assets/img/lca-48.png");
-const plus_square_icon = chrome.runtime.getURL(
-  "../assets/img/plus-square-icon.png"
-);
-const red_trash_icon = chrome.runtime.getURL(
-  "../assets/img/red-trash-icon.png"
-);
-const most_green_icon = chrome.runtime.getURL(
-  "../assets/img/most-green-icon.png"
-);
-const equivalent_icon = chrome.runtime.getURL(
-  "../assets/img/equivalent-icon.png"
-);
 const sync_icon = chrome.runtime.getURL("../assets/img/sync-icon.png");
 const question_icon = chrome.runtime.getURL("../assets/img/question-icon.png");
 
@@ -127,9 +116,7 @@ async function trackPhone() {
   if (phoneModel && isDomainValid(allowedDomains)) {
     try {
       currentPhoneData = await getPhoneCarbonData(phoneModel);
-      currentRecommendedPhones = await getRecommendedModels(
-        currentPhoneData.device
-      );
+      currentRecommendedPhones = await getRecommendedModels(currentPhoneData.device);
       await injectPopupContent("phone");
     } catch (error) {
       console.error(error);
@@ -643,11 +630,11 @@ export async function injectPopupContent(
     const phoneSkeletonHTML = getPhoneEmissionsSkeleton();
     masterContainer.insertAdjacentHTML("beforeend", phoneSkeletonHTML);
     // Stop input propogation of the search-phone input. Some websites have their own input behavior. We need to disable them.
-    stopInputPropogation(shadowRoot.getElementById("search-phone"));
+    // stopInputPropogation(shadowRoot.getElementById("search-phone"));
     // Delay the execution of showPhoneEmissions to ensure DOM elements are available
-    setTimeout(() => {
+    setTimeout(async () => {
       masterContainer.classList.remove("lca-viz-hidden");
-      showPhoneEmissions();
+      await showPhoneEmissions();
     }, 0);
   } else if (popupCase === "freight") {
     const freightContent = getFreightHTMLContent(freightData.formatted);
@@ -669,17 +656,17 @@ export async function injectPopupContent(
 }
 
 // Stops the input propogation of the input element
-function stopInputPropogation(input) {
-  input.addEventListener("keydown", (event) => {
-    event.stopPropagation();
-  });
-  input.addEventListener("keyup", (event) => {
-    event.stopPropagation();
-  });
-  input.addEventListener("keypress", (event) => {
-    event.stopPropagation();
-  });
-}
+// function stopInputPropogation(input) {
+//   input.addEventListener("keydown", (event) => {
+//     event.stopPropagation();
+//   });
+//   input.addEventListener("keyup", (event) => {
+//     event.stopPropagation();
+//   });
+//   input.addEventListener("keypress", (event) => {
+//     event.stopPropagation();
+//   });
+// }
 
 // Returns the HTML code for the floating menu
 function getLCAFloatingMenu() {
@@ -810,61 +797,6 @@ function getCloudEmissionsSkeleton() {
   return cloudEmissionsSkeleton;
 }
 
-/**
- * @returns {HTMLElement} Returns the skeleton code for phone emissions.
- */
-function getPhoneEmissionsSkeleton() {
-  const phoneEmissionsSkeleton = `
-    <div class="phone-master-container">
-      <section class="phone-container lcz-br-8 pd-16 lcz-mt-12 lcz-hidden-a">
-        <div class="lcz-loading-box flex-center lcz-br-8 pd-16 lcz-mt-12">
-          <div class="lcz-loader">
-            <div class="lca-viz-circle"></div>
-            <div class="lca-viz-circle"></div>
-            <div class="lca-viz-circle"></div>
-          </div>
-        </div>
-        <section class="phone-spec-container fz-20 lcz-mt-12 lcz-hidden-a"></section>
-      </section>
-
-      <section class="compare-phone lcz-br-8 lcz-hidden-a">
-        <div class="compare-container lcz-br-8 pd-4 lca-viz-hidden">
-          <div class="flex-center compare-btn">
-            <img src="${plus_square_icon}" class="lcz-icon-20">
-            <p class="fz-16 lcz-margin-8">Compare</p>
-          </div>
-        </div>
-        <div class="select-phone-container lcz-br-8 pd-16 slide-content lca-viz-hidden">
-          <div class="flex-center close-phone-btn">
-            <svg class="lcz-icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-          </div>
-          <p class="lcz-margin-0 fz-20">Select phone model</p>
-          <p class="phone-spec-title fz-12">Comparing with: <span id="lca-viz-compare-with"><b>iPhone 15 Pro</b></span></p>
-          <div class="lca-viz-search-container lcz-br-8 pd-16 fz-16">
-            <input type="text" id="search-phone" class="lcz-grey-text fz-16" placeholder="Search..." title="Type to search for phone models">
-            <div class="phone-model-container">
-            </div>
-          </div>
-        </div>
-        <div class="lcz-mt-24 lcz-mb-16 lca-viz-competitor-section">
-          <p class="lcz-margin-0 fz-20 lcz-mb-16 pdl-4"><b>Compare similar phones:</b></p>
-          <div class="lca-viz-competitor-container rg-12">
-        </div>
-
-        </div>
-      </section>
-
-      <section class="lcz-side-by-side-section lcz-hidden-a lcz-mt-12">
-        <div class="side-by-side-container flex-center">
-          <div class="lcz-side-by-side-spec-container lcz-grid-1fr-1fr cg-12"></div>
-        </div>
-      </section>
-    </div>
-  `;
-  return phoneEmissionsSkeleton;
-}
 
 // Displays the UI for the phone emissions
 async function showPhoneEmissions() {
@@ -875,9 +807,9 @@ async function showPhoneEmissions() {
   showElement(phoneSpecContainer, "a");
   comparePhone.classList.remove("lcz-hidden-a");
   masterContainer.focus();
-  displayPhoneSpecEmissions();
+  displayPhoneSpecEmissions(currentPhoneData, shadowRoot);
   await handlePhoneCompare();
-  handlePhoneSearch();
+  // handlePhoneSearch();
 }
 
 // Displays the UI for the freight emissions
@@ -1107,88 +1039,86 @@ function injectGoogleMaps(mode) {
 }
 
 // Handles searching for a phone model from the database
-function handlePhoneSearch() {
-  const searchInput = shadowRoot.getElementById("search-phone");
-  searchInput.addEventListener("keyup", search);
-}
+// function handlePhoneSearch() {
+//   const searchInput = shadowRoot.getElementById("search-phone");
+//   searchInput.addEventListener("keyup", search);
+// }
 
-// Searches the phone model from the database
-function search() {
-  let input = shadowRoot.getElementById("search-phone");
-  let filter = input.value.toUpperCase();
-  let container = shadowRoot.querySelector(".phone-model-container");
-  const children = container.children;
-  for (let i = 0; i < children.length; i++) {
-    let textValue = children[i].textContent || children[i].innerText;
-    if (textValue.toUpperCase().indexOf(filter) > -1) {
-      children[i].style.display = "";
-    } else {
-      children[i].style.display = "none";
-    }
-  }
-}
+// // Searches the phone model from the database
+// function search() {
+//   let input = shadowRoot.getElementById("search-phone");
+//   let filter = input.value.toUpperCase();
+//   let container = shadowRoot.querySelector(".phone-model-container");
+//   const children = container.children;
+//   for (let i = 0; i < children.length; i++) {
+//     let textValue = children[i].textContent || children[i].innerText;
+//     if (textValue.toUpperCase().indexOf(filter) > -1) {
+//       children[i].style.display = "";
+//     } else {
+//       children[i].style.display = "none";
+//     }
+//   }
+// }
 
 // Handles the interaction of the phone comparison, including the compare and close button
 async function handlePhoneCompare() {
-  const compareBtn = shadowRoot.querySelector(".compare-btn");
-  const comparePhone = shadowRoot.querySelector(".compare-phone");
-  const compareContainer = shadowRoot.querySelector(".compare-container");
-  const slideContent = shadowRoot.querySelector(".slide-content");
+  // const compareBtn = shadowRoot.querySelector(".compare-btn");
+  // const comparePhone = shadowRoot.querySelector(".compare-phone");
+  // const compareContainer = shadowRoot.querySelector(".compare-container");
+  // const slideContent = shadowRoot.querySelector(".slide-content");
 
+  // compareBtn.addEventListener("click", async () => {
+  //   // await populatePhoneModel();
+  //   comparePhone.classList.add("down");
+  //   compareContainer.classList.add("hide");
+  //   slideContent.classList.add("slide-down");
+  //   handleSideBySideSelection();
+  // });
+
+  // const closeBtn = shadowRoot.querySelector(".close-phone-btn");
+  // closeBtn.addEventListener("click", () => {
+  //   comparePhone.classList.remove("down");
+  //   compareContainer.classList.remove("hide");
+  //   slideContent.classList.remove("slide-down");
+  // });
   await populatePhoneModel();
-  compareBtn.addEventListener("click", async () => {
-    // await populatePhoneModel();
-    comparePhone.classList.add("down");
-    compareContainer.classList.add("hide");
-    slideContent.classList.add("slide-down");
-    handleSideBySideSelection();
-  });
-
-  const closeBtn = shadowRoot.querySelector(".close-phone-btn");
-  closeBtn.addEventListener("click", () => {
-    comparePhone.classList.remove("down");
-    compareContainer.classList.remove("hide");
-    slideContent.classList.remove("slide-down");
-  });
 
   // For the new 2 recommended phone models
-  const competitorNodeList = shadowRoot.querySelectorAll(
-    ".lca-viz-competitor-phone"
-  );
-  const competitorSection = shadowRoot.querySelector(
-    ".lca-viz-competitor-section"
-  );
+  const competitorNodeList = shadowRoot.querySelectorAll(".lca-viz-competitor-phone");
+  const competitorSection = shadowRoot.querySelector(".lca-viz-competitor-section");
+
   competitorNodeList.forEach((phone) => {
     phone.addEventListener("click", () => {
       const phoneId = parseInt(phone.id);
 
       console.log("phone Id = " + phoneId);
       competitorSection.classList.add("lcz-hidden-a");
-      displaySideBySideComparison(phoneId);
+      console.log('currentPhoneData before passing on to phone-utils: ', currentPhoneData);
+      displaySideBySideComparison(phoneId, currentPhoneData, currentRecommendedPhones, shadowRoot);
     });
   });
 }
 
 // Handles the selection of a phone model in the list
-function handleSideBySideSelection() {
-  const phoneNodeList = shadowRoot.querySelector(
-    ".phone-model-container"
-  ).children;
-  Array.from(phoneNodeList).forEach((phone) => {
-    phone.addEventListener("click", (event) => {
-      const phoneId = parseInt(event.target.id);
+// function handleSideBySideSelection() {
+//   const phoneNodeList = shadowRoot.querySelector(
+//     ".phone-model-container"
+//   ).children;
+//   Array.from(phoneNodeList).forEach((phone) => {
+//     phone.addEventListener("click", (event) => {
+//       const phoneId = parseInt(event.target.id);
 
-      const comparePhone = shadowRoot.querySelector(".compare-phone");
-      const compareContainer = shadowRoot.querySelector(".compare-container");
-      const slideContent = shadowRoot.querySelector(".slide-content");
-      comparePhone.classList.remove("down");
-      compareContainer.classList.remove("hide");
-      slideContent.classList.remove("slide-down");
+//       const comparePhone = shadowRoot.querySelector(".compare-phone");
+//       const compareContainer = shadowRoot.querySelector(".compare-container");
+//       const slideContent = shadowRoot.querySelector(".slide-content");
+//       comparePhone.classList.remove("down");
+//       compareContainer.classList.remove("hide");
+//       slideContent.classList.remove("slide-down");
 
-      displaySideBySideComparison(phoneId);
-    });
-  });
-}
+//       displaySideBySideComparison(phoneId);
+//     });
+//   });
+// }
 
 // Handles the changing of different reference units for phone emissions flow.
 // (i.e. changing between "~ kg of trash burned", "~ of miles driven", and "~ of trees cut down" every 3 seconds)
@@ -1242,232 +1172,11 @@ function handleSideBySideSelection() {
 // }
 
 /**
- * Takes in phone object and returns the html code for data source.
- * @param {Object} phoneObject The phone object
- * @returns the html code for data source.
- */
-function getDataSource(phoneObject) {
-  if (phoneObject.method && phoneObject.method === "given") {
-    const txtSourceHTML = `
-      <div class="lca-viz-txt-source pdt-12">
-        <a href="${phoneObject.source}" class="lca-link fz-16" target="_blank">Data source</a>
-      </div>`;
-    return txtSourceHTML;
-  } else {
-    return `<div></div>`;
-  }
-}
-
-// Display a side-by-side carbon emissions comparison of two phones
-function displaySideBySideComparison(phoneId) {
-  const currentPhone = currentPhoneData;
-  const comparedPhone = currentRecommendedPhones.find(
-    (phone) => phone.index === phoneId
-  );
-
-  const wrapper = shadowRoot.querySelector(".lcz-side-by-side-section");
-  const phoneContainer = shadowRoot.querySelector(".phone-container");
-
-  let specContainer = shadowRoot.querySelector(".lcz-side-by-side-spec-container");
-  specContainer.innerHTML = "";
-  specContainer.innerHTML += `
-    <p class="lcz-margin-0 lcz-side-phone-text fz-16"><b>${currentPhone.device}</b></p>
-    <p class="lcz-margin-0 lcz-side-phone-text fz-16"><b>${comparedPhone.device}</b></p>
-    <img src="${red_trash_icon}" class="lcz-icon-16 lcz-trash-btn" alt="remove device">
-  `;
-
-  let arrayResult = alignStorageArrays(currentPhone.specs, comparedPhone.specs);
-  let currentArray = arrayResult[0];
-  let comparedArray = arrayResult[1];
-
-  for (let i = 0; i < currentArray.length; i++) {
-    const result = findGreener(currentArray[i].co2e, comparedArray[i].co2e);
-    // Returns a boolean checking
-    specContainer.innerHTML += `
-      <div class="lcz-details-container fz-16">
-        <div class="flex-center most-green cg-4">
-          <p><b>${currentArray[i].storage}</b>&nbsp;</p>
-          ${
-            currentArray[i].mostEco
-              ? `<img src="${most_green_icon}" class="lcz-icon-16 emissions-diff-minus lcz-br-4 lcz-margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
-              : ""
-          }
-        </div>
-        <div class="flex-center co2e-data-container pd-8 lcz-br-8 cg-4 lca-viz-lexend-reg ${
-          result === "one" ? "greener" : result === "two" ? "" : ""
-        }">
-          <p class="lcz-margin-0">${
-            currentArray[i].co2e !== "--"
-              ? currentArray[i].co2e + " kg CO2e"
-              : "--"
-          } </p>
-        </div>
-      </div>
-      <div class="lcz-details-container fz-16">
-        <div class="flex-center most-green cg-4">
-          <p><b>${comparedArray[i].storage}</b>&nbsp;</p>
-          ${
-            comparedArray[i].mostEco
-              ? `<img src="${most_green_icon}" class="lcz-icon-16 emissions-diff-minus lcz-br-4 lcz-margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
-              : ""
-          }
-        </div>
-        <div class="flex-center co2e-data-container pd-8 lcz-br-8 cg-4 lca-viz-lexend-reg ${
-          result === "one" ? "" : result === "two" ? "greener" : ""
-        }">
-          <p class="lcz-margin-0">${
-            comparedArray[i].co2e !== "--"
-              ? comparedArray[i].co2e + " kg CO2e"
-              : "--"
-          }</p>
-        </div>
-      </div>
-    `;
-  }
-
-  const currentPhoneDataSource = getDataSource(currentPhone);
-  const comparedPhoneDataSource = getDataSource(comparedPhone);
-  specContainer.innerHTML += currentPhoneDataSource;
-  specContainer.innerHTML += comparedPhoneDataSource;
-
-  const competitorSection = shadowRoot.querySelector(
-    ".lca-viz-competitor-section"
-  );
-
-  const trashBtn = specContainer.querySelector(".lcz-trash-btn");
-  trashBtn.addEventListener("click", () => {
-    hideElement(wrapper, "a");
-    showElement(phoneContainer, "a");
-
-    competitorSection.classList.remove("lcz-hidden-a");
-  });
-
-  const lcaBanner = shadowRoot.querySelector(".lca-banner");
-  lcaBanner.insertAdjacentElement("afterend", wrapper);
-
-  if (phoneContainer.classList.contains("lcz-hidden-a")) {
-    hideElement(wrapper, "a");
-    showElement(wrapper, "a");
-  } else {
-    hideElement(phoneContainer, "a");
-    showElement(wrapper, "a");
-  }
-}
-
-/**
- * @param {String} emissionsOne
- * @param {String} emissionsTwo
- * @returns returns null if co2e value is NaN, returns "one" if emissionsOne is less than emissionsTwo, returns "two" otherwise.
- */
-function findGreener(emissionsOne, emissionsTwo) {
-  const eOne = parseInt(emissionsOne);
-  const eTwo = parseInt(emissionsTwo);
-  if (isNaN(eOne) || isNaN(eTwo)) {
-    // This is a .greener class used to identify which phone is more eco-friendly
-    return null;
-  } else if (eOne < eTwo) {
-    return "one";
-  } else if (eOne > eTwo) {
-    return "two";
-  }
-}
-
-/**
-   * Function to create aligned storage arrays from arrays of objects
-   * Example input:
-   *  arr1 = [{ storage: '256GB', co2e: '12kg' }, { storage: '512GB', co2e: '24kg' }, { storage: '1 TB', co2e: '48kg' }];
-   *  arr2 = [{ storage: '1 TB', co2e: '48kg' }];
-   * @param {Array} arr1 An array object containing storage and co2e of a device
-   * @param {Array} arr2 An array object containing storage and co2e of a device
-   * @returns  Example Output: [
-                 [ { storage: '--', co2e: '--' }, { storage: '256GB', co2e: '12kg' }, { storage: '512GB', co2e: '24kg' }, { storage: '1 TB', co2e: '48kg' }, { storage: '2 TB', co2e: '96kg' } ],
-                 [ { storage: '128GB', co2e: '6kg' }, { storage: '256GB', co2e: '12kg' }, { storage: '512GB', co2e: '24kg' }, { storage: '1 TB', co2e: '48kg' }, { storage: '--', co2e: '--' } ]
-              ]
-*/
-function alignStorageArrays(arr1, arr2) {
-  // Extract unique storage values from both arrays
-  const uniqueStorageValues = new Set([
-    ...arr1.map((item) => item.storage),
-    ...arr2.map((item) => item.storage),
-  ]);
-
-  // Sort the unique storage values
-  const sortedStorageValues = Array.from(uniqueStorageValues).sort(
-    (a, b) => toGB(a) - toGB(b)
-  );
-
-  // Initialize new aligned arrays with placeholders
-  const newArr1 = [];
-  const newArr2 = [];
-
-  // Align storage values and fill placeholders
-  sortedStorageValues.forEach((value) => {
-    const obj1 = arr1.find((item) => item.storage === value);
-    const obj2 = arr2.find((item) => item.storage === value);
-
-    newArr1.push(obj1 ? obj1 : { storage: value, co2e: "--" });
-    newArr2.push(obj2 ? obj2 : { storage: value, co2e: "--" });
-  });
-
-  for (let i = 0; i < newArr1.length; i++) {
-    if (newArr1[i].co2e == "--") {
-      newArr1[i].storage = "--";
-    }
-
-    if (newArr2[i].co2e == "--") {
-      newArr2[i].storage = "--";
-    }
-  }
-
-  markMostEcoFriendlyIndex(arr1);
-  markMostEcoFriendlyIndex(arr2);
-
-  return [newArr1, newArr2];
-}
-
-// Takes in the storage array and flags the index that has the most eco-friendly option
-function markMostEcoFriendlyIndex(arr) {
-  const mostEcoIndex = arr.findIndex((item) => item.co2e !== "--");
-  if (mostEcoIndex !== -1) {
-    arr[mostEcoIndex].mostEco = true;
-  }
-}
-
-/**
- * Takes in the storage value and returns a numerical value in gigabytes (e.g. "256 GB" --> 256)
- * @param {String} storage the storage of a phone model (e.g. "256 GB", "1 TB")
- */
-function toGB(storage) {
-  const storageValue = parseFloat(storage);
-  if (storage.includes("TB")) {
-    return storageValue * 1024;
-  } else if (storage.includes("GB")) {
-    return storageValue;
-  } else if (storage.includes("MB")) {
-    return storageValue / 1024;
-  }
-  return storageValue;
-}
-
-/**
  * Populates the phone model that can be used for side-by-side emissions comparison
  */
 async function populatePhoneModel() {
   // const phoneModel = await getRecommendedModels(currentPhoneData.device);
   const phoneModel = currentRecommendedPhones;
-
-  const phoneModelContainer = shadowRoot.querySelector(
-    ".phone-model-container"
-  );
-  phoneModelContainer.innerHTML = "";
-  phoneModel.forEach((phone, index) => {
-    const phoneElement = document.createElement("p");
-    phoneElement.className = `phone-model-text lcz-br-4${
-      index === phoneModel.length - 1 ? " last" : ""
-    }`;
-    phoneElement.textContent = phone.device;
-    phoneModelContainer.appendChild(phoneElement);
-  });
 
   const phoneCompetitorContainer = shadowRoot.querySelector(
     ".lca-viz-competitor-container"
@@ -1484,110 +1193,110 @@ async function populatePhoneModel() {
 }
 
 // Displays the carbon emission of the phone being analyzed in the web page.
-function displayPhoneSpecEmissions() {
-  const data = currentPhoneData;
-  console.log("phone data = ");
-  console.log(data);
+// function displayPhoneSpecEmissions() {
+//   const data = currentPhoneData;
+//   console.log("phone data = ");
+//   console.log(data);
 
-  const container = shadowRoot.querySelector(".phone-spec-container");
-  const specs = data.specs;
-  const deviceName = data.device;
+//   const container = shadowRoot.querySelector(".phone-spec-container");
+//   const specs = data.specs;
+//   const deviceName = data.device;
 
-  container.innerHTML += `
-    <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
-      <p class="phone-spec-title" id="currentPhone"><b>${deviceName} Estimated Carbon Emissions</b></p>
-      <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="lcz-icon-20" id="lca-viz-q-icon">
-        <div class="left">
-          <h3 class="fz-12 lca-lexend">How are phone emissions calculated?</h3>
-          <p class="fz-12 lca-lexend">We use data from phone companies' product carbon footprint reports. If there is no data, a large language model (LLM) is used to estimate emissions based on publicly available data online.</p>
-          <i></i>
-        </div>
-      </div>
-    </div>
-    <div class="flex-center cg-8 fz-16">
-      <p>CO2e Equivalency: </p>
-      <select id="lca-viz-unit-select" class="lcz-br-4 pd-4">
-        <option value="0">Miles driven 🚗</option>
-        <option value="1">Trees offset 🌳</option>
-        <option value="2">Beef Consumed 🥩</option>
-      </select>
-    </div>
-  `;
+//   container.innerHTML += `
+//     <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
+//       <p class="phone-spec-title" id="currentPhone"><b>${deviceName} Estimated Carbon Emissions</b></p>
+//       <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="lcz-icon-20" id="lca-viz-q-icon">
+//         <div class="left">
+//           <h3 class="fz-12 lca-lexend">How are phone emissions calculated?</h3>
+//           <p class="fz-12 lca-lexend">We use data from phone companies' product carbon footprint reports. If there is no data, a large language model (LLM) is used to estimate emissions based on publicly available data online.</p>
+//           <i></i>
+//         </div>
+//       </div>
+//     </div>
+//     <div class="flex-center cg-8 fz-16">
+//       <p>CO2e Equivalency: </p>
+//       <select id="lca-viz-unit-select" class="lcz-br-4 pd-4">
+//         <option value="0">Miles driven 🚗</option>
+//         <option value="1">Trees offset 🌳</option>
+//         <option value="2">Beef Consumed 🥩</option>
+//       </select>
+//     </div>
+//   `;
 
-  const compareWith = shadowRoot.getElementById("lca-viz-compare-with");
-  compareWith.innerHTML = deviceName;
+//   const compareWith = shadowRoot.getElementById("lca-viz-compare-with");
+//   compareWith.innerHTML = deviceName;
 
-  // let mostGreenOption = footprints[0];
-  let mostGreenOption = specs[0];
-  specs.forEach((spec, index) => {
-    if (index !== 0) {
-      const co2eValue = parseFloat(spec.co2e);
-      const mostGreenCo2eValue = parseFloat(mostGreenOption.co2e);
-      if (co2eValue < mostGreenCo2eValue) {
-        mostGreenOption = spec;
-      }
-    }
-  });
+//   // let mostGreenOption = footprints[0];
+//   let mostGreenOption = specs[0];
+//   specs.forEach((spec, index) => {
+//     if (index !== 0) {
+//       const co2eValue = parseFloat(spec.co2e);
+//       const mostGreenCo2eValue = parseFloat(mostGreenOption.co2e);
+//       if (co2eValue < mostGreenCo2eValue) {
+//         mostGreenOption = spec;
+//       }
+//     }
+//   });
 
-  specs.forEach((spec, index) => {
-    const co2eValue = parseFloat(spec.co2e);
-    const mostGreenCo2eValue = parseFloat(mostGreenOption.co2e);
-    const percentageIncrease =
-      ((co2eValue - mostGreenCo2eValue) / mostGreenCo2eValue) * 100;
+//   specs.forEach((spec, index) => {
+//     const co2eValue = parseFloat(spec.co2e);
+//     const mostGreenCo2eValue = parseFloat(mostGreenOption.co2e);
+//     const percentageIncrease =
+//       ((co2eValue - mostGreenCo2eValue) / mostGreenCo2eValue) * 100;
 
-    const isMostGreen = spec.storage === mostGreenOption.storage;
-    container.innerHTML += `
-      <div class="lcz-details-container fz-16" id=${index + "-c"}>
-        <div class="flex-center ${isMostGreen ? "most-green" : ""} cg-4">
-          <p><b>${spec.storage} </b>&nbsp;</p>
-          ${
-            isMostGreen
-              ? `<img src="${most_green_icon}" class="lcz-icon-16 emissions-diff-minus lcz-br-4 lcz-margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
-              : `<span class="emissions-diff-plus fz-12 lcz-br-4 lcz-margin-0"><b>(+${percentageIncrease.toFixed(
-                  0
-                )}% emissions)</b></span>`
-          }
-        </div>
-        <div class="flex-center co2e-data-container pd-8 lcz-br-8 cg-4 lca-viz-lexend-reg">
-          <p class="lcz-margin-0">${co2eValue} kg CO2e</p>
-          <img src="${equivalent_icon}" class="lcz-icon-16" alt="Equivalent to">
-          <div class="lca-viz-unit-container phone flex-center cg-4">
+//     const isMostGreen = spec.storage === mostGreenOption.storage;
+//     container.innerHTML += `
+//       <div class="lcz-details-container fz-16" id=${index + "-c"}>
+//         <div class="flex-center ${isMostGreen ? "most-green" : ""} cg-4">
+//           <p><b>${spec.storage} </b>&nbsp;</p>
+//           ${
+//             isMostGreen
+//               ? `<img src="${most_green_icon}" class="lcz-icon-16 emissions-diff-minus lcz-br-4 lcz-margin-0 lca-viz-MEF" title="This is the most eco-friendly option" alt="Most eco-friendly option">`
+//               : `<span class="emissions-diff-plus fz-12 lcz-br-4 lcz-margin-0"><b>(+${percentageIncrease.toFixed(
+//                   0
+//                 )}% emissions)</b></span>`
+//           }
+//         </div>
+//         <div class="flex-center co2e-data-container pd-8 lcz-br-8 cg-4 lca-viz-lexend-reg">
+//           <p class="lcz-margin-0">${co2eValue} kg CO2e</p>
+//           <img src="${equivalent_icon}" class="lcz-icon-16" alt="Equivalent to">
+//           <div class="lca-viz-unit-container phone flex-center cg-4">
 
-            <div class="lca-viz-unit-div">
-              <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">${Math.ceil(
-                  co2eValue * 2.5
-                )} miles driven by a car &nbsp;🚗</p>
-              </div>
-            </div>
+//             <div class="lca-viz-unit-div">
+//               <div class="flex-center lca-viz-justify-center cg-8">
+//                 <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">${Math.ceil(
+//                   co2eValue * 2.5
+//                 )} miles driven by a car &nbsp;🚗</p>
+//               </div>
+//             </div>
 
-            <div class="lca-viz-unit-div">
-              <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">${(
-                  co2eValue * 0.048
-                ).toFixed(1)} trees annually &nbsp;🌳</p>
-              </div>
-            </div>
+//             <div class="lca-viz-unit-div">
+//               <div class="flex-center lca-viz-justify-center cg-8">
+//                 <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">${(
+//                   co2eValue * 0.048
+//                 ).toFixed(1)} trees annually &nbsp;🌳</p>
+//               </div>
+//             </div>
 
-            <div class="lca-viz-unit-div">
-              <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">${(
-                  co2eValue * 0.033
-                ).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
-              </div>
-            </div>
+//             <div class="lca-viz-unit-div">
+//               <div class="flex-center lca-viz-justify-center cg-8">
+//                 <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">${(
+//                   co2eValue * 0.033
+//                 ).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
+//               </div>
+//             </div>
 
-          </div>
-        </div>
-      </div>
-      `;
-  });
+//           </div>
+//         </div>
+//       </div>
+//       `;
+//   });
 
-  const dataSource = getDataSource(currentPhoneData);
-  container.innerHTML += dataSource;
+//   const dataSource = getDataSource(currentPhoneData);
+//   container.innerHTML += dataSource;
 
-  handleCO2eEquivalencyChange(shadowRoot);
-}
+//   handleCO2eEquivalencyChange(shadowRoot);
+// }
 
 // Use this function to display a loading animation while waiting for the API calls
 export async function hideLoadingIcon(boxNumber = "") {
@@ -1610,35 +1319,6 @@ export async function hideLoadingIcon(boxNumber = "") {
 export const hidePhoneLoadingIcon = () => hideLoadingIcon();
 export const hideFreightLoadingIcon = () => hideLoadingIcon("2");
 export const hideCloudLoadingIcon = () => hideLoadingIcon("3");
-
-/**
- * Shows an element. Only works with flex and block elements
- * @param {element} element The element to be shown
- * @param {*} version The animation style. If no version is given, use the default style
- */
-function showElement(element, version) {
-  if (version === "a") {
-    if (element.classList.contains("flex-center")) {
-      element.style.display = "flex";
-    } else {
-      element.style.display = "block";
-    }
-    requestAnimationFrame(() => {
-      element.classList.remove("lcz-hidden-a");
-      element.classList.add("lcz-visible-a");
-    });
-  } else if (version === "b") {
-    if (element.classList.contains("flex-center")) {
-      element.style.display = "flex";
-    } else {
-      element.style.display = "block";
-    }
-    requestAnimationFrame(() => {
-      element.classList.remove("lcz-hidden-b");
-      element.classList.add("lcz-visible-b");
-    });
-  }
-}
 
 // Formats the instance names for the cloud emissions
 function formatInstanceNames(input) {
@@ -1786,21 +1466,6 @@ async function getFreightEmissions(data) {
     return responseData;
   } catch (error) {
     console.error("Error:", error);
-  }
-}
-
-/**
- * Hides an element using CSS transitions.
- * @param {HTMLElement} element The element to be hidden
- * @param {string} version The animation style. If no version is given, use the default style
- */
-export function hideElement(element, version) {
-  if (version === "a") {
-    element.classList.remove("lcz-visible-a");
-    element.classList.add("lcz-hidden-a");
-  } else if (version === "b") {
-    element.classList.remove("lcz-visible-b");
-    element.classList.add("lcz-hidden-b");
   }
 }
 

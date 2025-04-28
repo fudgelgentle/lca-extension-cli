@@ -1,5 +1,8 @@
-const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
+// Utilities function for phone feature
 
+import { toGB } from "../../utils/math-utils";
+
+const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
 
 export function detectPhoneModel(title) {
   const phonePatterns = [
@@ -54,7 +57,6 @@ export function detectPhoneModel(title) {
     { regex: /Pixel\s?6a/i, model: "Google Pixel 6a" },
     { regex: /Pixel\s?6\s?Pro/i, model: "Google Pixel 6 Pro" },
     { regex: /Pixel\s?5a/i, model: "Google Pixel 5a" },
-
     // Add more phones as needed
   ];
 
@@ -122,5 +124,66 @@ export async function getRecommendedModels(phoneModel) {
     return responseData;
   } catch (error) {
     console.error(error);
+  }
+}
+
+/**
+   * Function to create aligned storage arrays from arrays of objects
+   * Example input:
+   *  arr1 = [{ storage: '256GB', co2e: '12kg' }, { storage: '512GB', co2e: '24kg' }, { storage: '1 TB', co2e: '48kg' }];
+   *  arr2 = [{ storage: '1 TB', co2e: '48kg' }];
+   * @param {Array} arr1 An array object containing storage and co2e of a device
+   * @param {Array} arr2 An array object containing storage and co2e of a device
+   * @returns  Example Output: [
+                 [ { storage: '--', co2e: '--' }, { storage: '256GB', co2e: '12kg' }, { storage: '512GB', co2e: '24kg' }, { storage: '1 TB', co2e: '48kg' }, { storage: '2 TB', co2e: '96kg' } ],
+                 [ { storage: '128GB', co2e: '6kg' }, { storage: '256GB', co2e: '12kg' }, { storage: '512GB', co2e: '24kg' }, { storage: '1 TB', co2e: '48kg' }, { storage: '--', co2e: '--' } ]
+              ]
+*/
+export function alignStorageArrays(arr1, arr2) {
+  // Extract unique storage values from both arrays
+  const uniqueStorageValues = new Set([
+    ...arr1.map((item) => item.storage),
+    ...arr2.map((item) => item.storage),
+  ]);
+
+  // Sort the unique storage values
+  const sortedStorageValues = Array.from(uniqueStorageValues).sort(
+    (a, b) => toGB(a) - toGB(b)
+  );
+
+  // Initialize new aligned arrays with placeholders
+  const newArr1 = [];
+  const newArr2 = [];
+
+  // Align storage values and fill placeholders
+  sortedStorageValues.forEach((value) => {
+    const obj1 = arr1.find((item) => item.storage === value);
+    const obj2 = arr2.find((item) => item.storage === value);
+
+    newArr1.push(obj1 ? obj1 : { storage: value, co2e: "--" });
+    newArr2.push(obj2 ? obj2 : { storage: value, co2e: "--" });
+  });
+
+  for (let i = 0; i < newArr1.length; i++) {
+    if (newArr1[i].co2e == "--") {
+      newArr1[i].storage = "--";
+    }
+
+    if (newArr2[i].co2e == "--") {
+      newArr2[i].storage = "--";
+    }
+  }
+
+  markMostEcoFriendlyIndex(arr1);
+  markMostEcoFriendlyIndex(arr2);
+
+  return [newArr1, newArr2];
+}
+
+// Takes in the storage array and flags the index that has the most eco-friendly option
+function markMostEcoFriendlyIndex(arr) {
+  const mostEcoIndex = arr.findIndex((item) => item.co2e !== "--");
+  if (mostEcoIndex !== -1) {
+    arr[mostEcoIndex].mostEco = true;
   }
 }
