@@ -33,12 +33,12 @@ import {
   hideAndClearMasterContainer,
   hidePopup,
   setupLCABannerAndFloatingMenu,
-  handleCO2eEquivalencyChange,
   shadowRoot,
   getReadableCO2e,
   formatToSignificantFigures,
   getBeefInfo
 } from "./popup-content";
+import { handleCO2eEquivalencyChange } from "./utils/ui-utils";
 import { injectPopupContent } from "./popup-content";
 import { updateFreightContent } from "./popup-content";
 import { getMasterContainer } from "./popup-content";
@@ -1204,7 +1204,7 @@ async function init() {
       const totalEmissions = getTotalEmissions();
       const totalEmissionsHTML = getTotalEmissionsHTML(totalEmissions);
       totalEmissionsContainer.innerHTML = totalEmissionsHTML;
-      handleCO2eEquivalencyChange(true);
+      handleCO2eEquivalencyChange(shadowRoot, true);
     }
   }
 

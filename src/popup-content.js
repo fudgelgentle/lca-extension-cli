@@ -9,6 +9,8 @@ import { getPhoneCarbonData } from "./phone-utils";
 import { getRecommendedModels } from "./phone-utils";
 import { getFedexDataChange, observeFedexShippingOptions,
   recordAllInputChange, recordPackageTypeChange, recordFromToAddressChange } from "./autodetect/freight/freight-tracker";
+import { getFreightHTMLContent } from "./autodetect/freight/freight";
+import { handleCO2eEquivalencyChange } from "./utils/ui-utils";
 
 const LCA_SERVER_URL = "https://lca-server-api.fly.dev";
 
@@ -25,8 +27,6 @@ const most_green_icon = chrome.runtime.getURL(
 const equivalent_icon = chrome.runtime.getURL(
   "../assets/img/equivalent-icon.png"
 );
-const airplane_icon = chrome.runtime.getURL("../assets/img/airplane-icon.png");
-const truck_icon = chrome.runtime.getURL("../assets/img/truck-icon.png");
 const sync_icon = chrome.runtime.getURL("../assets/img/sync-icon.png");
 const question_icon = chrome.runtime.getURL("../assets/img/question-icon.png");
 
@@ -331,7 +331,7 @@ export function displayCloudEmissions(emissionsResultHTML, isCloud) {
       .querySelector(".lca-viz-cloud-master-container")
       .classList.add("lcz-hidden-a");
   masterContainer.insertAdjacentHTML("beforeend", emissionsResultHTML);
-  handleCO2eEquivalencyChange();
+  handleCO2eEquivalencyChange(shadowRoot);
   requestAnimationFrame(async () => {
     shadowRoot
       .querySelector(".lca-viz-cloud-emissions-container")
@@ -650,10 +650,10 @@ export async function injectPopupContent(
       showPhoneEmissions();
     }, 0);
   } else if (popupCase === "freight") {
-    const freightContent = injectFreightHTMLContent(freightData.formatted);
+    const freightContent = getFreightHTMLContent(freightData.formatted);
     masterContainer.insertAdjacentHTML("beforeend", freightContent);
     setTimeout(() => {
-      handleCO2eEquivalencyChange();
+      handleCO2eEquivalencyChange(shadowRoot);
       masterContainer.classList.remove("lca-viz-hidden");
       showFreightHTMLContent();
     }, 0);
@@ -903,24 +903,6 @@ async function showCloudEmissions() {
 }
 
 /**
- * Takes in a weight value in kg and determines if the weight needs
-// unit conversion (to grams or tons) to make it more readable.
-* @param {number} kg
-*/
-function getReadableUnit(kg) {
-  if (kg < 1.0) {
-    const grams = parseFloat((kg * 100).toFixed(2));
-    return { weight: grams, unit: "g" };
-  } else if (kg >= 1000) {
-    const tons = parseFloat((kg / 1000).toFixed(2));
-    return { weight: tons, unit: "tons" };
-  } else {
-    const kilograms = parseFloat(kg.toFixed(2));
-    return { weight: kilograms, unit: "kg" };
-  }
-}
-
-/**
  * Converts a CO2e value in kilograms to a more readable format using grams,
  * kilograms, or tons, as appropriate.
  * @param {number} kgCO2e - The CO2e value in kilograms.
@@ -969,235 +951,6 @@ export async function updateFreightContent(freightData) {
     freightContainer.remove();
     await injectPopupContent("freight", freightData);
   }
-}
-
-// Returns the HTML for invalid freight data
-function getInvalidFreightData() {
-  return `<div class="freight-container lcz-br-8 pd-16 lcz-mt-12">
-      <div class="lcz-loading-box-2 flex-center lcz-br-8 pd-16 lcz-mt-12 lcz-hidden-a">
-        <div class="lcz-loader">
-          <div class="lca-viz-circle"></div>
-          <div class="lca-viz-circle"></div>
-          <div class="lca-viz-circle"></div>
-        </div>
-      </div>
-      <div class="freight-content lcz-visible-a" style="display: block;">
-        <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
-          <p class="fz-16 lcz-mt-0 lcz-mb-16"><b>The shipping data cannot be found</b></p>
-          <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="chrome-extension://moaglnlpoploemkipmdjfmhcjfbandkm/../assets/img/question-icon.png" alt="Hover me to get additional information" class="lcz-icon-20" id="lca-viz-q-icon">
-            <div class="left">
-              <h3 class="fz-12 lca-lexend">How are package emissions calculated?</h3>
-              <p class="fz-12 lca-lexend">We are using Climatiq's Intermodal Services, which collects data from various sources to calculate the shipping emissions, including GLEC v3 Framework, ISO 14083 standard, Emission Factor Database (EFDB), OpenStreetMap, and more.</p>
-              <i></i>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>`;
-}
-
-// Injects the freight HTML content
-function injectFreightHTMLContent(freightData) {
-  if (!freightData) {
-    return getInvalidFreightData();
-  }
-  const from = freightData.from;
-  const to = freightData.to;
-  // co2eValue unit is kg
-
-  // & New data
-  const airData = freightData.air;
-  const groundData = freightData.ground;
-
-  let airHTML = ``;
-  let groundHTML = ``;
-
-  let airDiffHTML = ``;
-  let groundDiffHTML = ``;
-  if (airData && groundData) {
-    const airEmission = airData.co2eValue;
-    const groundEmission = groundData.co2eValue;
-    const difference = airEmission - groundEmission;
-    const airDiff = parseInt((difference / groundEmission) * 100);
-    // const groundDiff = (parseInt((difference / airEmission) * 100));
-    if (airEmission > groundEmission) {
-      airDiffHTML = `<p class="emissions-diff-plus fz-12 lcz-br-4 lcz-margin-0"><b>+${airDiff}% emissions</b></p>`;
-      // groundDiffHTML = `<p class="emissions-diff-minus fz-12 br-4 margin-0"><b>-${groundDiff}% emissions</b></p>`;
-    } else {
-      airDiffHTML = `<p class="emissions-diff-minus fz-12 lcz-br-4 lcz-margin-0"><b>-${airDiff}% emissions</b></p>`;
-      // groundDiffHTML = `<p class="emissions-diff-plus fz-12 br-4 margin-0"><b>+${groundDiff}% emissions</b></p>`;
-    }
-  }
-
-  function formatShippingText(option) {
-    return option
-      .split(" ")
-      .map((word) => {
-        if (word.toLowerCase() === "fedex") {
-          return "FedEx";
-        }
-        if (["3day", "2day", "1day"].includes(word.toLowerCase())) {
-          return word.charAt(0) + "Day"; // Converts '3day' to '3Day', '2day' to '2Day', etc.
-        }
-        if (word.toLowerCase() === "am") {
-          return "AM"; // Converts 'Am' to 'AM'
-        }
-        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(); // Capitalize first letter
-      })
-      .join(" ");
-  }
-
-  let titleText = "Estimated Carbon Footprint of Transport";
-
-  if (airData) {
-    const airCo2eValue = airData.co2eValue;
-    let airTrashValue = airCo2eValue / 1.15;
-    const weightObject = getReadableUnit(airTrashValue);
-    airTrashValue = weightObject.weight;
-    // const trashUnit = weightObject.unit;
-    const shippingOptionsText = airData.airMode
-      .map(formatShippingText)
-      .join(", ");
-    airHTML = `
-      <div class="options-container">
-        <p class="shipping-options fz-12 lcz-mb-4">
-          <img src="${airplane_icon}" class="lcz-icon-14 align-middle" alt="airplane icon">
-          <b>By Air: </b>
-        </p>
-        ${airDiffHTML}
-        <p class="fz-12 lcz-mt-4 lcz-mb-4">${shippingOptionsText}</p>
-        <div class="freight-emissions flex-column-center lcz-br-8 rg-12 pd-16">
-          <span class="fz-20 co2e-value lcz-mt-4"><b>${airCo2eValue} kg CO2e</b></span>
-          <div class="lca-viz-unit-container freight flex-center cg-4">
-            <div class="lca-viz-unit-div">
-              <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">or ${Math.ceil(
-                  airCo2eValue * 2.5
-                )} miles driven by a car &nbsp;🚗</p>
-              </div>
-            </div>
-
-            <div class="lca-viz-unit-div">
-              <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">or ${(
-                  airCo2eValue * 0.048
-                ).toFixed(1)} trees annually &nbsp;🌳</p>
-              </div>
-            </div>
-
-            <div class="lca-viz-unit-div">
-              <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">or ${(
-                  airCo2eValue * 0.033
-                ).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="lca-viz-google-maps-air flex-center lcz-mt-8"></div>
-      </div>
-    `;
-  }
-  if (groundData) {
-    const groundCo2eValue = groundData.co2eValue;
-    let groundTrashValue = groundCo2eValue / 1.15;
-    const weightObject = getReadableUnit(groundTrashValue);
-    groundTrashValue = weightObject.weight;
-    // const trashUnit = weightObject.unit;
-    console.log("ground shipping options = " + groundData.groundMode);
-    const shippingOptionsText = groundData.groundMode
-      .map(formatShippingText)
-      .join(", ");
-    groundHTML = `
-      <div class="options-container">
-        <p class="shipping-options fz-12 lcz-mb-4">
-          <img src="${truck_icon}" class="lcz-icon-14 align-middle" alt="truck icon">
-          <b>By Ground: </b>
-        </p>
-        ${groundDiffHTML}
-        <p class="fz-12 lcz-mt-4 lcz-mb-4">${shippingOptionsText}</p>
-        <div class="freight-emissions flex-column-center lcz-br-8 rg-12 pd-16">
-          <span class="fz-20 co2e-value lcz-mt-4"><b>${groundCo2eValue} kg CO2e</b></span>
-          <div class="lca-viz-unit-container freight flex-center cg-4">
-            <div class="lca-viz-unit-div">
-              <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">or ${Math.ceil(
-                  groundCo2eValue * 2.5
-                )} miles driven by a car &nbsp;🚗</p>
-              </div>
-            </div>
-
-            <div class="lca-viz-unit-div">
-              <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">or ${(
-                  groundCo2eValue * 0.048
-                ).toFixed(1)} trees annually &nbsp;🌳</p>
-              </div>
-            </div>
-
-            <div class="lca-viz-unit-div">
-              <div class="flex-center lca-viz-justify-center cg-8">
-                <p class="lcz-margin-0 lcz-grey-text fz-16 lca-viz-text-align-center">or ${(
-                  groundCo2eValue * 0.033
-                ).toFixed(2)} kg of beef consumed &nbsp;🥩</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        <div class="lca-viz-google-maps-ground flex-center lcz-mt-8"></div>
-      </div>
-    `;
-  }
-  if (!airData && !groundData) {
-    titleText =
-      "We're unable to determine the carbon emissions for the specified locations.";
-  }
-
-  const freightEmissions = `
-    <div class="freight-container lcz-br-8 pd-16 lcz-mt-12 lcz-hidden-a">
-      <div class="lcz-loading-box-2 flex-center lcz-br-8 pd-16 lcz-mt-12">
-        <div class="lcz-loader">
-          <div class="lca-viz-circle"></div>
-          <div class="lca-viz-circle"></div>
-          <div class="lca-viz-circle"></div>
-        </div>
-      </div>
-      <div class="freight-content lcz-hidden-a">
-
-        <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
-          <p class="fz-16 lcz-mt-0 mb-16"><b>${titleText}</b></p>
-          <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="lcz-icon-20" id="lca-viz-q-icon">
-            <div class="left">
-              <h3 class="fz-12 lca-lexend">How are package emissions calculated?</h3>
-              <p class="fz-12 lca-lexend">We are using Climatiq's Intermodal Services, which collects data from various sources to calculate the shipping emissions, including GLEC v3 Framework, ISO 14083 standard, Emission Factor Database (EFDB), OpenStreetMap, and more.</p>
-              <i></i>
-            </div>
-          </div>
-        </div>
-
-        <div class="flex-center cg-8 fz-16">
-          <p>CO2e Equivalency: </p>
-          <select id="lca-viz-unit-select" class="lcz-br-4 pd-4">
-            <option value="0">Miles driven 🚗</option>
-            <option value="1">Trees offset 🌳</option>
-            <option value="2">Beef Consumed 🥩</option>
-          </select>
-        </div>
-        <div>
-          ${groundHTML}
-          ${airHTML}
-        </div>
-        <div class="shipping-container">
-          <p class="fz-12"><b>Transport Details</b></p>
-          <div class="shipping-info fz-12">
-            <p class="from-to-text"><b>From:</b> <span id="f-from">${from}</span></p>
-            <p class="from-to-text"><b>To:</b> <span id="t-to">${to}</span></p>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-  return freightEmissions;
 }
 
 // Tracks the current web page the extension is on to see if they are 'eligible' for displaying freight emissions
@@ -1439,54 +1192,54 @@ function handleSideBySideSelection() {
 
 // Handles the changing of different reference units for phone emissions flow.
 // (i.e. changing between "~ kg of trash burned", "~ of miles driven", and "~ of trees cut down" every 3 seconds)
-export function handleCO2eEquivalencyChange(isRawMaterial = false) {
-  let selector = shadowRoot;
-  if (isRawMaterial) {
-    selector = document;
-  }
-  const unitSelect = selector.getElementById("lca-viz-unit-select");
-  const unitDivsContainer = selector.querySelectorAll(
-    ".lca-viz-unit-container"
-  );
-  // Initialize: show the first unit-div by default
-  let currentIndex = 0;
-  if (unitSelect && unitDivsContainer) {
-    console.log("CALLING handleCO2EquivalencyChange");
-    unitDivsContainer.forEach((container) => {
-      container.children[currentIndex].classList.add("lca-viz-show");
-    });
+// export function handleCO2eEquivalencyChange(isRawMaterial = false) {
+//   let selector = shadowRoot;
+//   if (isRawMaterial) {
+//     selector = document;
+//   }
+//   const unitSelect = selector.getElementById("lca-viz-unit-select");
+//   const unitDivsContainer = selector.querySelectorAll(
+//     ".lca-viz-unit-container"
+//   );
+//   // Initialize: show the first unit-div by default
+//   let currentIndex = 0;
+//   if (unitSelect && unitDivsContainer) {
+//     console.log("CALLING handleCO2EquivalencyChange");
+//     unitDivsContainer.forEach((container) => {
+//       container.children[currentIndex].classList.add("lca-viz-show");
+//     });
 
-    unitSelect.addEventListener("change", (e) => {
-      const selectedIndex = parseInt(e.target.value);
-      console.log("selectedIndex = " + selectedIndex);
-      showSelectedUnit(selectedIndex);
-    });
-  } else {
-    console.log("handleCO2EquivalencyChange CANNOT be called");
-  }
+//     unitSelect.addEventListener("change", (e) => {
+//       const selectedIndex = parseInt(e.target.value);
+//       console.log("selectedIndex = " + selectedIndex);
+//       showSelectedUnit(selectedIndex);
+//     });
+//   } else {
+//     console.log("handleCO2EquivalencyChange CANNOT be called");
+//   }
 
-  // Function to change the displayed unit-div based on dropdown selection
-  function showSelectedUnit(index) {
-    unitDivsContainer.forEach((container) => {
-      console.log("currentIndex = " + currentIndex);
-      console.log("newIndex = " + index);
-      const oldUnitDiv = container.children[currentIndex];
-      const newUnitDiv = container.children[index];
-      console.log("unitDivs = ");
-      console.dir(oldUnitDiv);
-      // Hide the current unit-div
-      oldUnitDiv.classList.remove("lca-viz-show");
-      oldUnitDiv.classList.add("lca-viz-hide");
+//   // Function to change the displayed unit-div based on dropdown selection
+//   function showSelectedUnit(index) {
+//     unitDivsContainer.forEach((container) => {
+//       console.log("currentIndex = " + currentIndex);
+//       console.log("newIndex = " + index);
+//       const oldUnitDiv = container.children[currentIndex];
+//       const newUnitDiv = container.children[index];
+//       console.log("unitDivs = ");
+//       console.dir(oldUnitDiv);
+//       // Hide the current unit-div
+//       oldUnitDiv.classList.remove("lca-viz-show");
+//       oldUnitDiv.classList.add("lca-viz-hide");
 
-      // After fade-out, remove the hide class and show the selected unit
-      setTimeout(() => {
-        oldUnitDiv.classList.remove("lca-viz-hide");
-        newUnitDiv.classList.add("lca-viz-show");
-        currentIndex = index;
-      }, 300);
-    });
-  }
-}
+//       // After fade-out, remove the hide class and show the selected unit
+//       setTimeout(() => {
+//         oldUnitDiv.classList.remove("lca-viz-hide");
+//         newUnitDiv.classList.add("lca-viz-show");
+//         currentIndex = index;
+//       }, 300);
+//     });
+//   }
+// }
 
 /**
  * Takes in phone object and returns the html code for data source.
@@ -1833,7 +1586,7 @@ function displayPhoneSpecEmissions() {
   const dataSource = getDataSource(currentPhoneData);
   container.innerHTML += dataSource;
 
-  handleCO2eEquivalencyChange();
+  handleCO2eEquivalencyChange(shadowRoot);
 }
 
 // Use this function to display a loading animation while waiting for the API calls

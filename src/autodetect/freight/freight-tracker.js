@@ -1,5 +1,5 @@
 
-// This file contains a module for tracking freight scenarios
+// This module contains methods used for tracking input changes in fedex website.
 
 import { LbtoKg } from "../../utils/math-utils";
 import { observeAndStoreShippingOptions } from "../../popup-content";
