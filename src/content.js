@@ -863,7 +863,7 @@ async function init() {
       LCAActionBtnContainer.classList.add("lca-viz-non-interactable"); // Make non-clickable
     } else if (state === "error") {
       floatingLCAImg.src = close_icon_red;
-      LCAActionBtnText.textContent = "No raw materials detected.";
+      LCAActionBtnText.textContent = "No LCA relevant information.";
       LCAActionBtnText.classList.remove("lca-viz-hidden");
       LCAActionBtnContainer.classList.remove("lca-viz-interactable");
       LCAActionBtn.classList.remove("lca-viz-green-hover");
