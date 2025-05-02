@@ -26,7 +26,6 @@ export function observeFedexShippingOptions(callback) {
 
 // Gets the new data from the fedex form
 export function getFedexDataChange() {
-  console.log('GET FEDEX DATA CHANGE CALLED 💩');
   let currShippingOptions = [];
   const availableOptions = document.querySelectorAll(
     ".fdx-c-definitionlist__description--small"

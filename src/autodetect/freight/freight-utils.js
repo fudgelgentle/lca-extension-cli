@@ -20,7 +20,7 @@ export async function categorizeShippingOption(
 ) {
   let airMode = [];
   let groundMode = [];
-  // Use Promise.all to wait for all async operations to complete
+  console.log("shippingOptions: ", shippingOptions)
   const modes = await Promise.all(
     shippingOptions.map(async (option) => {
       const mode = await getFedexTransportMode(option, fromAddress, toAddress);
@@ -174,6 +174,8 @@ export async function getFreightData(
   let aData;
   let gData;
 
+  console.log("groundMode: ", groundMode);
+
   if (groundMode.length > 0) {
     const groundData = formatFreightData(
       fromAddress,
@@ -182,6 +184,7 @@ export async function getFreightData(
       totalWeight
     );
     freightGroundData = await getFreightEmissions(groundData);
+    console.log("freightGroundData: ", freightGroundData);
     if (freightGroundData) {
       gData = {
         co2eValue: parseFloat(freightGroundData.co2e.toFixed(2)),

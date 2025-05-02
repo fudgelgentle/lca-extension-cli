@@ -32,19 +32,17 @@ import {
   hideAndClearMasterContainer,
   hidePopup,
   setupLCABannerAndFloatingMenu,
-  shadowRoot,
-  getReadableCO2e,
-  formatToSignificantFigures,
-  getBeefInfo
+  shadowRoot
 } from "./popup-content";
 import { getFreightData } from "./autodetect/freight/freight-utils";
 import { handleCO2eEquivalencyChange } from "./utils/ui-utils";
 import { injectPopupContent } from "./popup-content";
 import { updateFreightContent } from "./popup-content";
 import { getMasterContainer } from "./popup-content";
-import { getCloudEmissionsResult } from "./popup-content";
 import { displayCloudEmissions } from "./popup-content";
 import { showMasterContainer } from "./popup-content";
+import { formatToSignificantFigures, getBeefInfo, getReadableCO2e } from "./utils/math-utils";
+import { getCloudEmissionsResult } from "./autodetect/cloud/cloud-ui";
 
 let chart;
 let chartContainer;
