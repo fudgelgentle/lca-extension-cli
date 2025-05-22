@@ -29,22 +29,24 @@ import { getParam } from "./material-utils";
 import { extractEmissionsFactor } from "./material-utils";
 import { getQuestionLCA } from "./material-utils";
 import {
-  getFreightData,
   hideAndClearMasterContainer,
   hidePopup,
   setupLCABannerAndFloatingMenu,
-  handleCO2eEquivalencyChange,
-  shadowRoot,
-  getReadableCO2e,
-  formatToSignificantFigures,
-  getBeefInfo
+  shadowRoot
 } from "./popup-content";
+import { getFreightData } from "./autodetect/freight/freight-utils";
+import { handleCO2eEquivalencyChange } from "./utils/ui-utils";
 import { injectPopupContent } from "./popup-content";
 import { updateFreightContent } from "./popup-content";
 import { getMasterContainer } from "./popup-content";
-import { getCloudEmissionsResult } from "./popup-content";
 import { displayCloudEmissions } from "./popup-content";
 import { showMasterContainer } from "./popup-content";
+import { formatToSignificantFigures, getBeefInfo, getReadableCO2e } from "./utils/math-utils";
+import { getCloudEmissionsResult } from "./autodetect/cloud/cloud-ui";
+import { handleUpDownBtnBehavior, handleToggleSwitch } from "./highlight/highlight-tracker";
+import { escapeRegExp, replaceTagNameAndKeepStyles, getMaterialNames, getValidSentence, isNotEmptyString, getChartConfig, validateText } from "./highlight/highlight-utils";
+import { getLCAActionBtn, getInteractiveChartHTML, createUpDownBtn } from "./highlight/highlight-ui";
+import { isDomainValid } from "./utils/utils";
 
 let chart;
 let chartContainer;
@@ -255,261 +257,6 @@ async function init() {
     });
   }
 
-  // Handles the behavior of the up and down buttons, used in the raw material scenario
-  function handleUpDownBtnBehavior() {
-    // ! case: ratio
-    const toggleOnContainers = document.querySelectorAll(".lca-viz-param-toggle-on");
-    if (toggleOnContainers) {
-      toggleOnContainers.forEach((container) => {
-        const ratioUpBtnList = container.querySelectorAll(".lca-viz-up");
-        const ratioDownBtnList = container.querySelectorAll(".lca-viz-down");
-        for (let j = 0; j < ratioUpBtnList.length; j++) {
-          const index = parseInt(
-            ratioUpBtnList[j].parentElement
-              .querySelector(".lca-viz-parameter-text")
-              .id.match(/\d+$/)[0]
-          );
-          ratioUpBtnList[j].addEventListener("click", () => {
-            updateValueRatio(1, index);
-          });
-          ratioDownBtnList[j].addEventListener("click", () => {
-            updateValueRatio(-1, index);
-          });
-        }
-        const inputNodeList = container.querySelectorAll(".input-ratio");
-        inputNodeList.forEach((input) => {
-          input.addEventListener("input", () => {
-            const newWeight = parseFloat(input.value);
-            if (newWeight > 0) {
-              const index = parseInt(input.id.match(/\d+$/)[0]);
-              updateValueRatio(0, index, newWeight);
-            }
-          });
-        });
-      });
-    }
-
-    // ! case: independent - togle off
-    const toggleOffContainers = document.querySelectorAll(
-      ".lca-viz-param-toggle-off"
-    );
-    if (toggleOffContainers) {
-      toggleOffContainers.forEach((container) => {
-        const ratioUpBtnList = container.querySelectorAll(".lca-viz-up");
-        const ratioDownBtnList = container.querySelectorAll(".lca-viz-down");
-        for (let j = 0; j < ratioUpBtnList.length; j++) {
-          const index = parseInt(
-            ratioUpBtnList[j].parentElement
-              .querySelector(".lca-viz-parameter-text")
-              .id.match(/\d+$/)[0]
-          );
-          ratioUpBtnList[j].addEventListener("click", () => {
-            updateValue(1, index);
-          });
-          ratioDownBtnList[j].addEventListener("click", () => {
-            updateValue(-1, index);
-          });
-        }
-        const inputNodeList = container.querySelectorAll(".input-normal");
-        inputNodeList.forEach((input) => {
-          input.addEventListener("input", () => {
-            const newWeight = parseFloat(input.value);
-            if (newWeight >= 1) {
-              const index = parseInt(input.id.match(/\d+$/)[0]);
-              updateValue(0, index, newWeight);
-            }
-          });
-        });
-      });
-    }
-
-    // ! independent - normal
-    const independentContainer = document.querySelector(
-      ".lca-viz-independent-container"
-    );
-    if (independentContainer) {
-      const ratioUpBtnList =
-        independentContainer.querySelectorAll(".lca-viz-up");
-      const ratioDownBtnList =
-        independentContainer.querySelectorAll(".lca-viz-down");
-      for (let j = 0; j < ratioUpBtnList.length; j++) {
-        const index = parseInt(
-          ratioUpBtnList[j].parentElement
-            .querySelector(".lca-viz-parameter-text")
-            .id.match(/\d+$/)[0]
-        );
-        ratioUpBtnList[j].addEventListener("click", () => {
-          updateValue(1, index);
-        });
-        ratioDownBtnList[j].addEventListener("click", () => {
-          updateValue(-1, index);
-        });
-      }
-      const inputNodeList =
-        independentContainer.querySelectorAll(".input-normal");
-      inputNodeList.forEach((input) => {
-        input.addEventListener("input", () => {
-          const newWeight = parseFloat(input.value);
-          if (newWeight >= 1) {
-            const index = parseInt(input.id.match(/\d+$/)[0]);
-            updateValue(0, index, newWeight);
-          }
-        });
-      });
-    }
-  }
-
-// Updates the value of the ratio input
-  function updateValueRatio(weightChange, index, newWeight = null) {
-    const inputNode = document.getElementById("input-ratio-no-" + index);
-    const closestToggleContainer = inputNode.closest(".lca-viz-param-toggle-on");
-    let currentWeight = parseInt(inputNode.value);
-
-    if (newWeight !== null) {
-      currentWeight = newWeight;
-    } else {
-      if (weightChange < 0 && currentWeight <= 1) {
-        return;
-      }
-      currentWeight += weightChange;
-    }
-
-    const ratioValue = inputNode.dataset.ratioValue;
-    const scalingFactor = currentWeight / ratioValue;
-
-    updateChartData(currentWeight, index);
-    inputNode.value = currentWeight;
-
-    // calculate the new weight of the related materials
-    const otherInputs = closestToggleContainer.querySelectorAll(".input-ratio");
-    otherInputs.forEach((otherInputNode) => {
-      if (otherInputNode.id !== "input-ratio-no-" + index) {
-        console.log("currentWeight = " + otherInputNode.value);
-        const otherNewWeight = parseFloat(
-          (otherInputNode.dataset.ratioValue * scalingFactor).toFixed(2)
-        );
-        console.log("newWeight = " + otherNewWeight);
-        const otherIndex = parseInt(otherInputNode.id.match(/\d+$/)[0]);
-        updateChartData(otherNewWeight, otherIndex);
-        otherInputNode.value = otherNewWeight;
-      }
-    });
-  }
-
-  /**
-   * Updates the value of the independent materials, and toggle-off materials
-   */
-  function updateValue(weightChange, index, newWeight = null) {
-    const inputNode = document.getElementById("lca-viz-input-" + index);
-    let currentWeight = parseInt(inputNode.value);
-    if (newWeight !== null) {
-      currentWeight = newWeight;
-    } else {
-      if (weightChange < 0 && currentWeight <= 1) {
-        return;
-      }
-      currentWeight += weightChange;
-    }
-    updateChartData(currentWeight, index);
-    inputNode.value = currentWeight;
-  }
-
-  /**
-   * Updates the chart data based on the new weight
-   * @param {number} newWeight The new value that is being displayed in the UI
-   * @param {number} currentWeight The current weight of the parameter
-   * @param {number} index The index of the raw material
-   */
-  function updateChartData(newWeight, index) {
-    if (index !== -1) {
-      let emissionsFactor = 0;
-      const obj = findByIndex(currentChartData, index);
-      emissionsFactor = extractEmissionsFactor(
-        obj.carbon_emission_factor
-      ).co2e_value;
-
-      let newEmissionsValue = parseFloat(
-        (emissionsFactor * newWeight).toFixed(2)
-      );
-      chart.data.datasets[0].data[index] = newEmissionsValue;
-      chart.update();
-
-      const totalEmissions = getTotalEmissions();
-      updateTotalEmissions(totalEmissions);
-    }
-  }
-
-  /**
-   * Handles the "toggle ratio button" that involes toggling between normal parameter vs ratio mode.
-   * ! Note: can ONLY call this method ONCE
-   */
-  function handleToggleSwitch() {
-    const toggleSwitches = document.querySelectorAll(".lca-viz-toggle-checkbox");
-    const lcaVizMap = document.getElementById("lca-viz-map");
-    const originalWidth = lcaVizMap.scrollWidth;
-    console.log("originalWidth = " + originalWidth);
-
-    function show(element) {
-      element.classList.remove("lca-viz-hidden");
-    }
-    function hide(element) {
-      element.classList.add("lca-viz-hidden");
-    }
-
-    toggleSwitches.forEach((toggleSwitch, index) => {
-      toggleSwitch.addEventListener("change", () => {
-        console.log("detected toggle switch clicking");
-        const uniqueId = document.getElementById("lca-viz-r-section-" + index);
-        const textDetails = uniqueId.querySelector(".lca-viz-ratio-detail-text");
-        const paramToggleOn = uniqueId.querySelector(".lca-viz-param-toggle-on");
-        const paramToggleOff = uniqueId.querySelector(".lca-viz-param-toggle-off");
-        // const originalWidth = lcaVizMap.scrollWidth;
-        const ratioTextList = uniqueId.querySelectorAll(".control-section");
-        ratioTextList.forEach((div) => {
-          if (div.innerText.length > 16) {
-            div.classList.add("fz-12");
-          }
-        });
-
-        if (toggleSwitch.checked) {
-          const ratioContainer = toggleSwitch.closest(".lca-viz-ratio-container");
-          const inputList = ratioContainer.querySelectorAll(".input-normal");
-          inputList.forEach((input) => {
-            const newWeight = 1;
-            const index = parseInt(input.id.match(/\d+$/)[0]);
-            updateValue(0, index, newWeight);
-          });
-          lcaVizMap.style.width = `${originalWidth}px`;
-          setTimeout(() => {
-            hide(textDetails);
-            hide(paramToggleOn);
-            show(paramToggleOff);
-            const newWidth = paramToggleOff.scrollWidth;
-            lcaVizMap.style.width = `${newWidth}px`;
-          }, 0);
-        } else {
-          const ratioContainer = toggleSwitch.closest(".lca-viz-ratio-container");
-          const inputList = ratioContainer.querySelectorAll(".input-ratio");
-          inputList.forEach((input) => {
-            const newWeight = input.dataset.ratioValue;
-            const index = parseInt(input.id.match(/\d+$/)[0]);
-            updateValueRatio(0, index, newWeight);
-          });
-          lcaVizMap.style.width = `${originalWidth}px`;
-          setTimeout(() => {
-            show(textDetails);
-            hide(paramToggleOff);
-            show(paramToggleOn);
-            const newWidth = paramToggleOn.scrollWidth + 100;
-            lcaVizMap.style.width = `${newWidth}px`;
-          }, 0);
-        }
-        paramToggleOn.style.width = "auto";
-        textDetails.style.height = "auto";
-      });
-    });
-  }
-
   /**
    * Makes the highlighted text background color turn green, and displays carbon information based on scenarios
    * that is returned from the JSON (scenarios can either be: raw material, freight, or energy)
@@ -623,11 +370,6 @@ async function init() {
       resetHighlight(currentHighlightedNode);
       currentHighlightedNode = null;
     });
-  }
-
-  // Escape special characters in material names for regex
-  function escapeRegExp(text) {
-    return text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
 
@@ -757,7 +499,7 @@ async function init() {
    * @param {String} scenario Either "energy" or "freight".
    */
   function setupQuestionLCA(contentHTML) {
-    const questionMenuHTML = getLCAFloatingMenu();
+    const questionMenuHTML = getLCAContentFloatingMenu();
     // Initialize and inject the freight question UI.
     masterQContainer.insertAdjacentHTML("beforeend", contentHTML);
     masterQContainer.insertAdjacentHTML("beforebegin", questionMenuHTML);
@@ -771,51 +513,17 @@ async function init() {
   }
 
   /**
-   * Takes in materialList and returns two arrays containing the name of all the raw materials and processes.
-   * @param {Object} materialList
-   * @returns two arrays containing the name of all the raw materials and processes.
-   */
-  function getMaterialNames(materialList) {
-    let rawMaterialNames = [];
-    let processesNames = [];
-    // Check for raw materials and related materials -> ratio
-    if (materialList.raw_materials?.related_materials) {
-      materialList.raw_materials.related_materials.forEach(
-        (relatedMaterial) => {
-          if (relatedMaterial.ratio) {
-            relatedMaterial.ratio.forEach((item) => {
-              rawMaterialNames.push(item.name);
-            });
-          }
-        }
-      );
-    }
-    // Check for raw materials and independent materials
-    if (materialList.raw_materials?.independent_materials) {
-      materialList.raw_materials.independent_materials.forEach(
-        (independentMaterial) => {
-          rawMaterialNames.push(independentMaterial.name);
-        }
-      );
-    }
-    // Check for processes
-    if (materialList.processes) {
-      materialList.processes.forEach((process) => {
-        processesNames.push({
-          name: process.name,
-          power_original: process.power_original,
-          power_original_unit: process.power_original_unit,
-          time_original: process.time_original,
-          time_original_unit: process.time_original_unit,
-          index: process.index,
-        });
-      });
-    }
-    return {
-      rawMaterialNames: rawMaterialNames,
-      processesNames: processesNames,
-    };
-  }
+ * Gets the LCA Floating Menu.
+ * @returns The LCA Floating Menu HTML.
+ */
+function getLCAContentFloatingMenu() {
+  const floatingMenu = `
+    <div class="flex-center lca-viz-floating-lca-menu pd-12 lcz-br-8 lcz-hidden-b" id="lca-viz-question-menu">
+      <img src="${lca_48}" alt="LCA Image" class="floating-lca-img lcz-icon-24">
+    </div>
+  `;
+  return floatingMenu;
+}
 
   /**
    * Initializes the chart and displays it on the map.
@@ -823,7 +531,7 @@ async function init() {
    */
   function initializeChart(rawMaterialData) {
     currentChartData = rawMaterialData;
-    let chartConfig = getChartConfig();
+    let chartConfig = getChartConfig(currentChartData);
     // Remove the previous chart, reset the 'chart' global variable
     const map = document.getElementById("lca-viz-map");
     if (map) {
@@ -835,40 +543,6 @@ async function init() {
     createChart(chartConfig);
     const resetChartPosition = true;
     makeChartVisible(resetChartPosition);
-  }
-
-  /**
-   * Sets the state of the LCA Action Button.
-   * @param {String} state The state of the LCA Action Button.
-   */
-  function setLCAActionBtnState(state) {
-    const LCAActionBtnText = document.getElementById("lca-viz-action-btn-text");
-    const floatingLCAImg = document.querySelector(".floating-lca-img");
-    const LCAActionBtn = document.getElementById("lca-viz-action-btn");
-    if (state === "default") {
-      floatingLCAImg.src = lca_48;
-      LCAActionBtnText.textContent = "";
-      LCAActionBtnText.classList.add("lca-viz-hidden");
-      LCAActionBtnContainer.classList.add("lca-viz-interactable");
-      LCAActionBtn.classList.add("lca-viz-green-hover");
-      LCAActionBtnContainer.classList.remove("lca-viz-non-interactable");
-    }
-    //? new code
-    else if (state === "analyzing") {
-      floatingLCAImg.src = loading_icon_2;
-      LCAActionBtnText.textContent = "Analyzing...";
-      LCAActionBtnText.classList.remove("lca-viz-hidden");
-      LCAActionBtnContainer.classList.remove("lca-viz-interactable");
-      LCAActionBtn.classList.remove("lca-viz-green-hover");
-      LCAActionBtnContainer.classList.add("lca-viz-non-interactable"); // Make non-clickable
-    } else if (state === "error") {
-      floatingLCAImg.src = close_icon_red;
-      LCAActionBtnText.textContent = "No LCA relevant information.";
-      LCAActionBtnText.classList.remove("lca-viz-hidden");
-      LCAActionBtnContainer.classList.remove("lca-viz-interactable");
-      LCAActionBtn.classList.remove("lca-viz-green-hover");
-      LCAActionBtnContainer.classList.add("lca-viz-non-interactable"); // Make non-clickable
-    }
   }
 
   /**
@@ -924,84 +598,11 @@ async function init() {
     }
   }
 
-  /**
-   * Replaces an HTML element with a new tag while retaining its styles, classes, attributes, and content.
-   * @param {*} oldNode
-   * @param {*} newTagName
-   * @param {*} newClasses
-   * @returns The modified node
-   */
-  function replaceTagNameAndKeepStyles(oldNode, newTagName, newClasses) {
-    const newNode = document.createElement(newTagName);
-    newNode.classList.add(...newClasses);
-    // Copy existing classes
-    oldNode.classList.forEach((cls) => newNode.classList.add(cls));
-    // Copy inline styles
-    newNode.style.cssText = oldNode.style.cssText;
-    // Copy the content of old node into the new node
-    while (oldNode.firstChild) {
-      newNode.appendChild(oldNode.firstChild);
-    }
-    // Copy the atrributes of old node into the new node
-    for (const attr of oldNode.attributes) {
-      if (attr.name !== "class" && attr.name !== "style") {
-        newNode.setAttribute(attr.name, attr.value);
-      }
-    }
-    return newNode;
-  }
-
-  /**
-   * Takes in a sentence and uses LLM to determine the relevant sentences that can be used to display a carbon chart.
-   * Returns a JSON that contains information about each identified raw materials and their parameters.
-   * If the highlightedText does not have sufficient information, the data will return null.
-   * @param {String} highlightedText
-   * @returns a JSON that contains information about each identified raw materials and their parameters.
-   */
-  async function getValidSentence(highlightedText) {
-    const jsonObject = {
-      text: highlightedText,
-    };
-    try {
-      const response = await fetch(LCA_SERVER_URL + "/api/evaluate-text", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(jsonObject),
-      });
-
-      if (response.ok) {
-        const responseData = await response.json();
-        if (responseData) {
-          return responseData;
-        }
-        return null; // If responseData doesn't have the expected structure
-      } else {
-        setLCAActionBtnState("error");
-        return null;
-      }
-    } catch (error) {
-      console.error("Error fetching data:", error);
-      setLCAActionBtnState("error"); // Handle errors gracefully
-      return null;
-    }
-  }
-
   // Enables the highlight text behavior for all scenarios: raw materials, freight, energy
   function trackAllScenario() {
     handleLCAActionBtn();
     recordCurrentMouseCoord();
     handleHighlightText();
-  }
-
-  /**
-   * Checks if the selected text is not empty.
-   * @returns {boolean} True if the selected text is not empty, false otherwise.
-   */
-  function isNotEmptyString() {
-    const selection = window.getSelection();
-    return selection.toString().length > 0 && /\S/.test(selection.toString());
   }
 
   /**
@@ -1053,7 +654,6 @@ async function init() {
    * Handles the behavior for clicking on the LCA Action Button.
    */
   function handleLCAActionBtn() {
-
     const actionBtnHTML = getLCAActionBtn();
     const tempDiv = document.createElement("div");
     tempDiv.innerHTML = actionBtnHTML;
@@ -1076,22 +676,6 @@ async function init() {
         );
       }
     });
-  }
-
-  /**
-   * Gets the LCA Action Button HTML.
-   * @returns The LCA Action Button HTML.
-   */
-  function getLCAActionBtn() {
-    const actionBtn = `
-      <div id="lca-viz-action-btn-container" class="pd-12">
-        <div class="flex-center lca-viz-interactable pd-12 lcz-br-8 cg-8" id="lca-viz-action-btn">
-          <img src="${lca_48}" alt="LCA Image" class="floating-lca-img lcz-icon-20 lcz-mb-0">
-          <span class="lca-viz-hidden lca-lexend fz-14" id="lca-viz-action-btn-text"></span>
-        </div>
-      </div>
-    `;
-    return actionBtn;
   }
 
   // Records the current coordinate of the mouse.
@@ -1130,32 +714,7 @@ async function init() {
 
       paramContainer.innerHTML = relatedMaterialHTML + independentMaterialHTML + processesHTML;
 
-      map.innerHTML = `
-        <div class="flex-center lca-viz-header cg-12 pd-12">
-        <div class="flex-center cg-12 lca-viz-header-title">
-          <img alt="logo" src="${lca_48}" class="lcz-icon-20 lca-viz-lca-logo">
-          <span><b>Living Sustainability</b></span>
-        </div>
-        <button id="lca-viz-close-map" class="lca-viz-close-button flex-center">
-          <svg width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
-        </div>
-        <div class="flex-stretch lca-viz-title-and-question lcz-mt-8">
-          <span class="lca-viz-raw-material-title"><b>Estimated Carbon Footprint of Raw Materials</b></span>
-          <div class="btn lca-viz-btn-primary lca-viz-tooltip"><img src="${question_icon}" alt="Hover me to get additional information" class="lcz-icon-20" id="lca-viz-q-icon">
-            <div class="left">
-              <h3 class="fz-12 lca-lexend">How are raw material emissions calculated?</h3>
-              <p class="fz-12">We are using a large language model (LLM) to extract relevant raw materials and conduct a life cycle assessment (LCA) of the raw materials using available public datasets on the internet.</p>
-              <i></i>
-            </div>
-          </div>
-        </div>
-        <div class="lca-viz-canvas flex-center lca-viz-justify-center">
-          <canvas id="lca-viz-carbon-chart"></canvas>
-        </div>
-      `;
+      map.innerHTML = getInteractiveChartHTML();
 
       const paramSection = document.createElement("div");
       paramSection.classList.add("param-section");
@@ -1204,7 +763,7 @@ async function init() {
       const totalEmissions = getTotalEmissions();
       const totalEmissionsHTML = getTotalEmissionsHTML(totalEmissions);
       totalEmissionsContainer.innerHTML = totalEmissionsHTML;
-      handleCO2eEquivalencyChange(true);
+      handleCO2eEquivalencyChange(shadowRoot, true);
     }
   }
 
@@ -1220,19 +779,11 @@ async function init() {
    * Handles closing the chart behavior
    */
   function handleCloseMapButton() {
-    document
-      .getElementById("lca-viz-close-map")
-      .addEventListener("click", () => {
+    document.getElementById("lca-viz-close-map").addEventListener("click", () => {
         hideChart();
-        document
-          .querySelector(".lca-viz-mark")
-          .classList.add("lca-viz-previously-highlighted");
-        // currentHighlightedNode.classList.add('lca-viz-previously-highlighted');
-        document
-          .querySelector(".off-lca-btn")
-          .classList.remove("lca-viz-hidden");
+        document.querySelector(".lca-viz-mark").classList.add("lca-viz-previously-highlighted");
+        document.querySelector(".off-lca-btn").classList.remove("lca-viz-hidden");
       });
-
     currentHighlightedNode.addEventListener("click", redisplayChart);
   }
 
@@ -1282,108 +833,6 @@ async function init() {
     },
   };
 
-
-  /**
-   * Gets the chart configuration.
-   * @param {String} carbonInfo
-   * @returns JSON Object
-   */
-  function getChartConfig() {
-    const cData = extractNameAndEmissions(currentChartData);
-
-    const rawLabels = cData.map((item) => item.name);
-    const emissionsData = cData.map((item) => item.emissions);
-    const chartData = {
-      labels: rawLabels,
-      datasets: [
-        {
-          label: "",
-          data: emissionsData,
-          fill: false,
-          backgroundColor: [
-            "rgba(255, 99, 132, 0.2)",
-            "rgba(255, 159, 64, 0.2)",
-            "rgba(255, 205, 86, 0.2)",
-            "rgba(75, 192, 192, 0.2)",
-            "rgba(54, 162, 235, 0.2)",
-            "rgba(153, 102, 255, 0.2)",
-            "rgba(201, 203, 207, 0.2)",
-            "rgba(255, 127, 80, 0.2)",
-            "rgba(144, 238, 144, 0.2)",
-            "rgba(173, 216, 230, 0.2)",
-            "rgba(221, 160, 221, 0.2)",
-            "rgba(240, 128, 128, 0.2)",
-          ],
-          borderColor: [
-            "rgb(255, 99, 132)",
-            "rgb(255, 159, 64)",
-            "rgb(255, 205, 86)",
-            "rgb(75, 192, 192)",
-            "rgb(54, 162, 235)",
-            "rgb(153, 102, 255)",
-            "rgb(201, 203, 207)",
-            "rgb(255, 127, 80)",
-            "rgb(144, 238, 144)",
-            "rgb(173, 216, 230)",
-            "rgb(221, 160, 221)",
-            "rgb(240, 128, 128)",
-          ],
-          borderWidth: 1,
-        },
-      ],
-    };
-
-    const options = {
-      responsive: true,
-      layout: {
-        padding: {
-          bottom: 25,
-        },
-      },
-      plugins: {
-        legend: {
-          display: true, // Show legend for pie/donut chart
-          position: "top",
-          labels: {
-            padding: 10,
-          },
-        },
-        tooltip: {
-          callbacks: {
-            label: function (tooltipItem) {
-              const label = tooltipItem.label || "";
-              const value = tooltipItem.raw;
-              return `${label}: ${value} g CO2e`; // Add unit in tooltip
-            },
-          },
-        },
-        datalabels: {
-          anchor: "end",
-          align: "end",
-          formatter: function (value) {
-            return `${value} g CO2e`;
-          },
-        },
-      },
-    };
-    return { data: chartData, options: options };
-  }
-
-  /**
-   * Gets the total emissions of all raw materials in the chart
-   * @returns The total emissions of all raw materials in the chart in 'g CO2e'
-   */
-  function getTotalEmissions() {
-    if (!chart || !chart.data || !chart.data.datasets || !chart.data.datasets[0]) {
-      console.error("Chart data not found!");
-      return 0;
-    }
-    const emissionsData = chart.data.datasets[0].data;
-    const totalEmissions = emissionsData.reduce((sum, value) => sum + value, 0);
-    console.log("Total Emissions:", totalEmissions, "g CO2e");
-    return totalEmissions.toFixed(2);
-  }
-
   // Handles the behavior of opening and closing the lca question UI.
   function toggleQuestionButtonState() {
     const openContainer = floatingQMenu;
@@ -1413,7 +862,7 @@ async function init() {
  * @param {Object} data The raw materials data
  * @returns An array of objects containing raw materials and their emissions.
  */
-function extractNameAndEmissions(data) {
+export function extractNameAndEmissions(data) {
   independentMaterialHTML = ``;
   relatedMaterialHTML = ``;
   processesHTML = ``;
@@ -1449,19 +898,6 @@ function extractNameAndEmissions(data) {
       "</div>";
   }
   return results;
-}
-
-// Checks if the current domain is valid.
-export function isDomainValid(domainList) {
-  let allowedDomains = domainList;
-  const currentDomain = getBaseDomain(window.location.hostname);
-
-  console.log("currentDomain = " + currentDomain);
-  if (allowedDomains.includes(currentDomain)) {
-    return true;
-  } else {
-    return false;
-  }
 }
 
 // Gets the base domain of the current hostname.
@@ -1705,32 +1141,6 @@ function handleQuestionForm() {
     inputNode.value = currentWeight;
   }
 
-  /**
-   * Returns the HTML for up and down button given the parameter.
-   */
-  function createUpDownBtn(index, unit, defaultValue, type) {
-    const upDownBtn = `
-          <div class="lca-viz-special-text-container-2 lca-viz-up-down-btn-master-${index} lca-viz-up-down-btn-master-${index}-${type}">
-            <div class="lca-viz-special-text-intext lca-viz-active-st lca-viz-param-fill">
-              <input class="lca-viz-parameter-text input-normal lca-viz-parameter-2 lca-viz-fnt-inherit" id="lca-viz-input-${index}" data-type="${type}" data-value-unit="${unit}" type="number" value="${defaultValue}">
-              <div class="lca-viz-up-down-btn-container-intext flex-column">
-                <div class="lca-viz-active lca-viz-up-down-btn lca-viz-up">
-                  <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M3.60595 1.24256C3.99375 0.781809 4.7032 0.781808 5.091 1.24256L8.00777 4.70806C8.53906 5.3393 8.09032 6.30353 7.26525 6.30353L1.4317 6.30353C0.606637 6.30353 0.157892 5.33931 0.689181 4.70807L3.60595 1.24256Z" fill="currentColor"/>
-                  </svg>
-                </div>
-                <div class="lca-viz-active lca-viz-up-down-btn lca-viz-down">
-                  <svg width="100%" height="100%" viewBox="0 0 9 7" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M5.09107 5.74914C4.70327 6.20989 3.99382 6.20989 3.60602 5.74914L0.689251 2.28363C0.157962 1.65239 0.606707 0.688168 1.43177 0.688168L7.26532 0.688168C8.09039 0.688168 8.53913 1.65239 8.00784 2.28363L5.09107 5.74914Z" fill="currentColor"/>
-                  </svg>
-                </div>
-              </div>
-            </div>
-          </div>
-    `;
-    return upDownBtn;
-  }
-
   // Handles the freight input.
   async function handleFreightInput() {
     const formData = new FormData(formContainer);
@@ -1839,11 +1249,6 @@ function checkAllValid() {
   }
 }
 
-// Validates the text input.
-function validateText(input) {
-  return input.value.trim() !== "";
-}
-
 // Validates the package weight input.
 function validatePackageWeight(input) {
   const value = parseFloat(input.value.trim());
@@ -1867,19 +1272,6 @@ function toggleValidation(input, errorId, isValid) {
   }
 }
 
-/**
- * Gets the LCA Floating Menu.
- * @returns The LCA Floating Menu HTML.
- */
-function getLCAFloatingMenu() {
-  const floatingMenu = `
-    <div class="flex-center lca-viz-floating-lca-menu pd-12 lcz-br-8 lcz-hidden-b" id="lca-viz-question-menu">
-      <img src="${lca_48}" alt="LCA Image" class="floating-lca-img lcz-icon-24">
-    </div>
-  `;
-  return floatingMenu;
-}
-
 // Hides the Master Question Container.
 function hideMasterQContainer() {
   masterQContainer.classList.add("lca-viz-c-hidden");
@@ -1899,4 +1291,79 @@ function hideFloatingQMenu() {
     floatingQMenu.classList.add("lcz-hidden-b");
     floatingQMenu.classList.remove("lcz-visible-b");
   });
+}
+
+
+/**
+ * Updates the chart data based on the new weight
+ * @param {number} newWeight The new value that is being displayed in the UI
+ * @param {number} currentWeight The current weight of the parameter
+ * @param {number} index The index of the raw material
+ */
+export function updateChartData(newWeight, index) {
+  if (index !== -1) {
+    let emissionsFactor = 0;
+    const obj = findByIndex(currentChartData, index);
+    emissionsFactor = extractEmissionsFactor(
+      obj.carbon_emission_factor
+    ).co2e_value;
+
+    let newEmissionsValue = parseFloat(
+      (emissionsFactor * newWeight).toFixed(2)
+    );
+    chart.data.datasets[0].data[index] = newEmissionsValue;
+    chart.update();
+
+    const totalEmissions = getTotalEmissions();
+    updateTotalEmissions(totalEmissions);
+  }
+}
+
+/**
+ * Gets the total emissions of all raw materials in the chart
+ * @returns The total emissions of all raw materials in the chart in 'g CO2e'
+ */
+function getTotalEmissions() {
+  if (!chart || !chart.data || !chart.data.datasets || !chart.data.datasets[0]) {
+    console.error("Chart data not found!");
+    return 0;
+  }
+  const emissionsData = chart.data.datasets[0].data;
+  const totalEmissions = emissionsData.reduce((sum, value) => sum + value, 0);
+  console.log("Total Emissions:", totalEmissions, "g CO2e");
+  return totalEmissions.toFixed(2);
+}
+
+/**
+   * Sets the state of the LCA Action Button.
+   * @param {String} state The state of the LCA Action Button.
+   */
+export function setLCAActionBtnState(state) {
+  const LCAActionBtnText = document.getElementById("lca-viz-action-btn-text");
+  const floatingLCAImg = document.querySelector(".floating-lca-img");
+  const LCAActionBtn = document.getElementById("lca-viz-action-btn");
+  if (state === "default") {
+    floatingLCAImg.src = lca_48;
+    LCAActionBtnText.textContent = "";
+    LCAActionBtnText.classList.add("lca-viz-hidden");
+    LCAActionBtnContainer.classList.add("lca-viz-interactable");
+    LCAActionBtn.classList.add("lca-viz-green-hover");
+    LCAActionBtnContainer.classList.remove("lca-viz-non-interactable");
+  }
+  //? new code
+  else if (state === "analyzing") {
+    floatingLCAImg.src = loading_icon_2;
+    LCAActionBtnText.textContent = "Analyzing...";
+    LCAActionBtnText.classList.remove("lca-viz-hidden");
+    LCAActionBtnContainer.classList.remove("lca-viz-interactable");
+    LCAActionBtn.classList.remove("lca-viz-green-hover");
+    LCAActionBtnContainer.classList.add("lca-viz-non-interactable"); // Make non-clickable
+  } else if (state === "error") {
+    floatingLCAImg.src = close_icon_red;
+    LCAActionBtnText.textContent = "No raw materials detected.";
+    LCAActionBtnText.classList.remove("lca-viz-hidden");
+    LCAActionBtnContainer.classList.remove("lca-viz-interactable");
+    LCAActionBtn.classList.remove("lca-viz-green-hover");
+    LCAActionBtnContainer.classList.add("lca-viz-non-interactable"); // Make non-clickable
+  }
 }

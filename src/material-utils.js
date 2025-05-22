@@ -3,7 +3,7 @@
 
 // import { expand_icon_wide } from "./content";
 import { lca_32 } from "./content";
-import { formatToSignificantFigures, getBeefInfo } from "./popup-content"
+import { formatToSignificantFigures, getBeefInfo } from "./utils/math-utils";
 
 /**
  * Returns the HTML code for ratio section given a list of ratios
@@ -338,13 +338,6 @@ export function extractEmissionsFactor(emissionsString) {
   return resultObj;
 }
 
-export function getBaseDomain(hostname) {
-  const parts = hostname.split('.');
-  if (parts.length > 2) {
-    return parts.slice(-2).join('.');
-  }
-  return hostname;
-}
 
 
 /**
