@@ -1,5 +1,6 @@
 
 // Utilities function for modifying the UI of different features
+const lca_48 = chrome.runtime.getURL("../../assets/img/lca-48.png");
 
 /**
  * Handles the changing of different reference units for phone emissions flow.
@@ -97,4 +98,24 @@ export function showElement(element, version) {
       element.classList.add("lcz-visible-b");
     });
   }
+}
+
+/**
+ * @returns {HTMLElement} the HTML code for LCA Banner
+ */
+export function getLCABanner() {
+  const lcaBanner = `
+    <section class="lca-banner flex-stretch">
+      <div class="flex-center title-container lcz-br-8 pd-12">
+        <img src="${lca_48}" alt="LCA Image" class="lcz-icon-20">
+        <p class="title-text fz-20 eco-bold lca-viz-text-align-center"><b>Living Sustainability</b></p>
+      </div>
+      <div class="flex-center lca-viz-close-container lcz-br-8 pd-16">
+        <svg class="lcz-icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+    </section>
+  `;
+  return lcaBanner;
 }

@@ -3,7 +3,7 @@
 // 2. Freight carbon emissions
 // 3. Cloud computing carbon emissions
 
-import { isDomainValid } from "./content";
+import { isDomainValid } from "./utils/utils";
 import { detectPhoneModel } from "./autodetect/phone/phone-utils";
 import { getPhoneCarbonData } from "./autodetect/phone/phone-utils";
 import { getRecommendedModels } from "./autodetect/phone/phone-utils";
@@ -11,16 +11,14 @@ import { getFedexDataChange, observeFedexShippingOptions,
   recordAllInputChange, recordPackageTypeChange, recordFromToAddressChange } from "./autodetect/freight/freight-tracker";
 import { getFreightHTMLContent } from "./autodetect/freight/freight-ui";
 import { getFreightData } from "./autodetect/freight/freight-utils";
-import { handleCO2eEquivalencyChange, hideElement, showElement } from "./utils/ui-utils";
+import { handleCO2eEquivalencyChange, hideElement, showElement, getLCABanner } from "./utils/ui-utils";
 import { getPhoneEmissionsSkeleton, displayPhoneSpecEmissions, displaySideBySideComparison } from "./autodetect/phone/phone-ui";
 import { observeTextChange, observeElementTextAndClassContent, getElementByTextContent } from "./autodetect/cloud/cloud-tracker";
 import { checkIsNumberInputFilled, formatInstanceNames, getCloudData } from "./autodetect/cloud/cloud-utils";
 import { getCloudEmissionsSkeleton, getCloudEmissionsResult } from "./autodetect/cloud/cloud-ui";
 import { loadGoogleMaps } from "./autodetect/freight/google-maps";
 
-
 const lca_48 = chrome.runtime.getURL("../assets/img/lca-48.png");
-
 // masterContainer is the main container that contains the popup content.
 export let masterContainer = null;
 // floatingMenu is the container that contains the floating menu.
@@ -54,7 +52,8 @@ if (isDomainValid(popupDomains)) {
   }
 }
 
-// Initializes the popup content.
+// This is the main method that enables all of the interaction of the autodetect feature.
+// It initializes the popup content.
 function initialize() {
   return new Promise((resolve) => {
     setupPopupShadowDOM();
@@ -271,7 +270,6 @@ export function displayCloudEmissions(emissionsResultHTML, isCloud) {
     shadowRoot
       .querySelector(".lca-viz-cloud-emissions-container")
       .classList.remove("lcz-hidden-a");
-    // masterContainer.focus();
     if (!isCloud) await hideCloudLoadingIcon();
     const cloudContent = shadowRoot.querySelector(
       ".lca-viz-cloud-results-info-container"
@@ -300,7 +298,6 @@ export function handleCalculateButton() {
         cloudSizeText,
         durationText
       );
-      console.log("cloudData: ", cloudData);
       const data = {
         emissions: cloudData.total_co2e,
         region: regionText,
@@ -361,7 +358,7 @@ async function loadCSS(url) {
 export function setupLCABannerAndFloatingMenu() {
   const lcaBanner = getLCABanner();
   masterContainer.insertAdjacentHTML("beforeend", lcaBanner);
-  const lcaFloatingMenu = getLCAFloatingMenu();
+  const lcaFloatingMenu = getLCAPopupFloatingMenu();
   masterContainer.insertAdjacentHTML("beforebegin", lcaFloatingMenu);
   floatingMenu = shadowRoot.getElementById("lca-viz-floating-menu");
   toggleButtonState();
@@ -380,7 +377,7 @@ export async function injectPopupContent(
   if (!shadowRoot) shadowRoot = sRoot;
 
   masterContainer.insertAdjacentHTML("beforeend", lcaBanner);
-  const lcaFloatingMenu = getLCAFloatingMenu();
+  const lcaFloatingMenu = getLCAPopupFloatingMenu();
   masterContainer.insertAdjacentHTML("beforebegin", lcaFloatingMenu);
   floatingMenu = shadowRoot.getElementById("lca-viz-floating-menu");
   toggleButtonState();
@@ -413,7 +410,7 @@ export async function injectPopupContent(
 }
 
 // Returns the HTML code for the floating menu
-function getLCAFloatingMenu() {
+function getLCAPopupFloatingMenu() {
   const floatingMenu = `
     <div class="flex-center lca-viz-floating-lca-menu pd-12 lcz-br-8 lcz-hidden-b" id="lca-viz-floating-menu">
       <img src="${lca_48}" alt="LCA Image" class="floating-lca-img lcz-icon-24">
@@ -448,7 +445,6 @@ export function showMasterContainer() {
     // masterContainer should only be using hidden-b, but I'm safeguarding this in case.
     masterContainer.classList.remove("lca-viz-hidden");
     masterContainer.classList.remove("lcz-hidden-a");
-
     masterContainer.classList.remove("lcz-hidden-b");
     // showElement(masterContainer, "b");
     masterContainer.addEventListener("transitionend", { once: true });
@@ -458,6 +454,7 @@ export function showMasterContainer() {
 // Hides and clears the master container
 export function hideAndClearMasterContainer() {
   if (masterContainer) {
+    masterContainer.classList.remove("lcz-visible-b");
     masterContainer.classList.add("lcz-hidden-b");
     masterContainer.addEventListener("transitionend", clearMasterContainer, {
       once: true,
@@ -468,26 +465,6 @@ export function hideAndClearMasterContainer() {
 // Clears the content inside the master container
 export function clearMasterContainer() {
   if (masterContainer) masterContainer.replaceChildren();
-}
-
-/**
- * @returns {HTMLElement} the HTML code for LCA Banner
- */
-function getLCABanner() {
-  const lcaBanner = `
-    <section class="lca-banner flex-stretch">
-      <div class="flex-center title-container lcz-br-8 pd-12">
-        <img src="${lca_48}" alt="LCA Image" class="lcz-icon-20">
-        <p class="title-text fz-20 eco-bold lca-viz-text-align-center"><b>Living Sustainability</b></p>
-      </div>
-      <div class="flex-center lca-viz-close-container lcz-br-8 pd-16">
-        <svg class="lcz-icon-20" width="100%" height="100%" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <path d="M18 6L6 18M6 6L18 18" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-    </section>
-  `;
-  return lcaBanner;
 }
 
 

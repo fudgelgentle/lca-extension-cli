@@ -338,13 +338,6 @@ export function extractEmissionsFactor(emissionsString) {
   return resultObj;
 }
 
-export function getBaseDomain(hostname) {
-  const parts = hostname.split('.');
-  if (parts.length > 2) {
-    return parts.slice(-2).join('.');
-  }
-  return hostname;
-}
 
 
 /**
